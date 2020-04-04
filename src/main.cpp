@@ -1,0 +1,224 @@
+///////////////////////////////////////////////////////////////////////////
+//
+// Copyright (c) 2020, STEREOLABS.
+//
+// All rights reserved.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+///////////////////////////////////////////////////////////////////////////
+
+/***********************************************************************************************
+ ** This sample demonstrates how to use the ZED SDK with OpenCV. 					  	      **
+ ** Depth and images are captured with the ZED SDK, converted to OpenCV format and displayed. **
+ ***********************************************************************************************/
+
+ // ZED includes
+#include <sl/Camera.hpp>
+
+// OpenCV includes
+#include <opencv2/opencv.hpp>
+
+#include <CamUtilities.h>
+#include <Simulation.h>
+#include <Config.h>
+
+using namespace std;
+using namespace sl;
+
+cv::Mat slMat2cvMat(Mat& input);
+void printHelp();
+
+int main(int argc, char **argv) {
+
+	// Create a ZED camera object
+	Camera zed;
+
+	// Set configuration parameters
+	InitParameters init_parameters;
+	//init_parameters.camera_resolution = RESOLUTION::HD1080;
+	init_parameters.camera_resolution = Config::camResolution();
+	//init_parameters.depth_mode = DEPTH_MODE::ULTRA;
+	init_parameters.depth_mode = Config::camPerformanceMode();
+	init_parameters.coordinate_units = UNIT::METER;
+	if (argc > 1) init_parameters.input.setFromSVOFile(argv[1]);
+
+	// Open the camera
+	ERROR_CODE zed_open_state = zed.open(init_parameters);
+	if (zed_open_state != ERROR_CODE::SUCCESS) {
+		cout << "[Sample] Error Camera Open: " << zed_open_state << "\nExit program." << endl;
+		return -1;
+	}
+
+	// Display help in console
+	printHelp();
+
+	// Set runtime parameters after opening the camera
+	RuntimeParameters runtime_parameters;
+	runtime_parameters.sensing_mode = SENSING_MODE::FILL;
+
+
+	// Prepare new image size to retrieve half-resolution images
+	Resolution image_size = zed.getCameraInformation().camera_configuration.resolution;
+	int new_width = image_size.width;
+	int new_height = image_size.height;
+
+	Resolution new_image_size(new_width, new_height);
+
+	// To share data between sl::Mat and cv::Mat, use slMat2cvMat()
+	// Only the headers and pointer to the sl::Mat are copied, not the data itself
+	Mat image_zed(new_width, new_height, MAT_TYPE::U8_C4);
+	cv::Mat image_ocv = slMat2cvMat(image_zed);
+	//Mat depth_image_zed(new_width, new_height, MAT_TYPE::U8_C4);
+	//cv::Mat depth_image_ocv = slMat2cvMat(depth_image_zed);
+
+	Mat depth_measure(new_width, new_height, MAT_TYPE::F32_C1);
+
+	//Make starting pose.
+	sl::float3 startposition;
+	startposition = sl::float3(0.06, -0.026, 0.0062);
+
+	Simulation sim(&zed, startposition);
+
+	//Config file stuff. 
+	//Config::SaveSettingsToDisk("config.txt");
+	//Config::LoadSettingsFromDisk("config.txt");
+
+	/*cout << "Toggle Laser Dot: " << Config::GetBoolSetting("ToggleLaserCrosshair") << endl;
+
+	cout << "Toggle Laser Path: " << Config::GetBoolSetting("ToggleLaserPath") << endl;
+	cout << "Toggle Gravity Dot: " << Config::GetBoolSetting("ToggleGravityCrosshair") << endl;
+	cout << "Toggle Gravity Path: " << Config::GetBoolSetting("ToggleGravityPath") << endl;*/
+
+	cout << "Toggle Laser Dot: " << Config::toggleLaserCrosshair() << endl;
+	Config::toggleLaserCrosshair(false);
+	cout << "Toggle Laser Dot: " << Config::toggleLaserCrosshair() << endl;
+
+	// Loop until 'q' is pressed
+	char key = ' ';
+	while (key != 'q') {
+
+		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) {
+
+
+			/*cv::Mat multmat = projmat * pointmat;
+
+			float w = multmat.at<float>(3, 0);
+			float x = multmat.at<float>(0, 0) / w;
+			float y = -multmat.at<float>(1, 0) / w;
+			float z = multmat.at<float>(2, 0) / w;*/
+
+			//cout << multmat.at<float>(0, 0) << " " << multmat.at<float>(0, 1) << " " << multmat.at<float>(0, 2) << " " << multmat.at<float>(0, 3) << endl;
+			//cout << x << ", " << y << ", " << z << endl;
+			//cout << multmat.at<float>(0, 0) << " " << multmat.at<float>(1, 0) << " " << multmat.at<float>(2, 0) << " " << multmat.at<float>(3, 0) << endl;
+
+			// Retrieve the left image, depth image in half-resolution
+			zed.retrieveImage(image_zed, VIEW::LEFT, MEM::CPU, new_image_size);
+			//zed.retrieveImage(depth_image_zed, VIEW::DEPTH, MEM::CPU, new_image_size);
+
+			zed.retrieveMeasure(depth_measure);
+
+			// Display image and depth using cv:Mat which share sl:Mat data
+			/*float screenx = (x + 1) / 2.0 * new_width;
+			float screeny = (y + 1) / 2.0 * new_height;
+
+			sl::float3 testpos = sl::float3(0, 0, -2);
+			int2 screenpos = CamUtilities::CameraToScreenPos(testpos, projmat, new_width, new_height);*/
+
+			//Laser crosshair - no gravity. 
+			if (Config::toggleLaserCrosshair() || Config::toggleLaserPath())
+			{
+				int2 collisionpoint_nograv;
+				float collisiondepth_nograv;
+				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, collisionpoint_nograv, collisiondepth_nograv);
+				if(collided && Config::toggleLaserCrosshair())
+				{
+					//cout << "Collided at " << collisionpoint_nograv.x << ", " << collisionpoint_nograv.y << endl;
+					cv::circle(image_ocv, cv::Point(collisionpoint_nograv.x, collisionpoint_nograv.y), 30 / collisiondepth_nograv, cv::Scalar(0, 0, 255.0), -1);
+				}
+				else
+				{
+					//cout << "Did not collide. Last was " << collisionpoint_nograv.x << ", " << collisionpoint_nograv.y << endl;
+				}
+			}
+
+			//Laser crosshair - gravity.
+			if (Config::toggleGravityCrosshair() || Config::toggleGravityPath())
+			{
+				int2 collisionpoint_grav;
+				float collisiondepth_grav;
+				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, collisionpoint_grav, collisiondepth_grav);
+				if (collided && Config::toggleGravityCrosshair())
+				{
+					//cout << "Collided at " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
+					cv::circle(image_ocv, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), 30 / collisiondepth_grav, cv::Scalar(0, 255.0, 0), -1);
+				}
+				else
+				{
+					//cout << "Did not collide. Last was " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
+				}
+			}
+
+			cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+			cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+
+
+			cv::imshow("Image", image_ocv);
+			//cv::imshow("Depth", depth_image_ocv);
+
+			//float centerdepth = 0;
+			//depth_measure.getValue(new_width / 2, new_height / 2, &centerdepth);
+
+			//cout << centerdepth << endl;
+
+			// Handle key event
+			key = cv::waitKey(10);
+		}
+	}
+	zed.close();
+	return 0;
+}
+
+/**
+* Conversion function between sl::Mat and cv::Mat
+**/
+cv::Mat slMat2cvMat(Mat& input) {
+	// Mapping between MAT_TYPE and CV_TYPE
+	int cv_type = -1;
+	switch (input.getDataType()) {
+	case MAT_TYPE::F32_C1: cv_type = CV_32FC1; break;
+	case MAT_TYPE::F32_C2: cv_type = CV_32FC2; break;
+	case MAT_TYPE::F32_C3: cv_type = CV_32FC3; break;
+	case MAT_TYPE::F32_C4: cv_type = CV_32FC4; break;
+	case MAT_TYPE::U8_C1: cv_type = CV_8UC1; break;
+	case MAT_TYPE::U8_C2: cv_type = CV_8UC2; break;
+	case MAT_TYPE::U8_C3: cv_type = CV_8UC3; break;
+	case MAT_TYPE::U8_C4: cv_type = CV_8UC4; break;
+	default: break;
+	}
+
+	// Since cv::Mat data requires a uchar* pointer, we get the uchar1 pointer from sl::Mat (getPtr<T>())
+	// cv::Mat and sl::Mat will share a single memory structure
+	return cv::Mat(input.getHeight(), input.getWidth(), cv_type, input.getPtr<sl::uchar1>(MEM::CPU));
+}
+
+/**
+* This function displays help in console
+**/
+void printHelp() {
+	cout << " Press 's' to save Side by side images" << endl;
+	cout << " Press 'p' to save Point Cloud" << endl;
+	cout << " Press 'd' to save Depth image" << endl;
+	cout << " Press 'm' to switch Point Cloud format" << endl;
+	cout << " Press 'n' to switch Depth format" << endl;
+}
