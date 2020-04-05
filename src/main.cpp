@@ -42,6 +42,7 @@ void printHelp();
 
 void ClickCallback(int event, int x, int y, int flags, void* userdata); //Forward declaration. 
 
+EmptyPanel panel(0, 1, 0, 1);
 
 int main(int argc, char **argv) {
 
@@ -95,8 +96,8 @@ int main(int argc, char **argv) {
 	Simulation sim(&zed, startposition);
 
 	//Set up UI. 
-	EmptyPanel panel(0, 1, 0, 1);
-
+	//EmptyPanel panel(0, 1, 0, 1);
+	panel = EmptyPanel(0, 1, 0, 1);
 
 	// Loop until 'q' is pressed
 	char key = ' ';
@@ -178,6 +179,7 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 	if (event == CV_EVENT_LBUTTONDOWN)
 	{
 		//Clickable::ProcessAllClicks(x, y);
+		panel.ProcessAllClicks(x, y);
 	}
 }
 
