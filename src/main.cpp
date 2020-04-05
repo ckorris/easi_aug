@@ -32,12 +32,16 @@
 #include <CamUtilities.h>
 #include <Simulation.h>
 #include <Config.h>
+#include <Drawables.h>
 
 using namespace std;
 using namespace sl;
 
 cv::Mat slMat2cvMat(Mat& input);
 void printHelp();
+
+void ClickCallback(int event, int x, int y, int flags, void* userdata); //Forward declaration. 
+
 
 int main(int argc, char **argv) {
 
@@ -90,19 +94,9 @@ int main(int argc, char **argv) {
 
 	Simulation sim(&zed, startposition);
 
-	//Config file stuff. 
-	//Config::SaveSettingsToDisk("config.txt");
-	//Config::LoadSettingsFromDisk("config.txt");
+	//Set up UI. 
+	EmptyPanel panel(0, 1, 0, 1);
 
-	/*cout << "Toggle Laser Dot: " << Config::GetBoolSetting("ToggleLaserCrosshair") << endl;
-
-	cout << "Toggle Laser Path: " << Config::GetBoolSetting("ToggleLaserPath") << endl;
-	cout << "Toggle Gravity Dot: " << Config::GetBoolSetting("ToggleGravityCrosshair") << endl;
-	cout << "Toggle Gravity Path: " << Config::GetBoolSetting("ToggleGravityPath") << endl;*/
-
-	cout << "Toggle Laser Dot: " << Config::toggleLaserCrosshair() << endl;
-	Config::toggleLaserCrosshair(false);
-	cout << "Toggle Laser Dot: " << Config::toggleLaserCrosshair() << endl;
 
 	// Loop until 'q' is pressed
 	char key = ' ';
@@ -110,30 +104,12 @@ int main(int argc, char **argv) {
 
 		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) {
 
-
-			/*cv::Mat multmat = projmat * pointmat;
-
-			float w = multmat.at<float>(3, 0);
-			float x = multmat.at<float>(0, 0) / w;
-			float y = -multmat.at<float>(1, 0) / w;
-			float z = multmat.at<float>(2, 0) / w;*/
-
-			//cout << multmat.at<float>(0, 0) << " " << multmat.at<float>(0, 1) << " " << multmat.at<float>(0, 2) << " " << multmat.at<float>(0, 3) << endl;
-			//cout << x << ", " << y << ", " << z << endl;
-			//cout << multmat.at<float>(0, 0) << " " << multmat.at<float>(1, 0) << " " << multmat.at<float>(2, 0) << " " << multmat.at<float>(3, 0) << endl;
-
 			// Retrieve the left image, depth image in half-resolution
 			zed.retrieveImage(image_zed, VIEW::LEFT, MEM::CPU, new_image_size);
-			//zed.retrieveImage(depth_image_zed, VIEW::DEPTH, MEM::CPU, new_image_size);
 
 			zed.retrieveMeasure(depth_measure);
 
-			// Display image and depth using cv:Mat which share sl:Mat data
-			/*float screenx = (x + 1) / 2.0 * new_width;
-			float screeny = (y + 1) / 2.0 * new_height;
 
-			sl::float3 testpos = sl::float3(0, 0, -2);
-			int2 screenpos = CamUtilities::CameraToScreenPos(testpos, projmat, new_width, new_height);*/
 
 			//Laser crosshair - no gravity. 
 			if (Config::toggleLaserCrosshair() || Config::toggleLaserPath())
@@ -169,17 +145,25 @@ int main(int argc, char **argv) {
 				}
 			}
 
-			cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
-			cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+			cv::namedWindow("EasiAug");
 
+			//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+			//cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
-			cv::imshow("Image", image_ocv);
-			//cv::imshow("Depth", depth_image_ocv);
+			//Test button. 
+			//cv::Rect testrect;
+			//testrect = cv::Rect(0, new_height - 50, 80, 50);
+			//cv::rectangle(image_ocv, testrect, cv::Scalar(255, 0, 0), -1);
 
-			//float centerdepth = 0;
-			//depth_measure.getValue(new_width / 2, new_height / 2, &centerdepth);
+			//Draw drawables. 
+			cv::Rect panelrect = cv::Rect(1, new_height * 0.8, new_width - 2, new_height * 0.2 - 2);
+			panel.ProcessUI(panelrect, image_ocv, "EasiAug");
 
-			//cout << centerdepth << endl;
+			cv::imshow("EasiAug", image_ocv);
+
+			//Input.
+			cv::setMouseCallback("EasiAug", ClickCallback);
+
 
 			// Handle key event
 			key = cv::waitKey(10);
@@ -187,6 +171,14 @@ int main(int argc, char **argv) {
 	}
 	zed.close();
 	return 0;
+}
+
+void ClickCallback(int event, int x, int y, int flags, void* userdata)
+{
+	if (event == CV_EVENT_LBUTTONDOWN)
+	{
+		//Clickable::ProcessAllClicks(x, y);
+	}
 }
 
 /**
