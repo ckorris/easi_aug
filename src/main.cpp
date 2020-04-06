@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
 
 	//Set up UI. 
 	//EmptyPanel panel(0, 1, 0, 1);
-	panel = EmptyPanel(0, 1, 0, 1);
+	//panel = EmptyPanel(0, 1, 0, 1);
 
 	// Loop until 'q' is pressed
 	char key = ' ';

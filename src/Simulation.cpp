@@ -81,6 +81,6 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	//collisionpoint = &lastvalidpoint;
 	collisionpoint = CamUtilities::CameraToScreenPos(lastvalidpoint, projectionMatrix, depthmat.getWidth(), depthmat.getHeight());
 	collisiondepth = lastvalidpoint.z;
-	cout << "Failed. Downspeed at failure: " << downspeed << endl;
+	//cout << "Failed. Downspeed at failure: " << downspeed << endl;
 	return false; //We didn't hit anything. 
 }

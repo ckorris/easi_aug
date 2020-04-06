@@ -15,13 +15,15 @@ public:
 	void Disable();
 
 	void ProcessAllClicks(int x, int y);
-
+	vector < unique_ptr<Drawable>> children;
 protected:
 
 	//static vector<Drawable> allEnabledDrawables;
+	static vector<unique_ptr<Drawable>> allEnabledDrawables;
 
 	bool isEnabled;
-	vector<Drawable> children;
+	//vector<Drawable*> children;
+
 
 	float anchorXMin;
 	float anchorXMax;
