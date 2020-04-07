@@ -139,11 +139,11 @@ SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)
 	//ArrowButton plusonearrow(getter, setter, 1.0, 0, 1, 0.17, 0.34);
 
 	Drawable::children.emplace_back(new ArrowButton(getter, setter, 5.0, 0, 1, 0.0, 0.2)); //Plus 5 arrow.
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, 1.0, 0, 1, 0.21, 0.4)); // Plus 1 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, 1.0, 0, 1, 0.2, 0.4)); // Plus 1 arrow.
 
 	Drawable::children.emplace_back(new ValueLabel(getter, label, 0, 1, 0.4, 0.6)); // Plus 1 arrow.
 
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, -1.0, 0, 1, .6, 0.79)); //Minus 1 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, -1.0, 0, 1, .6, 0.8)); //Minus 1 arrow.
 	Drawable::children.emplace_back(new ArrowButton(getter, setter, -5.0, 0, 1, 0.8, 1)); //Minus 5 arrow.
 }
 
@@ -198,5 +198,21 @@ void ArrowButton::OnClicked()
 
 void ArrowButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
-	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 255), -1);
+	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 255), -1); //Background. 
+
+	vector<cv::Point> points;
+	if (changeAmount >= 0.0)
+	{
+		points.push_back(cv::Point(screenBounds.x, screenBounds.y + screenBounds.height));
+		points.push_back(cv::Point(screenBounds.x + (screenBounds.width / 2.0), screenBounds.y));
+		points.push_back(cv::Point(screenBounds.x + screenBounds.width, screenBounds.y + screenBounds.height));
+	}
+	else
+	{
+		points.push_back(cv::Point(screenBounds.x, screenBounds.y));
+		points.push_back(cv::Point(screenBounds.x + (screenBounds.width / 2.0), screenBounds.y + screenBounds.height));
+		points.push_back(cv::Point(screenBounds.x + screenBounds.width, screenBounds.y));
+	}
+
+	cv::fillConvexPoly(drawto, points, cv::Scalar(140, 140, 140));
 }
