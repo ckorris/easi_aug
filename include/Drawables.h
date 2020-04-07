@@ -47,15 +47,38 @@ public:
 protected:
 	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
 	
-	static float GetSpeed();
 };
 
+class SettingIncrementorPanel : public Drawable
+{
+public:
+	SettingIncrementorPanel(float(*getter)(), void(*setter)(float), string label, 
+		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+
+protected:
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+	float(*settingGetter)();
+	void(*settingSetter)(float);
+};
+
+class ValueLabel : public Drawable
+{
+public:
+	ValueLabel(float(*getter)(), string label, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+
+protected: 
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+
+	float(*settingGetter)();
+	string labelPrefix;
+};
 
 class ArrowButton : public Drawable
 {
 public:
-	typedef float(*callback_function)(void);
-	ArrowButton(float (*setter)(), float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+	//typedef float(*callback_function)(void);
+	ArrowButton(float (*getter)(), void(*setter)(float), float changeamount, 
+		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 	//ArrowButton(callback_function setter, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 protected:
@@ -64,5 +87,7 @@ protected:
 
 	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
 
-	float(*settingSetter)();
+	float(*settingGetter)();
+	void(*settingSetter)(float);
+	float changeAmount;
 };

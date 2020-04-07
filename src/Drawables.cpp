@@ -104,36 +104,23 @@ void Drawable::ProcessAllClicks(int x, int y)
 
 void Drawable::OnClicked()
 {
-	//cout << "Drawable base draw" << endl;
+	
 }
-
-float EmptyPanel::GetSpeed()
-{
-	//return 6.5;
-	cout << "Retrieved forward speed!" << endl;
-	return Config::forwardSpeedMPS();
-}
-
 
 
 EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax) : Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
 	cout << "EmptyPanel constructor" << endl;
 
-	//float getspeed() { return Config::forwardSpeedMPS(); };
-	//ArrowButton::callback_function speeddel;
-	float(*del)() = GetSpeed; //TODO: Lambda?
-	//float (*del)() = Config::forwardSpeedMPS;
-	//speeddel = &EmptyPanel::GetSpeed();
+	float(*speedgetter)() = []() {return Config::forwardSpeedMPS(); };
+	void(*speedsetter)(float) = [](float v) {Config::forwardSpeedMPS(v); };
 
-	//ArrowButton uparrow(del, 0, 0.8, 0, .2);
+	//SettingIncrementorPanel speedpanel(speedgetter, speedsetter, 0, 0.15, 0, 1);
 
-	//children.push_back(&uparrow);
-	Drawable::children.emplace_back(new ArrowButton(del, 0, 0.8, 0, .2));
+	//Drawable::children.emplace_back(new ArrowButton(speedgetter, speedsetter, 1.0, 0, 0.8, 0, .2));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, "FPS: ", 0, 0.1, 0, 1));
 	
 }
-
-
 
 void EmptyPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
@@ -141,27 +128,75 @@ void EmptyPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 	cv::rectangle(drawto, drawrect, cv::Scalar(25, 25, 25), 2); //Test - should be empty eventually. 
 }
 
+SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)(float), string label,
+	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	:Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	settingGetter = getter;
+	settingSetter = setter;
 
-ArrowButton::ArrowButton(float (*setter)(), float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	//ArrowButton plusfivearrow(getter, setter, 5.0, 0, 1, 0, 0.17);
+	//ArrowButton plusonearrow(getter, setter, 1.0, 0, 1, 0.17, 0.34);
+
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, 5.0, 0, 1, 0.0, 0.2)); //Plus 5 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, 1.0, 0, 1, 0.21, 0.4)); // Plus 1 arrow.
+
+	Drawable::children.emplace_back(new ValueLabel(getter, label, 0, 1, 0.4, 0.6)); // Plus 1 arrow.
+
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, -1.0, 0, 1, .6, 0.79)); //Minus 1 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, -5.0, 0, 1, 0.8, 1)); //Minus 5 arrow.
+}
+
+void SettingIncrementorPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//Don't do anything. 
+}
+
+ValueLabel::ValueLabel(float(*getter)(), string label, 
+	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	settingGetter = getter;
+	labelPrefix = label;
+}
+
+void ValueLabel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	char buffer[20];
+	int n = sprintf(buffer, "%1.1f", this->settingGetter());
+
+
+	string printval = labelPrefix + buffer;
+
+	cv::Size textsize = cv::getTextSize(printval, 1, 1, 1, NULL);
+
+	cv::Point centerpoint(screenBounds.x + (screenBounds.width / 2.0) - (textsize.width / 2.0), 
+		screenBounds.y + (screenBounds.height / 2.0) + (textsize.height / 2.0));
+	cv::putText(drawto, printval, centerpoint, 1, 1, cv::Scalar(255, 255, 255), 1, 8, false);
+}
+
+ArrowButton::ArrowButton(float (*getter)(), void(*setter)(float), float changeamount, 
+	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
 	cout << "ArrowButton constructor" << endl;
 
+	settingGetter = getter;
 	settingSetter = setter;
+	changeAmount = changeamount;
 }
 
 
 void ArrowButton::OnClicked()
 {
-	this->settingSetter();
-	cout << "ArrowButton OnClicked" << endl;
+
+	float val = this->settingGetter();
+	val += changeAmount;
+	this->settingSetter(val);
+	cout << "New setting: " << val << endl;
 }
 
 void ArrowButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
-	//cout << "ArrowButton Draw" << endl;
-	//For now just draw rectangle.
-	//cout << "ScreenBounds: " << screenBounds.x << ", " << screenBounds.y << ", " << screenBounds.width << ", " << screenBounds.height << endl;
-	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 255), 5);
-	//cv::rectangle(drawto, cv::Rect(200, 200, 200, 200), cv::Scalar(0, 0, 255), 5);
+	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 255), -1);
 }
