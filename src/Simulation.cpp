@@ -21,7 +21,7 @@ Simulation::Simulation(sl::Camera *zed, sl::float3 barreloffset)
 }
 
 bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applygravity, 
-	int2& collisionpoint, float& collisiondepth, float& totaltime)
+	int2& collisionpoint, float& collisiondepth, float& totaltime, bool drawline, cv::Mat& drawlinetomat, cv::Scalar linecolor)
 {
 	float downspeed = 0;
 	totaltime = 0;
@@ -31,6 +31,10 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 
 	sl::float3 lastvalidpoint = barrelOffset;
 	sl::float3 currentpoint = barrelOffset;
+
+	//For drawing. 
+	int2 lastscreenpos;
+	bool drawthistime = false; //If we're drawing a line, we'll use this to alternate when we're drawing and not. 
 
 	for (float d = 0; d < MAX_DISTANCE; d += distbetweensamples)
 	{
@@ -77,7 +81,17 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 		}
 		else
 		{
+			if (drawline)
+			{
+				if (drawthistime)
+				{
+					cv::line(drawlinetomat, cv::Point(lastscreenpos.x, lastscreenpos.y), cv::Point(screenpos.x, screenpos.y), linecolor);
+				}
+				drawthistime = !drawthistime; 
+			}
+
 			lastvalidpoint = currentpoint;
+			lastscreenpos = screenpos;
 		}
 	}
 

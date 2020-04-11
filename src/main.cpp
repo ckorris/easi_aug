@@ -124,7 +124,8 @@ int main(int argc, char **argv) {
 				int2 collisionpoint_nograv;
 				float collisiondepth_nograv;
 				float traveltime_nograv; 
-				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv);
+				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv,
+					Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0));
 				if(collided && Config::toggleLaserCrosshair())
 				{
 					//cout << "Collided at " << collisionpoint_nograv.x << ", " << collisionpoint_nograv.y << endl;
@@ -142,7 +143,8 @@ int main(int argc, char **argv) {
 				int2 collisionpoint_grav;
 				float collisiondepth_grav;
 				float traveltime_grav;
-				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, collisionpoint_grav, collisiondepth_grav, traveltime_grav);
+				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
+					Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0));
 				if (collided && Config::toggleGravityCrosshair())
 				{
 					float dotradius = 30 / collisiondepth_grav;
