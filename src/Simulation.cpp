@@ -20,9 +20,11 @@ Simulation::Simulation(sl::Camera *zed, sl::float3 barreloffset)
 	barrelOffset = barreloffset;
 }
 
-bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applygravity, int2& collisionpoint, float& collisiondepth)
+bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applygravity, 
+	int2& collisionpoint, float& collisiondepth, float& totaltime)
 {
 	float downspeed = 0;
+	totaltime = 0;
 
 	float timebetweendots = distbetweensamples / speedmps; //How long does it take for the projectile to travel between two dots? Currently assuming forward speed doesn't change.
 	float downspeedaddpersample = GRAVITY_ACCEL * timebetweendots;
@@ -42,6 +44,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 		}
 
 		float pointdepth = currentpoint.z; //Shorthand. 
+		totaltime += timebetweendots;
 
 		//If it's behind the camera, don't bother calculating the rest. 
 		if (pointdepth < 0) 

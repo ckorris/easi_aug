@@ -38,6 +38,7 @@ using namespace std;
 using namespace sl;
 
 cv::Mat slMat2cvMat(Mat& input);
+int slMatType2cvMatType(sl::MAT_TYPE sltype);
 void printHelp();
 
 void ClickCallback(int event, int x, int y, int flags, void* userdata); //Forward declaration. 
@@ -51,9 +52,7 @@ int main(int argc, char **argv) {
 
 	// Set configuration parameters
 	InitParameters init_parameters;
-	//init_parameters.camera_resolution = RESOLUTION::HD1080;
 	init_parameters.camera_resolution = Config::camResolution();
-	//init_parameters.depth_mode = DEPTH_MODE::ULTRA;
 	init_parameters.depth_mode = Config::camPerformanceMode();
 	init_parameters.coordinate_units = UNIT::METER;
 	if (argc > 1) init_parameters.input.setFromSVOFile(argv[1]);
@@ -66,7 +65,7 @@ int main(int argc, char **argv) {
 	}
 
 	// Display help in console
-	printHelp();
+	//printHelp();
 
 	// Set runtime parameters after opening the camera
 	RuntimeParameters runtime_parameters;
@@ -75,6 +74,9 @@ int main(int argc, char **argv) {
 
 	// Prepare new image size to retrieve half-resolution images
 	Resolution image_size = zed.getCameraInformation().camera_configuration.resolution;
+
+	
+
 	int new_width = image_size.width;
 	int new_height = image_size.height;
 
@@ -82,10 +84,18 @@ int main(int argc, char **argv) {
 
 	// To share data between sl::Mat and cv::Mat, use slMat2cvMat()
 	// Only the headers and pointer to the sl::Mat are copied, not the data itself
-	Mat image_zed(new_width, new_height, MAT_TYPE::U8_C4);
-	cv::Mat image_ocv = slMat2cvMat(image_zed);
-	//Mat depth_image_zed(new_width, new_height, MAT_TYPE::U8_C4);
-	//cv::Mat depth_image_ocv = slMat2cvMat(depth_image_zed);
+	Mat image_zed(new_image_size, MAT_TYPE::U8_C4);
+	//cv::Mat image_ocv = slMat2cvMat(image_zed);
+
+	int cvmattype = slMatType2cvMatType(image_zed.getDataType());
+	cv::Mat image_ocv = cv::Mat(new_height, new_width, cvmattype, image_zed.getPtr<sl::uchar1>(MEM::CPU));
+
+	bool switchwidthandheight = Config::screenRotation() % 2 == 0 ? false : true;
+	if (switchwidthandheight)
+	{
+		//image_ocv.cols = image_zed.getHeight();
+		//image_ocv.rows = image_zed.getWidth();
+	}
 
 	Mat depth_measure(new_width, new_height, MAT_TYPE::F32_C1);
 
@@ -94,10 +104,6 @@ int main(int argc, char **argv) {
 	startposition = sl::float3(0.06, -0.026, 0.0062);
 
 	Simulation sim(&zed, startposition);
-
-	//Set up UI. 
-	//EmptyPanel panel(0, 1, 0, 1);
-	//panel = EmptyPanel(0, 1, 0, 1);
 
 	// Loop until 'q' is pressed
 	char key = ' ';
@@ -117,11 +123,12 @@ int main(int argc, char **argv) {
 			{
 				int2 collisionpoint_nograv;
 				float collisiondepth_nograv;
-				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, collisionpoint_nograv, collisiondepth_nograv);
+				float traveltime_nograv; 
+				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv);
 				if(collided && Config::toggleLaserCrosshair())
 				{
 					//cout << "Collided at " << collisionpoint_nograv.x << ", " << collisionpoint_nograv.y << endl;
-					cv::circle(image_ocv, cv::Point(collisionpoint_nograv.x, collisionpoint_nograv.y), 30 / collisiondepth_nograv, cv::Scalar(0, 0, 255.0), -1);
+					cv::circle(image_ocv, cv::Point(collisionpoint_nograv.x, collisionpoint_nograv.y), 30 / collisiondepth_nograv, cv::Scalar(0, 255.0, 0), -1);
 				}
 				else
 				{
@@ -134,11 +141,39 @@ int main(int argc, char **argv) {
 			{
 				int2 collisionpoint_grav;
 				float collisiondepth_grav;
-				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, collisionpoint_grav, collisiondepth_grav);
+				float traveltime_grav;
+				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, collisionpoint_grav, collisiondepth_grav, traveltime_grav);
 				if (collided && Config::toggleGravityCrosshair())
 				{
+					float dotradius = 30 / collisiondepth_grav;
+
 					//cout << "Collided at " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
-					cv::circle(image_ocv, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), 30 / collisiondepth_grav, cv::Scalar(0, 255.0, 0), -1);
+					cv::circle(image_ocv, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 0, 255.0), -1);
+					if (Config::toggleDistance())
+					{
+						char distbuffer[20];
+						int d = sprintf(distbuffer, "%0.2f", collisiondepth_grav);
+						string distsuffix = "m";
+						string disttext = distbuffer + distsuffix; //Not sure why I can't just add the literal. 
+						cv::Size disttextsize = cv::getTextSize(disttext, 1, 1, 1, NULL);
+
+						cv::Point disttextpoint(collisionpoint_grav.x - 20 - dotradius - disttextsize.width, 
+							collisionpoint_grav.y - 20 - dotradius);
+						cv::putText(image_ocv, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255));
+					}
+					if (Config::toggleTravelTime())
+					{
+						char timebuffer[20];
+						int t = sprintf(timebuffer, "%0.3f", traveltime_grav);
+						string timesuffix = "ms";
+						string timetext = timebuffer + timesuffix;
+						//cv::Size timetextsize = cv::getTextSize(timetext, 1, 1, 1, NULL);
+
+						cv::Point timetextpoint(collisionpoint_grav.x + 20 + dotradius,
+							collisionpoint_grav.y - 20 - dotradius);
+
+						cv::putText(image_ocv, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255));
+					}
 				}
 				else
 				{
@@ -204,6 +239,23 @@ cv::Mat slMat2cvMat(Mat& input) {
 	// Since cv::Mat data requires a uchar* pointer, we get the uchar1 pointer from sl::Mat (getPtr<T>())
 	// cv::Mat and sl::Mat will share a single memory structure
 	return cv::Mat(input.getHeight(), input.getWidth(), cv_type, input.getPtr<sl::uchar1>(MEM::CPU));
+}
+
+int slMatType2cvMatType(sl::MAT_TYPE sltype)
+{
+	int cv_type = -1;
+	switch (sltype) {
+	case MAT_TYPE::F32_C1: cv_type = CV_32FC1; break;
+	case MAT_TYPE::F32_C2: cv_type = CV_32FC2; break;
+	case MAT_TYPE::F32_C3: cv_type = CV_32FC3; break;
+	case MAT_TYPE::F32_C4: cv_type = CV_32FC4; break;
+	case MAT_TYPE::U8_C1: cv_type = CV_8UC1; break;
+	case MAT_TYPE::U8_C2: cv_type = CV_8UC2; break;
+	case MAT_TYPE::U8_C3: cv_type = CV_8UC3; break;
+	case MAT_TYPE::U8_C4: cv_type = CV_8UC4; break;
+	default: break;
+	}
+	return cv_type;
 }
 
 /**

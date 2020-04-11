@@ -5,10 +5,13 @@
 using namespace sl;
 using namespace std;
 
+//Bools. 
 static const string TOGGLE_LASER_CROSSHAIR_NAME = "ToggleLaserCrosshair";
 static const string TOGGLE_LASER_PATH_NAME = "ToggleLaserPath";
 static const string TOGGLE_GRAVITY_CROSSHAIR_NAME = "ToggleGravityCrosshair";
 static const string TOGGLE_GRAVITY_PATH_NAME = "ToggleGravityPath";
+static const string TOGGLE_DISTANCE_NAME = "ToggleDistance";
+static const string TOGGLE_TRAVEL_TIME_NAME = "ToggleTravelTime";
 
 //Integers.
 static const string SCREEN_ROTATION_NAME = "ScreenRotation";
@@ -67,6 +70,25 @@ public:
 	{
 		SetBoolSetting(TOGGLE_GRAVITY_PATH_NAME, newvalue);
 	}
+
+	static inline const bool& toggleDistance()
+	{
+		return GetBoolSetting(TOGGLE_DISTANCE_NAME);
+	}
+	static inline const void toggleDistance(bool newvalue)
+	{
+		SetBoolSetting(TOGGLE_DISTANCE_NAME, newvalue);
+	}
+
+	static inline const bool& toggleTravelTime()
+	{
+		return GetBoolSetting(TOGGLE_TRAVEL_TIME_NAME);
+	}
+	static inline const void toggleTravelTime(bool newvalue)
+	{
+		SetBoolSetting(TOGGLE_TRAVEL_TIME_NAME, newvalue);
+	}
+
 
 	//INT/ENUM
 	static inline const int& screenRotation()

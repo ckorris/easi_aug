@@ -5,7 +5,7 @@ using namespace std;
 
 Drawable::Drawable(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 {
-	cout << "Drawable Constructor" << endl;
+	//cout << "Drawable Constructor" << endl;
 
 	anchorXMin = anchorxmin;
 	anchorXMax = anchorxmax;
@@ -84,7 +84,7 @@ void Drawable::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
 
 void Drawable::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
-	cout << "Drawable Draw" << endl;
+	//cout << "Drawable Draw" << endl;
 }
 
 void Drawable::ProcessAllClicks(int x, int y)
@@ -110,22 +110,28 @@ void Drawable::OnClicked()
 
 EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax) : Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
-	cout << "EmptyPanel constructor" << endl;
+	//cout << "EmptyPanel constructor" << endl;
 
+	//Delegates for FPS speed. 
 	float(*speedgetter)() = []() {return Config::forwardSpeedMPS(); };
 	void(*speedsetter)(float) = [](float v) {Config::forwardSpeedMPS(v); };
+
+	//Delegates for hop-up
+	float(*hopupgetter)() = []() {return Config::hopUpSpeedMPS(); };
+	void(*hopupsetter)(float) = [](float v) {Config::hopUpSpeedMPS(v); };
 
 	//SettingIncrementorPanel speedpanel(speedgetter, speedsetter, 0, 0.15, 0, 1);
 
 	//Drawable::children.emplace_back(new ArrowButton(speedgetter, speedsetter, 1.0, 0, 0.8, 0, .2));
 	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, "FPS: ", 0, 0.1, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, "HOP: ", 0.1, 0.2, 0, 1));
 	
 }
 
 void EmptyPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
 	//cout << "EmptyPanel draw" << endl;
-	cv::rectangle(drawto, drawrect, cv::Scalar(25, 25, 25), 2); //Test - should be empty eventually. 
+	cv::rectangle(drawto, drawrect, cv::Scalar(25, 25, 25), 2); //Draws an outline around its bounds. 
 }
 
 SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)(float), string label,
@@ -179,7 +185,7 @@ ArrowButton::ArrowButton(float (*getter)(), void(*setter)(float), float changeam
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
-	cout << "ArrowButton constructor" << endl;
+	//cout << "ArrowButton constructor" << endl;
 
 	settingGetter = getter;
 	settingSetter = setter;

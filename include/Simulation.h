@@ -10,7 +10,8 @@ class Simulation
 {
 public:
 	Simulation(sl::Camera *zed, sl::float3 barreloffset);
-	bool Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applygravity, int2& collisionpoint, float& collisiondepth);
+	bool Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applygravity, 
+		int2& collisionpoint, float& collisiondepth, float& totaltime);
 
 private:
 	sl::Camera *currentZED;
