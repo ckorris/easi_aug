@@ -61,6 +61,18 @@ protected:
 	void(*settingSetter)(float);
 };
 
+class Label : public Drawable
+{
+public: 
+	Label(string label, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+
+protected: 
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+
+	string labelText;
+};
+
+
 class ValueLabel : public Drawable
 {
 public:
@@ -90,4 +102,20 @@ protected:
 	float(*settingGetter)();
 	void(*settingSetter)(float);
 	float changeAmount;
+};
+
+class ToggleButton : public Drawable
+{
+public: 
+	ToggleButton(bool(*getter)(), void(*setter)(bool),
+		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+
+protected:
+
+	void OnClicked() override;
+
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+
+	bool(*settingGetter)();
+	void(*settingSetter)(bool);
 };

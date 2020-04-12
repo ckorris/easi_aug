@@ -125,7 +125,38 @@ EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, flo
 	//Drawable::children.emplace_back(new ArrowButton(speedgetter, speedsetter, 1.0, 0, 0.8, 0, .2));
 	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, "FPS: ", 0, 0.1, 0, 1));
 	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, "HOP: ", 0.1, 0.2, 0, 1));
-	
+
+	//Draw toggles. 
+	//Toggle laser crosshair.
+	bool(*drawLaserCrosshairGetter)() = []() { return Config::toggleLaserCrosshair(); };
+	void(*drawLaserCrosshairSetter)(bool) = [](bool b) { Config::toggleLaserCrosshair(b); };
+	Drawable::children.emplace_back(new Label("L-XHR:", 0.2, 0.25, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawLaserCrosshairGetter, drawLaserCrosshairSetter, 0.25, 0.3, 0, 0.5));
+	//Toggle gravity crosshair.
+	bool(*drawGravityCrosshairGetter)() = []() { return Config::toggleGravityCrosshair(); };
+	void(*drawGravityCrosshairSetter)(bool) = [](bool b) { Config::toggleGravityCrosshair(b); };
+	Drawable::children.emplace_back(new Label("G-XHR:", 0.2, 0.25, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(drawGravityCrosshairGetter, drawGravityCrosshairSetter, 0.25, 0.3, 0.5, 1));
+	//Toggle laser path.
+	bool(*drawLaserPathGetter)() = []() { return Config::toggleLaserPath(); };
+	void(*drawLaserPathSetter)(bool) = [](bool b) { Config::toggleLaserPath(b); };
+	Drawable::children.emplace_back(new Label("L-PTH:", 0.3, 0.35, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawLaserPathGetter, drawLaserPathSetter, 0.35, 0.4, 0, 0.5));
+	//Toggle gravity path.
+	bool(*drawGravityPathGetter)() = []() { return Config::toggleGravityPath(); };
+	void(*drawGravityPathSetter)(bool) = [](bool b) { Config::toggleGravityPath(b); };
+	Drawable::children.emplace_back(new Label("G-PTH:", 0.3, 0.35, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(drawGravityPathGetter, drawGravityPathSetter, 0.35, 0.4, 0.5, 1));
+	//Toggle distance.
+	bool(*drawDistanceGetter)() = []() { return Config::toggleDistance(); };
+	void(*drawDistanceSetter)(bool) = [](bool b) { Config::toggleDistance(b); };
+	Drawable::children.emplace_back(new Label("DIST:", 0.4, 0.45, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawDistanceGetter, drawDistanceSetter, 0.45, 0.5, 0, 0.5));
+	//Toggle travel time.
+	bool(*travelTimeGetter)() = []() { return Config::toggleTravelTime(); };
+	void(*travelTimeSetter)(bool) = [](bool b) { Config::toggleTravelTime(b); };
+	Drawable::children.emplace_back(new Label("TIME:", 0.4, 0.45, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(travelTimeGetter, travelTimeSetter, 0.45, 0.5, 0.5, 1));
 }
 
 void EmptyPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -157,6 +188,23 @@ void SettingIncrementorPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string win
 {
 	//Don't do anything. 
 }
+
+Label::Label(string label, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	labelText = label;
+}
+
+void Label::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	cv::Size textsize = cv::getTextSize(labelText, 1, 1, 1, NULL);
+
+	cv::Point centerpoint(screenBounds.x + (screenBounds.width / 2.0) - (textsize.width / 2.0),
+		screenBounds.y + (screenBounds.height / 2.0) + (textsize.height / 2.0));
+	cv::putText(drawto, labelText, centerpoint, 1, 1, cv::Scalar(255, 255, 255), 1, 8, false);
+}
+
+
 
 ValueLabel::ValueLabel(float(*getter)(), string label, 
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
@@ -204,7 +252,7 @@ void ArrowButton::OnClicked()
 
 void ArrowButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
-	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 255), -1); //Background. 
+	cv::rectangle(drawto, screenBounds, cv::Scalar(100, 100, 100), -1); //Background. 
 
 	vector<cv::Point> points;
 	if (changeAmount >= 0.0)
@@ -220,5 +268,44 @@ void ArrowButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 		points.push_back(cv::Point(screenBounds.x + screenBounds.width, screenBounds.y));
 	}
 
-	cv::fillConvexPoly(drawto, points, cv::Scalar(140, 140, 140));
+	cv::fillConvexPoly(drawto, points, cv::Scalar(0, 0, 255));
+}
+
+ToggleButton::ToggleButton(bool(*getter)(), void(*setter)(bool),
+	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	:Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	settingGetter = getter;
+	settingSetter = setter;
+}
+
+void ToggleButton::OnClicked()
+{
+	//Flip the assigned bool setting. 
+	settingSetter(!settingGetter());
+}
+
+void ToggleButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//Black outline. 
+	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 0), 2); 
+	//Gray fill.
+	cv::rectangle(drawto, screenBounds, cv::Scalar(50, 50, 50), -1);
+
+	//If enabled, draw X. 
+	if (settingGetter())
+	{
+		const float marginpercent = 0.15; //Percentage of the bounds reserved for margin. 
+		float marginwidth = screenBounds.width * marginpercent;
+		float marginheight = screenBounds.height * marginpercent;
+
+		//Line from top left to bottom right.
+		cv::line(drawto, cv::Point(screenBounds.x + marginwidth, screenBounds.y + marginwidth),
+			cv::Point(screenBounds.x + screenBounds.width - marginwidth, screenBounds.y + screenBounds.height - marginwidth),
+			cv::Scalar(255, 255, 255), 3);
+		//Line from bottom left to top right.
+		cv::line(drawto, cv::Point(screenBounds.x + marginwidth, screenBounds.y + screenBounds.height - marginwidth),
+			cv::Point(screenBounds.x + screenBounds.width - marginwidth, screenBounds.y + marginwidth),
+			cv::Scalar(255, 255, 255), 3);
+	}
 }
