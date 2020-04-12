@@ -194,7 +194,8 @@ int main(int argc, char **argv) {
 			//cv::rectangle(image_ocv, testrect, cv::Scalar(255, 0, 0), -1);
 
 			//Draw drawables. 
-			cv::Rect panelrect = cv::Rect(1, new_height * 0.8, new_width - 2, new_height * 0.2 - 2);
+			//cv::Rect panelrect = cv::Rect(1, new_height * 0.8, new_width - 2, new_height * 0.2 - 2); //Bottom. 
+			cv::Rect panelrect = cv::Rect(2, 1, new_width - 2, new_height * 0.2 - 2);
 			panel.ProcessUI(panelrect, image_ocv, "EasiAug");
 
 			cv::imshow("EasiAug", image_ocv);

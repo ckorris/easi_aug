@@ -18,6 +18,9 @@ public:
 	vector < unique_ptr<Drawable>> children;
 protected:
 
+	const cv::Scalar TEXT_COLOR = cv::Scalar(0, 0, 255);
+	const cv::Scalar BACKGROUND_COLOR = cv::Scalar(70, 70, 70);
+
 	//static vector<Drawable> allEnabledDrawables;
 	static vector<unique_ptr<Drawable>> allEnabledDrawables;
 
@@ -52,7 +55,7 @@ protected:
 class SettingIncrementorPanel : public Drawable
 {
 public:
-	SettingIncrementorPanel(float(*getter)(), void(*setter)(float), string label, 
+	SettingIncrementorPanel(float(*getter)(), void(*setter)(float), string label, cv::Scalar arrowcolor,
 		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 protected:
@@ -89,7 +92,7 @@ class ArrowButton : public Drawable
 {
 public:
 	//typedef float(*callback_function)(void);
-	ArrowButton(float (*getter)(), void(*setter)(float), float changeamount, 
+	ArrowButton(float (*getter)(), void(*setter)(float), float changeamount, cv::Scalar color,
 		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 	//ArrowButton(callback_function setter, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
@@ -102,6 +105,7 @@ protected:
 	float(*settingGetter)();
 	void(*settingSetter)(float);
 	float changeAmount;
+	cv::Scalar arrowColor;
 };
 
 class ToggleButton : public Drawable

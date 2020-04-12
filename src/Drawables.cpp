@@ -112,19 +112,15 @@ EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, flo
 {
 	//cout << "EmptyPanel constructor" << endl;
 
-	//Delegates for FPS speed. 
+	//Speed arrows.
 	float(*speedgetter)() = []() {return Config::forwardSpeedMPS(); };
 	void(*speedsetter)(float) = [](float v) {Config::forwardSpeedMPS(v); };
-
-	//Delegates for hop-up
+	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, "FPS: ", cv::Scalar(0, 0, 255), 0, 0.1, 0, 1));
+	
+	//Hop-up arrows.
 	float(*hopupgetter)() = []() {return Config::hopUpSpeedMPS(); };
 	void(*hopupsetter)(float) = [](float v) {Config::hopUpSpeedMPS(v); };
-
-	//SettingIncrementorPanel speedpanel(speedgetter, speedsetter, 0, 0.15, 0, 1);
-
-	//Drawable::children.emplace_back(new ArrowButton(speedgetter, speedsetter, 1.0, 0, 0.8, 0, .2));
-	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, "FPS: ", 0, 0.1, 0, 1));
-	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, "HOP: ", 0.1, 0.2, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, "HOP: ", cv::Scalar(0, 0, 255), 0.1, 0.2, 0, 1));
 
 	//Draw toggles. 
 	//Toggle laser crosshair.
@@ -157,15 +153,46 @@ EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, flo
 	void(*travelTimeSetter)(bool) = [](bool b) { Config::toggleTravelTime(b); };
 	Drawable::children.emplace_back(new Label("TIME:", 0.4, 0.45, 0.5, 1));
 	Drawable::children.emplace_back(new ToggleButton(travelTimeGetter, travelTimeSetter, 0.45, 0.5, 0.5, 1));
+
+	//Cam pos arrows.
+	//X pos.
+	float(*camXPosGetter)() = []() {return Config::camXPos(); };
+	void(*camXPosSetter)(float) = [](float v) {Config::camXPos(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXPosGetter, camXPosSetter, "X: ", cv::Scalar(0, 255, 0), 0.52, 0.59, 0, 1));
+	//Y pos.
+	float(*camYPosGetter)() = []() {return Config::camYPos(); };
+	void(*camYPosSetter)(float) = [](float v) {Config::camYPos(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYPosGetter, camYPosSetter, "Y: ", cv::Scalar(0, 0, 255), 0.60, 0.67, 0, 1));
+	//Z pos.
+	float(*camZPosGetter)() = []() {return Config::camZPos(); };
+	void(*camZPosSetter)(float) = [](float v) {Config::camZPos(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZPosGetter, camZPosSetter, "Z: ", cv::Scalar(255, 0, 0), 0.68, 0.75, 0, 1));
+
+	//Cam rot arrows.
+	//X rot. 
+	float(*camXRotGetter)() = []() {return Config::camXRot(); };
+	void(*camXRotSetter)(float) = [](float v) {Config::camXRot(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXRotGetter, camXRotSetter, "rX: ", cv::Scalar(0, 255, 0), 0.77, 0.84, 0, 1));
+	//Y rot. 
+	float(*camYRotGetter)() = []() {return Config::camYRot(); };
+	void(*camYRotSetter)(float) = [](float v) {Config::camYRot(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYRotGetter, camYRotSetter, "rY: ", cv::Scalar(0, 0, 255), 0.85, 0.92, 0, 1));
+	//Z rot. 
+	float(*camZRotGetter)() = []() {return Config::camZRot(); };
+	void(*camZRotSetter)(float) = [](float v) {Config::camZRot(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZRotGetter, camZRotSetter, "rZ: ", cv::Scalar(255, 0, 0), 0.93, 1, 0, 1));
 }
 
 void EmptyPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
 	//cout << "EmptyPanel draw" << endl;
-	cv::rectangle(drawto, drawrect, cv::Scalar(25, 25, 25), 2); //Draws an outline around its bounds. 
+	//Draws an outline around its bounds. 
+	cv::rectangle(drawto, drawrect, cv::Scalar(25, 25, 25), 2); 
+	//Draw a gray background. 
+	cv::rectangle(drawto, drawrect, BACKGROUND_COLOR, -1);
 }
 
-SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)(float), string label,
+SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)(float), string label, cv::Scalar arrowcolor,
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	:Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
@@ -175,13 +202,13 @@ SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)
 	//ArrowButton plusfivearrow(getter, setter, 5.0, 0, 1, 0, 0.17);
 	//ArrowButton plusonearrow(getter, setter, 1.0, 0, 1, 0.17, 0.34);
 
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, 5.0, 0, 1, 0.0, 0.2)); //Plus 5 arrow.
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, 1.0, 0, 1, 0.2, 0.4)); // Plus 1 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, 5.0, arrowcolor, 0, 1, 0.0, 0.2)); //Plus 5 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, 1.0, arrowcolor, 0, 1, 0.2, 0.4)); // Plus 1 arrow.
 
 	Drawable::children.emplace_back(new ValueLabel(getter, label, 0, 1, 0.4, 0.6)); // Plus 1 arrow.
 
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, -1.0, 0, 1, .6, 0.8)); //Minus 1 arrow.
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, -5.0, 0, 1, 0.8, 1)); //Minus 5 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, -1.0, arrowcolor, 0, 1, .6, 0.8)); //Minus 1 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, -5.0, arrowcolor, 0, 1, 0.8, 1)); //Minus 5 arrow.
 }
 
 void SettingIncrementorPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -201,7 +228,8 @@ void Label::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 
 	cv::Point centerpoint(screenBounds.x + (screenBounds.width / 2.0) - (textsize.width / 2.0),
 		screenBounds.y + (screenBounds.height / 2.0) + (textsize.height / 2.0));
-	cv::putText(drawto, labelText, centerpoint, 1, 1, cv::Scalar(255, 255, 255), 1, 8, false);
+	//cv::putText(drawto, labelText, centerpoint, 1, 1, cv::Scalar(255, 255, 255), 1, 8, false);
+	cv::putText(drawto, labelText, centerpoint, 1, 1, TEXT_COLOR, 1, 8, false);
 }
 
 
@@ -226,10 +254,11 @@ void ValueLabel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 
 	cv::Point centerpoint(screenBounds.x + (screenBounds.width / 2.0) - (textsize.width / 2.0), 
 		screenBounds.y + (screenBounds.height / 2.0) + (textsize.height / 2.0));
-	cv::putText(drawto, printval, centerpoint, 1, 1, cv::Scalar(255, 255, 255), 1, 8, false);
+	//cv::putText(drawto, printval, centerpoint, 1, 1, cv::Scalar(255, 255, 255), 1, 8, false);
+	cv::putText(drawto, printval, centerpoint, 1, 1, TEXT_COLOR, 1, 8, false);
 }
 
-ArrowButton::ArrowButton(float (*getter)(), void(*setter)(float), float changeamount, 
+ArrowButton::ArrowButton(float (*getter)(), void(*setter)(float), float changeamount, cv::Scalar color,
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
@@ -238,6 +267,7 @@ ArrowButton::ArrowButton(float (*getter)(), void(*setter)(float), float changeam
 	settingGetter = getter;
 	settingSetter = setter;
 	changeAmount = changeamount;
+	arrowColor = color;
 }
 
 
@@ -252,7 +282,7 @@ void ArrowButton::OnClicked()
 
 void ArrowButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
-	cv::rectangle(drawto, screenBounds, cv::Scalar(100, 100, 100), -1); //Background. 
+	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 0), -1); //Black background. 
 
 	vector<cv::Point> points;
 	if (changeAmount >= 0.0)
@@ -268,7 +298,8 @@ void ArrowButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 		points.push_back(cv::Point(screenBounds.x + screenBounds.width, screenBounds.y));
 	}
 
-	cv::fillConvexPoly(drawto, points, cv::Scalar(0, 0, 255));
+	//cv::fillConvexPoly(drawto, points, cv::Scalar(0, 0, 255));
+	cv::fillConvexPoly(drawto, points, arrowColor);
 }
 
 ToggleButton::ToggleButton(bool(*getter)(), void(*setter)(bool),
@@ -289,8 +320,8 @@ void ToggleButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
 	//Black outline. 
 	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 0), 2); 
-	//Gray fill.
-	cv::rectangle(drawto, screenBounds, cv::Scalar(50, 50, 50), -1);
+	//Dark gray fill.
+	cv::rectangle(drawto, screenBounds, cv::Scalar(30, 30, 30), -1);
 
 	//If enabled, draw X. 
 	if (settingGetter())
