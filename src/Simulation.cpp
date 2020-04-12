@@ -1,9 +1,11 @@
 #include <CamUtilities.h>
 #include <sl/Camera.hpp>
 #include <opencv2/opencv.hpp>
+#include <math.h>
 
 #include <Simulation.h>
 #include <Config.h>
+
 
 using namespace sl;
 using namespace std;
@@ -30,7 +32,6 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	float timebetweendots = distbetweensamples / speedmps; //How long does it take for the projectile to travel between two dots? Currently assuming forward speed doesn't change.
 	float downspeedaddpersample = GRAVITY_ACCEL * timebetweendots;
 
-
 	sl::float3 camPosOffset(0, 0, 0);
 	camPosOffset.x = Config::camXPos();
 	camPosOffset.y = Config::camYPos();
@@ -43,14 +44,36 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	sl::float3 lastvalidpoint = camPosOffset;
 	sl::float3 currentpoint = camPosOffset;
 
+	sl::float3 forwardnormal(0, 0, 1); //TODO: Account for rotation using Config. 
+
+	//I'm handling the rotations without full-on 3D math because it's relative to the forward direction of the barrel,
+	//where Z rot does not (yet) matter (because the IMU should account for that when we add gravity). 
+	//Y rot first. 
+	float yanglerad = Config::camYRot();
+	sl::float3 yrotnormal = forwardnormal * 3.14159267 / 180.0;
+	yrotnormal.z = forwardnormal.z * cos(yanglerad) - forwardnormal.x * sin(yanglerad);
+	yrotnormal.x = forwardnormal.z * sin(yanglerad) + forwardnormal.x * cos(yanglerad);
+
+	sl::float3 finalrotnormal = yrotnormal;
+	float xanglerad = Config::camXRot() * 3.14159267 / 180.0;
+	finalrotnormal.z = yrotnormal.z * cos(xanglerad) - yrotnormal.y * sin(xanglerad);
+	finalrotnormal.y = yrotnormal.z * sin(xanglerad) - yrotnormal.y * cos(xanglerad);
+
+
+	sl::float3 fvelchange = finalrotnormal * distbetweensamples; //Change in position from forward velocity each frame. 
+
 	//For drawing. 
 	int2 lastscreenpos;
-	bool drawthistime = false; //If we're drawing a line, we'll use this to alternate when we're drawing and not. 
+	bool drawthistime = false; //If we're drawing a line, we'll use this to alternate when we're drawing and not.
 
-	for (float d = 0; d < MAX_DISTANCE; d += distbetweensamples)
+
+
+	//for (float d = 0; d < MAX_DISTANCE; d += distbetweensamples) //Must only add the Z component of forward normal. 
+	for (float d = 0; d < MAX_DISTANCE; d += fvelchange.z) //Must only add the Z component of forward normal. 
 	{
 		//Add forward and down speeds to position. 
-		currentpoint += sl::float3(0, 0, distbetweensamples);
+		//currentpoint += sl::float3(0, 0, distbetweensamples);
+		currentpoint += fvelchange;
 		if (applygravity)
 		{
 			currentpoint += sl::float3(0, -downspeed * timebetweendots, 0);
