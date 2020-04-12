@@ -55,13 +55,14 @@ protected:
 class SettingIncrementorPanel : public Drawable
 {
 public:
-	SettingIncrementorPanel(float(*getter)(), void(*setter)(float), string label, cv::Scalar arrowcolor,
-		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+	SettingIncrementorPanel(float(*getter)(), void(*setter)(float), float smallincrement, float bigincrement, 
+		string label, cv::Scalar arrowcolor, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 protected:
 	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
 	float(*settingGetter)();
 	void(*settingSetter)(float);
+
 };
 
 class Label : public Drawable

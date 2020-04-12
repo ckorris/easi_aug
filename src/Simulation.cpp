@@ -3,6 +3,7 @@
 #include <opencv2/opencv.hpp>
 
 #include <Simulation.h>
+#include <Config.h>
 
 using namespace sl;
 using namespace std;
@@ -10,14 +11,14 @@ using namespace std;
 const float GRAVITY_ACCEL = 9.00665;
 const float MAX_DISTANCE = 40.0;
 
-Simulation::Simulation(sl::Camera *zed, sl::float3 barreloffset)
+Simulation::Simulation(sl::Camera *zed)
 {
 	currentZED = zed;
 
 	sl::CameraInformation info = currentZED->getCameraInformation();
 	projectionMatrix = CamUtilities::GetProjectionMatrix(info);
 
-	barrelOffset = barreloffset;
+	//barrelOffset = barreloffset; //TODO: Remove, as we'll be calculating this based on the settings. 
 }
 
 bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applygravity, 
@@ -29,8 +30,18 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	float timebetweendots = distbetweensamples / speedmps; //How long does it take for the projectile to travel between two dots? Currently assuming forward speed doesn't change.
 	float downspeedaddpersample = GRAVITY_ACCEL * timebetweendots;
 
-	sl::float3 lastvalidpoint = barrelOffset;
-	sl::float3 currentpoint = barrelOffset;
+
+	sl::float3 camPosOffset(0, 0, 0);
+	camPosOffset.x = Config::camXPos();
+	camPosOffset.y = Config::camYPos();
+	camPosOffset.z = Config::camZPos();
+
+	//cout << camPosOffset.x << endl;
+
+	//sl::float3 lastvalidpoint = barrelOffset;
+	//sl::float3 currentpoint = barrelOffset;
+	sl::float3 lastvalidpoint = camPosOffset;
+	sl::float3 currentpoint = camPosOffset;
 
 	//For drawing. 
 	int2 lastscreenpos;

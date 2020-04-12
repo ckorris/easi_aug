@@ -129,7 +129,7 @@ bool Config::LoadSettingsFromDisk(string filename)
 			float floatval;
 			try
 			{
-				floatval = stol(val);
+				floatval = stof(val);
 			}
 			catch (const invalid_argument e)
 			{

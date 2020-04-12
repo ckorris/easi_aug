@@ -100,10 +100,11 @@ int main(int argc, char **argv) {
 	Mat depth_measure(new_width, new_height, MAT_TYPE::F32_C1);
 
 	//Make starting pose.
-	sl::float3 startposition;
+	/*sl::float3 startposition;
 	startposition = sl::float3(0.06, -0.026, 0.0062);
+	Simulation sim(&zed, startposition);*/
 
-	Simulation sim(&zed, startposition);
+	Simulation sim(&zed);
 
 	// Loop until 'q' is pressed
 	char key = ' ';
