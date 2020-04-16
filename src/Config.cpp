@@ -112,6 +112,7 @@ bool Config::LoadSettingsFromDisk(string filename)
 			}
 
 			boolSettings[valname] = boolval;
+			break;
 		case ConfigValueTypes::intvalue:
 			int intval;
 			try
@@ -124,7 +125,7 @@ bool Config::LoadSettingsFromDisk(string filename)
 				continue;
 			}
 			intSettings[valname] = intval;
-			
+			break;
 		case ConfigValueTypes::floatvalue:
 			float floatval;
 			try
@@ -137,6 +138,7 @@ bool Config::LoadSettingsFromDisk(string filename)
 				continue;
 			}
 			floatSettings[valname] = floatval;
+			break;
 		}
 	}
 
@@ -153,6 +155,40 @@ bool Config::SaveSettingsToDisk(string filename)
 	myfile.open(fileName);
 	myfile << "Testing settings.\n";
 	myfile.close();*/
+	
+	ofstream settingsfile;
+	settingsfile.open(fileName, ofstream::out | ofstream::trunc);
+
+	//Write the bool values. 
+	settingsfile << "#Booleans" << endl;
+	map<string, bool>::iterator booliterator = boolSettings.begin();
+	while (booliterator != boolSettings.end())
+	{
+		settingsfile << "b" << booliterator->first << "=" << booliterator->second << endl;
+		booliterator++;
+	}
+	settingsfile << endl;
+
+	settingsfile << "#Integers" << endl;
+	map<string, int>::iterator intiterator = intSettings.begin();
+	while (intiterator != intSettings.end())
+	{
+		settingsfile << "i" << intiterator->first << "=" << intiterator->second << endl;
+		intiterator++;
+	}
+	settingsfile << endl;
+
+	settingsfile << "#Floats" << endl;
+
+	map<string, float>::iterator floatiterator = floatSettings.begin();
+	while (floatiterator != floatSettings.end())
+	{
+		settingsfile << "f" << floatiterator->first << "=" << floatiterator->second << endl;
+		floatiterator++;
+	}
+
+	//settingsfile << "Testing settings.\n";
+	settingsfile.close();
 
 	return true; //TODO: Actually make sure shit worked. 
 }
