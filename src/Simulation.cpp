@@ -10,7 +10,7 @@
 using namespace sl;
 using namespace std;
 
-const float GRAVITY_ACCEL = 9.00665;
+const float GRAVITY_ACCEL = 9.006;
 const float MAX_DISTANCE = 40.0;
 
 Simulation::Simulation(sl::Camera *zed)
@@ -49,8 +49,8 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	//I'm handling the rotations without full-on 3D math because it's relative to the forward direction of the barrel,
 	//where Z rot does not (yet) matter (because the IMU should account for that when we add gravity). 
 	//Y rot first. 
-	float yanglerad = Config::camYRot();
-	sl::float3 yrotnormal = forwardnormal * 3.14159267 / 180.0;
+	sl::float3 yrotnormal = forwardnormal;
+	float yanglerad = Config::camYRot() * 3.14159267 / 180.0;
 	yrotnormal.z = forwardnormal.z * cos(yanglerad) - forwardnormal.x * sin(yanglerad);
 	yrotnormal.x = forwardnormal.z * sin(yanglerad) + forwardnormal.x * cos(yanglerad);
 
@@ -59,6 +59,17 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	finalrotnormal.z = yrotnormal.z * cos(xanglerad) - yrotnormal.y * sin(xanglerad);
 	finalrotnormal.y = yrotnormal.z * sin(xanglerad) - yrotnormal.y * cos(xanglerad);
 
+
+	//Calculate the hop-up angle, which is upward relative to the gun itself. 
+	
+	sl::float3 vectorup(0, 1, 0); //Could just put 0 and 1 in the math directly, but this makes code easier to read. 
+	sl::float3 hopupnormal = vectorup;
+	float zanglerad = Config::camZRot() * 3.14159267 / 180.0;
+	hopupnormal.x = vectorup.x * cos(zanglerad) - vectorup.y * sin(zanglerad);
+	hopupnormal.y = vectorup.x * sin(zanglerad) + vectorup.y * cos(zanglerad);
+
+	//Temporarily, the inverse of hop normal will be used for the gravity angle, until the ZED2 arrives and we have an IMU. 
+	sl::float3 gravitynormal(-hopupnormal.x, -hopupnormal.y, -hopupnormal.z);
 
 	sl::float3 fvelchange = finalrotnormal * distbetweensamples; //Change in position from forward velocity each frame. 
 
@@ -76,8 +87,8 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 		currentpoint += fvelchange;
 		if (applygravity)
 		{
-			currentpoint += sl::float3(0, -downspeed * timebetweendots, 0);
-			//currentpoint += sl::float3(0, -downspeedaddpersample, 0); //WRONG but testing. 
+			//currentpoint += sl::float3(0, -downspeed * timebetweendots, 0);
+			currentpoint += gravitynormal * (downspeed * timebetweendots);
 			downspeed += downspeedaddpersample;
 		}
 
@@ -90,8 +101,8 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 			continue;
 		}
 
-		int swidth = depthmat.getWidth();
-		int sheight = depthmat.getHeight();
+		int swidth = (int)depthmat.getWidth();
+		int sheight = (int)depthmat.getHeight();
 
 		int2 screenpos = CamUtilities::CameraToScreenPos(currentpoint, projectionMatrix, depthmat.getWidth(), depthmat.getHeight());
 		

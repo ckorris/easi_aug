@@ -35,7 +35,7 @@ public:
 
 #pragma region SettingsProperties
 	//BOOL
-	static inline const bool& toggleLaserCrosshair() 
+	static inline bool toggleLaserCrosshair() 
 	{
 		return GetBoolSetting(TOGGLE_LASER_CROSSHAIR_NAME);
 	}
@@ -44,7 +44,7 @@ public:
 		SetBoolSetting(TOGGLE_LASER_CROSSHAIR_NAME, newvalue);
 	}
 
-	static inline const bool& toggleLaserPath()
+	static inline bool toggleLaserPath()
 	{
 		return GetBoolSetting(TOGGLE_LASER_PATH_NAME);
 	}
@@ -53,7 +53,7 @@ public:
 		SetBoolSetting(TOGGLE_LASER_PATH_NAME, newvalue);
 	}
 
-	static inline const bool& toggleGravityCrosshair()
+	static inline bool toggleGravityCrosshair()
 	{
 		return GetBoolSetting(TOGGLE_GRAVITY_CROSSHAIR_NAME);
 	}
@@ -62,7 +62,7 @@ public:
 		SetBoolSetting(TOGGLE_GRAVITY_CROSSHAIR_NAME, newvalue);
 	}
 
-	static inline const bool& toggleGravityPath()
+	static inline bool toggleGravityPath()
 	{
 		return GetBoolSetting(TOGGLE_GRAVITY_PATH_NAME);
 	}
@@ -71,7 +71,7 @@ public:
 		SetBoolSetting(TOGGLE_GRAVITY_PATH_NAME, newvalue);
 	}
 
-	static inline const bool& toggleDistance()
+	static inline bool toggleDistance()
 	{
 		return GetBoolSetting(TOGGLE_DISTANCE_NAME);
 	}
@@ -80,7 +80,7 @@ public:
 		SetBoolSetting(TOGGLE_DISTANCE_NAME, newvalue);
 	}
 
-	static inline const bool& toggleTravelTime()
+	static inline bool toggleTravelTime()
 	{
 		return GetBoolSetting(TOGGLE_TRAVEL_TIME_NAME);
 	}
@@ -91,7 +91,7 @@ public:
 
 
 	//INT/ENUM
-	static inline const int& screenRotation()
+	static inline int screenRotation()
 	{
 		return GetIntSetting(SCREEN_ROTATION_NAME);
 	}
@@ -100,7 +100,7 @@ public:
 		SetIntSetting(SCREEN_ROTATION_NAME, newvalue);
 	}
 
-	static inline const sl::RESOLUTION& camResolution()
+	static inline sl::RESOLUTION camResolution()
 	{
 		return (sl::RESOLUTION)GetIntSetting(CAM_RESOLUTION_NAME);
 	}
@@ -109,7 +109,7 @@ public:
 		SetIntSetting(CAM_RESOLUTION_NAME, (int)newvalue);
 	}
 
-	static inline const sl::DEPTH_MODE& camPerformanceMode()
+	static inline sl::DEPTH_MODE camPerformanceMode()
 	{
 		return (sl::DEPTH_MODE)GetIntSetting(CAM_PERFORMANCE_MODE_NAME);
 	}
@@ -119,7 +119,7 @@ public:
 	}
 
 	//FLOAT
-	static inline const float& forwardSpeedMPS()
+	static inline float forwardSpeedMPS()
 	{
 		return GetFloatSetting(FORWARD_SPEED_NAME);
 	}
@@ -128,7 +128,7 @@ public:
 		SetFloatSetting(FORWARD_SPEED_NAME, newvalue);
 	}
 
-	static inline const float& hopUpSpeedMPS()
+	static inline float hopUpSpeedMPS()
 	{
 		return GetFloatSetting(HOP_UP_SPEED_NAME);
 	}
@@ -137,15 +137,16 @@ public:
 		SetFloatSetting(HOP_UP_SPEED_NAME, newvalue);
 	}
 
-	static inline const float& camXPos()
+	static inline float camXPos()
 	{
 		return GetFloatSetting(CAM_X_POS_NAME);
+		//return GetFloatSetting("CamXPos");
 	}
 	static inline const void camXPos(float newvalue)
 	{
 		SetFloatSetting(CAM_X_POS_NAME, newvalue);
 	}
-	static inline const float& camYPos()
+	static inline float camYPos()
 	{
 		return GetFloatSetting(CAM_Y_POS_NAME);
 	}
@@ -153,7 +154,7 @@ public:
 	{
 		SetFloatSetting(CAM_Y_POS_NAME, newvalue);
 	}
-	static inline const float& camZPos()
+	static inline float camZPos()
 	{
 		return GetFloatSetting(CAM_Z_POS_NAME);
 	}
@@ -162,7 +163,7 @@ public:
 		SetFloatSetting(CAM_Z_POS_NAME, newvalue);
 	}
 
-	static inline const float& camXRot()
+	static inline float camXRot()
 	{
 		return GetFloatSetting(CAM_X_ROT_NAME);
 	}
@@ -170,7 +171,7 @@ public:
 	{
 		SetFloatSetting(CAM_X_ROT_NAME, newvalue);
 	}
-	static inline const float& camYRot()
+	static inline float camYRot()
 	{
 		return GetFloatSetting(CAM_Y_ROT_NAME);
 	}
@@ -178,7 +179,7 @@ public:
 	{
 		SetFloatSetting(CAM_Y_ROT_NAME, newvalue);
 	}
-	static inline const float& camZRot()
+	static inline float camZRot()
 	{
 		return GetFloatSetting(CAM_Z_ROT_NAME);
 	}

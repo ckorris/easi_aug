@@ -103,8 +103,8 @@ bool Config::LoadSettingsFromDisk(string filename)
 		{
 		case ConfigValueTypes::boolvalue:
 			bool boolval;
-			if (val == "0") boolval = false;
-			else if (val == "1") boolval = true;
+			if (val[0] == '0') boolval = false; //For whatever reason, directly comparing the string ie val == "0" breaks on Ubuntu. 
+			else if (val[0] == '1') boolval = true;
 			else
 			{
 				cout << "Couldn't parse bool value from " << val << ". Should be 0 (false) or 1 (true)." << endl;

@@ -138,7 +138,7 @@ EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, flo
 	void(*drawLaserPathSetter)(bool) = [](bool b) { Config::toggleLaserPath(b); };
 	Drawable::children.emplace_back(new Label("L-PTH:", 0.3, 0.35, 0, 0.5));
 	Drawable::children.emplace_back(new ToggleButton(drawLaserPathGetter, drawLaserPathSetter, 0.35, 0.4, 0, 0.5));
-	//Toggle gravity path.
+	//Toggle gravity path.q
 	bool(*drawGravityPathGetter)() = []() { return Config::toggleGravityPath(); };
 	void(*drawGravityPathSetter)(bool) = [](bool b) { Config::toggleGravityPath(b); };
 	Drawable::children.emplace_back(new Label("G-PTH:", 0.3, 0.35, 0.5, 1));
