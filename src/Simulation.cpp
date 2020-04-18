@@ -1,4 +1,4 @@
-#include <CamUtilities.h>
+﻿#include <CamUtilities.h>
 #include <sl/Camera.hpp>
 #include <opencv2/opencv.hpp>
 #include <math.h>
@@ -12,6 +12,9 @@ using namespace std;
 
 const float GRAVITY_ACCEL = 9.006;
 const float MAX_DISTANCE = 40.0;
+
+const float GAS_CONSTANT_DRY_AIR = 287.058; //J / (kg*K).
+const float GAS_CONSTANT_WATER_VAPOR = 461.495; //J / (kg*K).
 
 Simulation::Simulation(sl::Camera *zed)
 {
@@ -69,8 +72,6 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	//Temporarily, the inverse of hop normal will be used for the gravity angle, until the ZED2 arrives and we have an IMU. 
 	sl::float3 gravitynormal(-hopupnormal.x, -hopupnormal.y, -hopupnormal.z);
 
-	
-
 	//For drawing. 
 	int2 lastscreenpos;
 	bool drawthistime = false; //If we're drawing a line, we'll use this to alternate when we're drawing and not.
@@ -89,7 +90,15 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 
 	//cout << "Start. tbd: " <<  timebetweendots << ", dsaps: " << downspeedaddpersample << ", vel: " << velocityps << ", frn: " << finalrotnormal << ", gravnormal: " << gravitynormal <<  endl;
 
+	//Numbers needed for drag. 
+	float crosssectionalarea = 3.14159267 * pow(Config::bbDiameterMM() / 1000 * 0.5, 2);
+	//float airdensity = CalculateAirDensity(1013.25, 50, 0); //Temp values - one atmosphere, 50°C, no humidity.
+	float airdensity = 122.5; //Temp. In hectapascals. 
+	float bbmasskg = Config::bbMassGrams() / 1000.0;
 
+	//DEBUG
+	//float testdragforce = CalculateDragForce(0.47, 122.5, crosssectionalarea, 65);
+	//cout << "Test Drag Force: " << testdragforce << "N" << endl;
 
 	//for (float d = 0; d < MAX_DISTANCE; d += fvelchange.z) //Must only add the Z component of forward normal. 
 	while (currentpoint.z < MAX_DISTANCE) //Sliiiightly concerned this will be infinite. 
@@ -97,26 +106,27 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 		//Catch potential infinite loop. 
 		if (velocityps.z <= 0)
 		{
-			cout << "Velocity z factor is less than or equal to zero. Aborting simulation." << endl;
+			//cout << "Velocity z factor is less than or equal to zero. Aborting simulation." << endl;
 			break;
 		}
 
 		if (applyphysics)
 		{
+			//Drag. 
+			float speedps = sqrt(pow(velocityps.x, 2) + pow(velocityps.y, 2) + pow(velocityps.z, 2));
+			float dragforcenewtons = CalculateDragForce(0.47, airdensity, crosssectionalarea, speedps);
+			//cout <<"Air Density: " << airdensity <<  " Newtons: " << dragforcenewtons << endl;
+			//velocityps -= velocityps.norm() * (dragforcenewtons / bbmasskg);// *timebetweendots;
+			float speedchange = (dragforcenewtons / bbmasskg);
+
+			velocityps -= velocityps / speedps * speedchange * timebetweendots;
+
 			//Modify velocity to account for physical forces. 
 			velocityps += gravitynormal * downspeedaddpersample;;
-
 			//Modify velocity to account for hop-up.
 			velocityps += hopupnormal * hopupaddpersample;
-
-			//TODO: Drag. 
-
-			//currentpoint += sl::float3(0, -downspeed * timebetweendots, 0);
-			//currentpoint += gravitynormal * (downspeed * timebetweendots);
-			//downspeed += downspeedaddpersample;
 		}
 
-		//currentpoint += fvelchange;
 		currentpoint += velocityps;
 
 		float pointdepth = currentpoint.z; //Shorthand. 
@@ -172,4 +182,34 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	collisiondepth = lastvalidpoint.z;
 	//cout << "Failed. Downspeed at failure: " << downspeed << endl;
 	return false; //We didn't hit anything. 
+}
+
+
+
+//Returns the air density in kg/m^3.
+float Simulation::CalculateAirDensity(float totalairpressurehpa, float tempcelsius, float relhumidity01)
+{
+	//Calculated with: https://www.omnicalculator.com/physics/air-density#how-to-calculate-the-air-density
+	float tempkelvins = tempcelsius + 273.15;
+	float saturationvaporpressure = 6.1078 * pow(10, 7.5 * tempcelsius / (tempcelsius + 237.3));
+	float vaporpressure = saturationvaporpressure * relhumidity01;
+	float dryairpressure = totalairpressurehpa - vaporpressure;
+
+	float dryairpressure_pa = dryairpressure * 100; //Hectopascals to Pascals.
+	float vaporpressure_pa = vaporpressure * 100;
+
+	//ρ = (pd / (Rd * T)) + (pv / (Rv * T))
+
+	float airdensity = (dryairpressure_pa / (GAS_CONSTANT_DRY_AIR * tempkelvins)) + (vaporpressure_pa / (GAS_CONSTANT_WATER_VAPOR * tempkelvins));
+	return airdensity;
+}
+
+//Returns the magnitude of the drag force vector in newtons. 
+float Simulation::CalculateDragForce(float dragcoefficient, float airdensitykgm3, float surfaream2, float speedms)
+{
+	//Drag coefficient is estimated to be 0.47 with no spin, 0.43 with high spin.
+	//Area for a 6mm BB is 0.000028274m^2.
+
+	float dragforce = dragcoefficient * 0.5 * airdensitykgm3 * surfaream2 * pow(speedms, 2);
+	return dragforce;
 }

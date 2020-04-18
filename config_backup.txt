@@ -20,3 +20,5 @@ fCamZPos=0.1062
 fCamXRotDegrees=0.0
 fCamYRotDegrees=0.0
 fCamZRotDegrees=0.0
+fBBMassGrams=0.2
+fBBDiameterMM=6

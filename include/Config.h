@@ -27,6 +27,8 @@ static const string CAM_Z_POS_NAME = "CamZPos";
 static const string CAM_X_ROT_NAME = "CamXRotDegrees";
 static const string CAM_Y_ROT_NAME = "CamYRotDegrees";
 static const string CAM_Z_ROT_NAME = "CamZRotDegrees";
+static const string BB_MASS_GRAMS_NAME = "BBMassGrams";
+static const string BB_DIAMETER_MM_NAME = "BBDiameterMM";
 
 class Config
 {
@@ -118,6 +120,7 @@ public:
 		SetIntSetting(CAM_PERFORMANCE_MODE_NAME, (int)newvalue);
 	}
 
+
 	//FLOAT
 	static inline float forwardSpeedMPS()
 	{
@@ -135,6 +138,24 @@ public:
 	static inline const void hopUpSpeedMPS(float newvalue)
 	{
 		SetFloatSetting(HOP_UP_SPEED_NAME, newvalue);
+	}
+
+	static inline float bbMassGrams()
+	{
+		return GetFloatSetting(BB_MASS_GRAMS_NAME);
+	}
+	static inline const void bbMassGrams(float newvalue)
+	{
+		SetFloatSetting(BB_MASS_GRAMS_NAME, newvalue);
+	}
+
+	static inline float bbDiameterMM()
+	{
+		return GetFloatSetting(BB_DIAMETER_MM_NAME);
+	}
+	static inline float bbDiameterMM(float newvalue)
+	{
+		SetFloatSetting(BB_DIAMETER_MM_NAME, newvalue);
 	}
 
 	static inline float camXPos()
@@ -187,6 +208,8 @@ public:
 	{
 		SetFloatSetting(CAM_Z_ROT_NAME, newvalue);
 	}
+
+
 
 	
 
