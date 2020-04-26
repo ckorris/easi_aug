@@ -20,7 +20,7 @@ static const string CAM_PERFORMANCE_MODE_NAME = "CamPerformanceMode";
 
 //Floats. 
 static const string FORWARD_SPEED_NAME = "ForwardSpeedMPS";
-static const string HOP_UP_SPEED_NAME = "HopUpSpeedMPS";
+static const string HOP_UP_RPS_NAME = "HopUpRPS";
 static const string CAM_X_POS_NAME = "CamXPos";
 static const string CAM_Y_POS_NAME = "CamYPos";
 static const string CAM_Z_POS_NAME = "CamZPos";
@@ -29,6 +29,8 @@ static const string CAM_Y_ROT_NAME = "CamYRotDegrees";
 static const string CAM_Z_ROT_NAME = "CamZRotDegrees";
 static const string BB_MASS_GRAMS_NAME = "BBMassGrams";
 static const string BB_DIAMETER_MM_NAME = "BBDiameterMM";
+static const string TEMPERATURE_NAME = "TemperatureC";
+static const string RELATIVE_HUMIDITY_NAME = "RelativeHumidity01";
 
 class Config
 {
@@ -133,11 +135,11 @@ public:
 
 	static inline float hopUpSpeedMPS()
 	{
-		return GetFloatSetting(HOP_UP_SPEED_NAME);
+		return GetFloatSetting(HOP_UP_RPS_NAME);
 	}
 	static inline const void hopUpSpeedMPS(float newvalue)
 	{
-		SetFloatSetting(HOP_UP_SPEED_NAME, newvalue);
+		SetFloatSetting(HOP_UP_RPS_NAME, newvalue);
 	}
 
 	static inline float bbMassGrams()
@@ -147,6 +149,31 @@ public:
 	static inline const void bbMassGrams(float newvalue)
 	{
 		SetFloatSetting(BB_MASS_GRAMS_NAME, newvalue);
+	}
+
+	static inline float temperatureC()
+	{
+		return GetFloatSetting(TEMPERATURE_NAME);
+	}
+	static inline const void temperatureC(float newvalue)
+	{
+		SetFloatSetting(TEMPERATURE_NAME, newvalue);
+	}
+
+	static inline float relativeHumidity01()
+	{
+		return GetFloatSetting(RELATIVE_HUMIDITY_NAME);
+	}
+	static inline const void relativeHumidity01(float newvalue)
+	{
+		if (newvalue < 0 || newvalue > 1)
+		{
+			cout << "Warning: Set relativeHumidity01 value to " << newvalue <<
+				". Clamping." << endl;
+			if (newvalue < 0) newvalue = 0;
+			else if (newvalue > 1) newvalue = 1;
+		}
+		SetFloatSetting(RELATIVE_HUMIDITY_NAME, newvalue);
 	}
 
 	static inline float bbDiameterMM()
@@ -208,6 +235,7 @@ public:
 	{
 		SetFloatSetting(CAM_Z_ROT_NAME, newvalue);
 	}
+
 
 
 

@@ -13,7 +13,7 @@ iCamPerformanceMode=1
 
 #Floats
 fForwardSpeedMPS=65.0
-fHopUpSpeedMPS=0.0
+fHopUpRPS=0.0
 fCamXPos=0.06
 fCamYPos=-0.026
 fCamZPos=0.1062
@@ -22,3 +22,5 @@ fCamYRotDegrees=0.0
 fCamZRotDegrees=0.0
 fBBMassGrams=0.2
 fBBDiameterMM=6
+fTemperatureC=20
+fRelativeHumidity01=0.25

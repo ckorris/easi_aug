@@ -92,13 +92,19 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 
 	//Numbers needed for drag. 
 	float crosssectionalarea = 3.14159267 * pow(Config::bbDiameterMM() / 1000 * 0.5, 2);
-	//float airdensity = CalculateAirDensity(1013.25, 50, 0); //Temp values - one atmosphere, 50°C, no humidity.
-	float airdensity = 122.5; //Temp. In hectapascals. 
+	float tempcelsius = Config::temperatureC();
+	float relhumidity01 = Config::relativeHumidity01();
+	float airdensity = CalculateAirDensity(1013.25, tempcelsius, relhumidity01); //Temp values - one atmosphere, 50°C, no humidity.
+	//float airdensity = 122.5; //Temp. In hectapascals. 
 	float bbmasskg = Config::bbMassGrams() / 1000.0;
 
 	//DEBUG
 	//float testdragforce = CalculateDragForce(0.47, 122.5, crosssectionalarea, 65);
 	//cout << "Test Drag Force: " << testdragforce << "N" << endl;
+	//float dragcoef = CalculateDragCoefficient(0, 120, 0.006, airdensity, 0.000198); //0.000185 using Dr's constant, poises. 
+	//cout << "Drag coef: " << dragcoef << endl;
+	//float airviscosity = CalculateAirViscosity(37.78); //Test at 50. 
+	//cout << "Viscosity: " << airviscosity << endl;
 
 	//for (float d = 0; d < MAX_DISTANCE; d += fvelchange.z) //Must only add the Z component of forward normal. 
 	while (currentpoint.z < MAX_DISTANCE) //Sliiiightly concerned this will be infinite. 
@@ -204,12 +210,61 @@ float Simulation::CalculateAirDensity(float totalairpressurehpa, float tempcelsi
 	return airdensity;
 }
 
+float Simulation::CalculateAirViscosity(float tempcelsius)
+{
+	float tempkelvins = tempcelsius + 273.15;
+
+	//We'll use Sutherland's formula for calculating this, which requires a reference temperature and viscosity. 
+	//We'll use 0°C (273.15°L) where viscosity is 0.00001716.
+	//Note we use the number 383.55, which is reference number 273.15 + the Sutherland temp of 110.4°K.
+	//Used as reference: https://www.cfd-online.com/Wiki/Sutherland's_law and https://www.lmnoeng.com/Flow/GasViscosity.php
+
+	//return 0.00001716 * pow(tempkelvins / 273.15, 1.5) * (383.55 / (tempkelvins + 110.4));
+	return (0.000001458 * pow(tempkelvins, 1.5)) / (tempkelvins + 110.4);
+}
+
+
 //Returns the magnitude of the drag force vector in newtons. 
 float Simulation::CalculateDragForce(float dragcoefficient, float airdensitykgm3, float surfaream2, float speedms)
 {
 	//Drag coefficient is estimated to be 0.47 with no spin, 0.43 with high spin.
 	//Area for a 6mm BB is 0.000028274m^2.
-
 	float dragforce = dragcoefficient * 0.5 * airdensitykgm3 * surfaream2 * pow(speedms, 2);
 	return dragforce;
+}
+
+float Simulation::CalculateDragCoefficient(float spinrpm, float linearspeedmps, float bbdiametermeters,
+	float airdensity, float airviscosity) //Note speed in mps, not a smaller fraction. 
+{
+	//This equation is made to fit experimental data, from Dr. Dyrkacz's "The Physics of Paintball" which he based on 
+	//Achenbach, E., J. Fluid Mech. 54,565 (1972). See his page here:
+	//https://web.archive.org/web/20040617080904/http://home.comcast.net/~dyrgcmn/pball/pballIntro.html
+
+	//Calculate the Reynolds number, which we'll need in a few places. 
+	//double reynolds = bbdiametermeters * airdensity * linearspeedmps * airviscosity;
+	double reynolds = bbdiametermeters * airdensity * linearspeedmps / airviscosity;
+	//cout << "Reynolds: " << reynolds << endl;
+
+	//First calculate without spin. We're gonna start using doubles from now on. 
+	double spinlessCD = (0.4274794 + 0.000001146254 * reynolds - 7.559635 * pow(10, -12) * pow(reynolds, 2) - 3.817309 * pow(10, -18) *
+		pow(reynolds, 3) + 2.389417 * pow(10, -23) * pow(reynolds, 4)) / (1 - 0.000002120623 * reynolds + 2.952772 * pow(10, -11) * pow(reynolds, 2) -
+			1.914687 * pow(10, -16) * pow(reynolds, 3) + 3.125996 * pow(10, -22) * pow(reynolds, 4));
+
+	//If we have any spin, we then take that and apply a new formula. 
+	if (spinrpm == 0) return (float)spinlessCD; //If no spin, we can quit here. 
+	
+	//Calculate the surface speed, which to my understanding is the speed at which a point on the outside of the circle is moving. 
+	float surfacespeed = bbdiametermeters * 3.14159267 * spinrpm / 60; //Equation on Dr's site excludes PI but that feels wrong. 
+
+	//Calculate the ratio of spin velocity to linear velocity. Those two are represented as V and U mathematically, hence calling it vu.
+	float vu = surfacespeed / linearspeedmps;
+
+	//Aaaaand another crazy formula created via lots of experimentation by someone way better at the mathses than yours truly. 
+	double spinCD = (spinlessCD + 2.2132291 * vu - 10.345178 * pow(vu, 2) + 16.15703 * pow(vu, 3) + -5.27306480 * pow(vu, 4)) /
+		(1 + 3.1077276 * vu - 13.6598678 * pow(vu, 2) + 24.00539887 * pow(vu, 3) - 8.340493152 * pow(vu, 4));
+
+	return (float)spinCD;
+
+
+
 }
