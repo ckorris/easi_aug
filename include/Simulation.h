@@ -28,6 +28,7 @@ private:
 	sl::Camera *currentZED;
 	cv::Mat projectionMatrix;
 	//sl::float3 barrelOffset; //For now, we assumt it always points in the same direction as the camera. 
-
+	sl::float3 CrossProduct(sl::float3 v1, sl::float3 v2);
+	sl::float3 RotateVectorAroundAxis(sl::float3 vectortorot, sl::float3 axis, float angledegrees);
 
 };

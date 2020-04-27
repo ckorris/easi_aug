@@ -133,11 +133,11 @@ public:
 		SetFloatSetting(FORWARD_SPEED_NAME, newvalue);
 	}
 
-	static inline float hopUpSpeedMPS()
+	static inline float hopUpRPS()
 	{
 		return GetFloatSetting(HOP_UP_RPS_NAME);
 	}
-	static inline const void hopUpSpeedMPS(float newvalue)
+	static inline const void hopUpRPS(float newvalue)
 	{
 		SetFloatSetting(HOP_UP_RPS_NAME, newvalue);
 	}

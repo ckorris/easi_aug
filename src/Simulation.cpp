@@ -61,16 +61,20 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	finalrotnormal.y = yrotnormal.z * sin(xanglerad) - yrotnormal.y * cos(xanglerad);
 
 
-	//Calculate the hop-up angle, which is upward relative to the gun itself. 
+	//Calculate the gun upwards angle, which is the vector pointing upward from the gun.
+	//This is used to calculate hop up, since the backspin of the bb will cause it to rise in this direction. 
 
 	sl::float3 vectorup(0, 1, 0); //Could just put 0 and 1 in the math directly, but this makes code easier to read. 
-	sl::float3 hopupnormal = vectorup;
+	sl::float3 gunupnormal = vectorup;
 	float zanglerad = Config::camZRot() * 3.14159267 / 180.0;
-	hopupnormal.x = vectorup.x * cos(zanglerad) - vectorup.y * sin(zanglerad);
-	hopupnormal.y = vectorup.x * sin(zanglerad) + vectorup.y * cos(zanglerad);
+	gunupnormal.x = vectorup.x * cos(zanglerad) - vectorup.y * sin(zanglerad);
+	gunupnormal.y = vectorup.x * sin(zanglerad) + vectorup.y * cos(zanglerad);
+	
 
-	//Temporarily, the inverse of hop normal will be used for the gravity angle, until the ZED2 arrives and we have an IMU. 
-	sl::float3 gravitynormal(-hopupnormal.x, -hopupnormal.y, -hopupnormal.z);
+	//Temporarily, the inverse of gun up normal will be used for the gravity angle, until the ZED2 arrives and we have an IMU. 
+	//Nah, actually just make it down. 
+	sl::float3 gravitynormal(-gunupnormal.x, -gunupnormal.y, -gunupnormal.z);
+	//sl::float3 gravitynormal(0, -1, 0);
 
 	//For drawing. 
 	int2 lastscreenpos;
@@ -84,18 +88,27 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	sl::float3 velocityps = finalrotnormal * distbetweensamples; //Startingvelocity
 	float downspeedaddpersample = GRAVITY_ACCEL * timebetweendots * timebetweendots; //GRAVITY_ACCEL * timebetweendots is downward accel added per dot but STILL IN MPS. Multiply again to get how much it should change. 
 
+	//Cache the spin speed in rotations per second(rps). 
+	float spinrps = Config::hopUpRPS();
+
+
 	//Upward acceleration to add each sample due to hop-up. 
 	//TODO: Eventually take into effect rotational drag. 
-	float hopupaddpersample = Config::hopUpSpeedMPS() * timebetweendots * timebetweendots; //Same concept as gravity. 
+	float hopupaddpersample = Config::hopUpRPS() * timebetweendots * timebetweendots; //Same concept as gravity. 
+
+
 
 	//cout << "Start. tbd: " <<  timebetweendots << ", dsaps: " << downspeedaddpersample << ", vel: " << velocityps << ", frn: " << finalrotnormal << ", gravnormal: " << gravitynormal <<  endl;
 
 	//Numbers needed for drag. 
-	float crosssectionalarea = 3.14159267 * pow(Config::bbDiameterMM() / 1000 * 0.5, 2);
+	float bbdiameterm = Config::bbDiameterMM() / 1000;
+	//float crosssectionalarea = 3.14159267 * pow(Config::bbDiameterMM() / 1000 * 0.5, 2);
+	float crosssectionalarea = 3.14159267 * pow(bbdiameterm * 0.5, 2);
 	float tempcelsius = Config::temperatureC();
 	float relhumidity01 = Config::relativeHumidity01();
 	float airdensity = CalculateAirDensity(1013.25, tempcelsius, relhumidity01); //Temp values - one atmosphere, 50°C, no humidity.
 	//float airdensity = 122.5; //Temp. In hectapascals. 
+	float airviscosity = CalculateAirViscosity(tempcelsius);
 	float bbmasskg = Config::bbMassGrams() / 1000.0;
 
 	//DEBUG
@@ -105,6 +118,8 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	//cout << "Drag coef: " << dragcoef << endl;
 	//float airviscosity = CalculateAirViscosity(37.78); //Test at 50. 
 	//cout << "Viscosity: " << airviscosity << endl;
+	//sl::float3 rotangle = RotateVectorAroundAxis(sl::float3(0, 0, 1), sl::float3(1, 0, 0), 45.0);
+	//cout << "New Angle: " << rotangle.x << ", " << rotangle.y << ", " << rotangle.z << endl;
 
 	//for (float d = 0; d < MAX_DISTANCE; d += fvelchange.z) //Must only add the Z component of forward normal. 
 	while (currentpoint.z < MAX_DISTANCE) //Sliiiightly concerned this will be infinite. 
@@ -118,19 +133,37 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 
 		if (applyphysics)
 		{
-			//Drag. 
 			float speedps = sqrt(pow(velocityps.x, 2) + pow(velocityps.y, 2) + pow(velocityps.z, 2));
-			float dragforcenewtons = CalculateDragForce(0.47, airdensity, crosssectionalarea, speedps);
+			sl::float3 velocitynorm = velocityps / speedps;
+
+			//Calculate hop-up normal. It's orthogonal to the velocity. 
+			//We get that by rotating around the cross product of the gun up normal and velocity by 90 degrees. 
+			//Recall that the gun up normal is the upward direction of the gun, ie the direction the backspin will push the bb. 
+			sl::float3 hopupcross = CrossProduct(velocityps, gunupnormal); 
+			//Normalize it. 
+			float hopupcrossmagnitude = sqrt(pow(hopupcross.x, 2) + pow(hopupcross.y, 2) + pow(hopupcross.z, 2));
+			hopupcross = hopupcross / hopupcrossmagnitude; 
+			sl::float3 hopupnormal = RotateVectorAroundAxis(velocitynorm, hopupcross, 90); //TODO: Make sure it's rotating the right way. 
+
+
+			//Drag. 
+			//float dragforcenewtons = CalculateDragForce(0.47, airdensity, crosssectionalarea, speedps); //Using temp drag coefficient.
+			float dragcoefficient = CalculateDragCoefficient(spinrps, speedps, bbdiameterm, airdensity, airviscosity);
+			float dragforcenewtons = CalculateDragForce(dragcoefficient, airdensity, crosssectionalarea, speedps);
 			//cout <<"Air Density: " << airdensity <<  " Newtons: " << dragforcenewtons << endl;
 			//velocityps -= velocityps.norm() * (dragforcenewtons / bbmasskg);// *timebetweendots;
 			float speedchange = (dragforcenewtons / bbmasskg);
 
-			velocityps -= velocityps / speedps * speedchange * timebetweendots;
+			//velocityps -= velocityps / speedps * speedchange * timebetweendots;
+			velocityps -= velocitynorm * speedchange * timebetweendots;
 
 			//Modify velocity to account for physical forces. 
 			velocityps += gravitynormal * downspeedaddpersample;;
+
+
 			//Modify velocity to account for hop-up.
-			velocityps += hopupnormal * hopupaddpersample;
+			velocityps += hopupnormal * hopupaddpersample; //TEMP: Still adding a solid mps, just since we're testing the normal. 
+			//cout << "HNorm: " << hopupnormal << " aps: " << hopupaddpersample << endl;
 		}
 
 		currentpoint += velocityps;
@@ -265,6 +298,52 @@ float Simulation::CalculateDragCoefficient(float spinrpm, float linearspeedmps, 
 
 	return (float)spinCD;
 
+}
+
+
+sl::float3 Simulation::CrossProduct(sl::float3 v1, sl::float3 v2)
+{
+	sl::float3 cross;
+	cross.x = v1.y * v2.z - v1.z * v2.y;
+	cross.y = v1.z * v2.x - v1.x * v2.z;
+	cross.z = v1.x * v2.y - v1.y * v2.x;
+
+	return cross;
+}
+
+sl::float3 Simulation::RotateVectorAroundAxis(sl::float3 srcvec, sl::float3 axis, float angledegrees)
+{
+	//Convert to radians. 
+	float anglerad = angledegrees * 3.14159267 / 180;
+
+	float sinang = sin(anglerad); //Shorthand.
+	float cosang = cos(anglerad); //Shorthand. 
+
+	//Build the rotation matrix that does the job. 
+	//Referencing: https://en.wikipedia.org/wiki/Rotation_matrix#Rotation_matrix_from_axis_and_angle
+	cv::Mat rotmatrix = cv::Mat(3, 3, CV_32FC1);
+
+	rotmatrix.at<float>(0, 0) = cosang + pow(axis.x, 2) * (1 - cosang);
+	rotmatrix.at<float>(0, 1) = axis.x * axis.y * (1 - cosang) - axis.z * cosang;
+	rotmatrix.at<float>(0, 2) = axis.x * axis.z * (1 - cosang) + axis.y * sinang;
+
+	rotmatrix.at<float>(1, 0) = axis.y * axis.x * (1 - cosang) + axis.z * sinang;
+	rotmatrix.at<float>(1, 1) = cosang + pow(axis.y, 2) * (1 - cosang);
+	rotmatrix.at<float>(1, 2) = axis.y * axis.z * (1 - cosang) - axis.x * sinang;
+
+	rotmatrix.at<float>(2, 0) = axis.z * axis.x * (1 - cosang) - axis.y * sinang;
+	rotmatrix.at<float>(2, 1) = axis.z * axis.y * (1 - cosang) + axis.x * sinang;
+	rotmatrix.at<float>(2, 2) = cosang + pow(axis.z, 2) * (1 - cosang);
+
+	//Multiply. 
+	cv::Mat srcvecmat = cv::Mat(3, 1, CV_32FC1);
+	srcvecmat.at<float>(0) = srcvec.x;
+	srcvecmat.at<float>(1) = srcvec.y;
+	srcvecmat.at<float>(2) = srcvec.z;
+
+	cv::Mat multmat = rotmatrix * srcvecmat;
+
+	return sl::float3(multmat.at<float>(0), multmat.at<float>(1), multmat.at<float>(2));
 
 
 }
