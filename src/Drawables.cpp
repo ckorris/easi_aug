@@ -118,9 +118,9 @@ EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, flo
 	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, 1, 5, "FPS: ", cv::Scalar(0, 0, 255), 0, 0.1, 0, 1));
 	
 	//Hop-up arrows.
-	float(*hopupgetter)() = []() {return Config::hopUpRPS(); };
-	void(*hopupsetter)(float) = [](float v) {Config::hopUpRPS(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 1, 5, "HOP: ", cv::Scalar(0, 0, 255), 0.1, 0.2, 0, 1));
+	float(*hopupgetter)() = []() {return Config::hopUpRPM(); };
+	void(*hopupsetter)(float) = [](float v) {Config::hopUpRPM(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 1000, 10000, "HOP: ", cv::Scalar(0, 0, 255), 0.1, 0.2, 0, 1));
 
 	//Draw toggles. 
 	//Toggle laser crosshair.
@@ -246,7 +246,7 @@ ValueLabel::ValueLabel(float(*getter)(), string label,
 void ValueLabel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
 	char buffer[20];
-	int n = sprintf(buffer, "%1.4f", this->settingGetter());
+	int n = sprintf(buffer, "%1.2f", this->settingGetter());
 
 	string printval = labelPrefix + buffer;
 

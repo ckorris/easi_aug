@@ -20,7 +20,7 @@ static const string CAM_PERFORMANCE_MODE_NAME = "CamPerformanceMode";
 
 //Floats. 
 static const string FORWARD_SPEED_NAME = "ForwardSpeedMPS";
-static const string HOP_UP_RPS_NAME = "HopUpRPS";
+static const string HOP_UP_RPM_NAME = "HopUpRPM";
 static const string CAM_X_POS_NAME = "CamXPos";
 static const string CAM_Y_POS_NAME = "CamYPos";
 static const string CAM_Z_POS_NAME = "CamZPos";
@@ -133,13 +133,13 @@ public:
 		SetFloatSetting(FORWARD_SPEED_NAME, newvalue);
 	}
 
-	static inline float hopUpRPS()
+	static inline float hopUpRPM()
 	{
-		return GetFloatSetting(HOP_UP_RPS_NAME);
+		return GetFloatSetting(HOP_UP_RPM_NAME);
 	}
-	static inline const void hopUpRPS(float newvalue)
+	static inline const void hopUpRPM(float newvalue)
 	{
-		SetFloatSetting(HOP_UP_RPS_NAME, newvalue);
+		SetFloatSetting(HOP_UP_RPM_NAME, newvalue);
 	}
 
 	static inline float bbMassGrams()

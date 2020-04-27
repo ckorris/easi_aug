@@ -19,10 +19,14 @@ public:
 
 	static float CalculateAirViscosity(float tempcelsius);
 
+	static float CalculateDragCoefficient(float spinrpm, float linearspeedmps, float bbdiametermeters,
+		float airdensity, float airviscosity);
+
+	static float CalculateLiftCoefficient(float spinrpm, float linearspeedmps, float bbdiametermeters);
+
 	static float CalculateDragForce(float dragcoefficient, float airdensitykgm3, float surfaream2, float speedms);
 
-	static float Simulation::CalculateDragCoefficient(float spinrpm, float linearspeedmps, float bbdiametermeters,
-		float airdensity, float airviscosity);
+	static float CalculateLiftForce(float liftcoefficient, float airdensitykgm3, float surfaream2, float speedms);
 
 private:
 	sl::Camera *currentZED;
