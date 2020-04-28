@@ -18,8 +18,8 @@ public:
 	vector < unique_ptr<Drawable>> children;
 protected:
 
-	const cv::Scalar TEXT_COLOR = cv::Scalar(0, 0, 255);
-	const cv::Scalar BACKGROUND_COLOR = cv::Scalar(70, 70, 70);
+	const cv::Scalar TEXT_COLOR = cv::Scalar(0, 0, 255, 1);
+	const cv::Scalar BACKGROUND_COLOR = cv::Scalar(70, 70, 70, 1);
 
 	//static vector<Drawable> allEnabledDrawables;
 	static vector<unique_ptr<Drawable>> allEnabledDrawables;

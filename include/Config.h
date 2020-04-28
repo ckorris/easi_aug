@@ -15,6 +15,7 @@ static const string TOGGLE_TRAVEL_TIME_NAME = "ToggleTravelTime";
 
 //Integers.
 static const string SCREEN_ROTATION_NAME = "ScreenRotation";
+static const string IMAGE_ROTATION_NAME = "ImageRotation";
 static const string CAM_RESOLUTION_NAME = "CamResolution";
 static const string CAM_PERFORMANCE_MODE_NAME = "CamPerformanceMode";
 
@@ -102,6 +103,15 @@ public:
 	static inline const void screenRotation(int newvalue)
 	{
 		SetIntSetting(SCREEN_ROTATION_NAME, newvalue);
+	}
+
+	static inline int imageRotation()
+	{
+		return GetIntSetting(IMAGE_ROTATION_NAME);
+	}
+	static inline const void imageRotation(int newvalue)
+	{
+		SetIntSetting(IMAGE_ROTATION_NAME, newvalue);
 	}
 
 	static inline sl::RESOLUTION camResolution()

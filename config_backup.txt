@@ -8,6 +8,7 @@ bToggleTravelTime=1
 
 #Integers
 iScreenRotation=1
+iImageRotation=0
 iCamResolution=2
 iCamPerformanceMode=1
 

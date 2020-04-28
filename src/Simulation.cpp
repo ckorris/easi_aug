@@ -330,7 +330,7 @@ float Simulation::CalculateLiftCoefficient(float spinrpm, float linearspeedmps, 
 	double liftcoef = (-0.0020907 - 0.208056226 * vu + 0.768791456 * pow(vu, 2) - 0.84865215 * pow(vu, 3) + 0.75365982 * pow(vu, 4)) /
 		(1 - 4.82629033 * vu + 9.95459464 * pow(vu, 2) - 7.85649742 * pow(vu, 3) + 3.273765328 * pow(vu, 4));
 
-	cout << " VU: " << vu << " CL: " << liftcoef << endl;
+	//cout << " VU: " << vu << " CL: " << liftcoef << endl;
 
 	return (float)liftcoef;
 }

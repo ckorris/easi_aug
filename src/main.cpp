@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
 	// Prepare new image size to retrieve half-resolution images
 	Resolution image_size = zed.getCameraInformation().camera_configuration.resolution;
 
-	
+
 
 	int new_width = image_size.width;
 	int new_height = image_size.height;
@@ -90,12 +90,13 @@ int main(int argc, char **argv) {
 	int cvmattype = slMatType2cvMatType(image_zed.getDataType());
 	cv::Mat image_ocv = cv::Mat(new_height, new_width, cvmattype, image_zed.getPtr<sl::uchar1>(MEM::CPU));
 
-	bool switchwidthandheight = Config::screenRotation() % 2 == 0 ? false : true;
-	if (switchwidthandheight)
-	{
-		//image_ocv.cols = image_zed.getHeight();
-		//image_ocv.rows = image_zed.getWidth();
-	}
+	//Make the UI image. 
+	int screenrot = Config::screenRotation();
+	int uiwidth = (screenrot % 2 == 0) ? image_ocv.cols : image_ocv.rows;
+	int uiheight = (screenrot % 2 == 0) ? image_ocv.rows : image_ocv.cols;
+
+	cv::Mat ui_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
+	ui_mat.setTo(cv::Scalar(0, 0, 0, 0));
 
 	Mat depth_measure(new_width, new_height, MAT_TYPE::F32_C1);
 
@@ -124,10 +125,10 @@ int main(int argc, char **argv) {
 			{
 				int2 collisionpoint_nograv;
 				float collisiondepth_nograv;
-				float traveltime_nograv; 
+				float traveltime_nograv;
 				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv,
-					Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0));
-				if(collided && Config::toggleLaserCrosshair())
+					Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0, 1));
+				if (collided && Config::toggleLaserCrosshair())
 				{
 					//cout << "Collided at " << collisionpoint_nograv.x << ", " << collisionpoint_nograv.y << endl;
 					cv::circle(image_ocv, cv::Point(collisionpoint_nograv.x, collisionpoint_nograv.y), 30 / collisiondepth_nograv, cv::Scalar(0, 255.0, 0), -1);
@@ -145,13 +146,13 @@ int main(int argc, char **argv) {
 				float collisiondepth_grav;
 				float traveltime_grav;
 				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
-					Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0));
+					Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0, 1));
 				if (collided && Config::toggleGravityCrosshair())
 				{
 					float dotradius = 30 / collisiondepth_grav;
 
 					//cout << "Collided at " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
-					cv::circle(image_ocv, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 0, 255.0), -1);
+					cv::circle(image_ocv, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 0, 255.0, 1), -1);
 					if (Config::toggleDistance())
 					{
 						char distbuffer[20];
@@ -160,9 +161,18 @@ int main(int argc, char **argv) {
 						string disttext = distbuffer + distsuffix; //Not sure why I can't just add the literal. 
 						cv::Size disttextsize = cv::getTextSize(disttext, 1, 1, 1, NULL);
 
-						cv::Point disttextpoint(collisionpoint_grav.x - 20 - dotradius - disttextsize.width, 
+						cv::Point disttextpoint(collisionpoint_grav.x - 20 - dotradius - disttextsize.width,
 							collisionpoint_grav.y - 20 - dotradius);
-						cv::putText(image_ocv, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255));
+
+						//Rotate coords if we're rotating the screen. 
+						if (screenrot % 2 != 0)
+						{
+							float oldx = disttextpoint.x;
+							disttextpoint.x = disttextpoint.y;
+							disttextpoint.y = oldx;
+						}
+
+						cv::putText(ui_mat, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 					}
 					if (Config::toggleTravelTime())
 					{
@@ -175,7 +185,15 @@ int main(int argc, char **argv) {
 						cv::Point timetextpoint(collisionpoint_grav.x + 20 + dotradius,
 							collisionpoint_grav.y - 20 - dotradius);
 
-						cv::putText(image_ocv, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255));
+						//Rotate coords if we're rotating the screen. 
+						if (screenrot % 2 != 0)
+						{
+							float oldx = timetextpoint.x;
+							timetextpoint.x = timetextpoint.y;
+							timetextpoint.y = oldx;
+						}
+
+						cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 					}
 				}
 				else
@@ -198,10 +216,78 @@ int main(int argc, char **argv) {
 
 			//Draw drawables. 
 			//cv::Rect panelrect = cv::Rect(1, new_height * 0.8, new_width - 2, new_height * 0.2 - 2); //Bottom. 
+
+			/* //Moving to after rotation.
 			cv::Rect panelrect = cv::Rect(2, 1, new_width - 2, new_height * 0.2 - 2);
 			panel.ProcessUI(panelrect, image_ocv, "EasiAug");
+			*/
 
-			cv::imshow("EasiAug", image_ocv);
+
+			
+			
+
+			cv::Rect panelrect;
+			panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
+			/*if (scale == 1)
+			{
+				panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
+			}
+			else
+			{
+				
+				int scaledwidth = image_ocv.rows / scale;
+				int leftoffset = image_ocv.cols / 2.0 - scaledwidth / 2.0;
+				
+				//int leftoffset = image_ocv.cols / 2 - image_ocv.rows / 2;
+
+				panelrect = cv::Rect(leftoffset + 1, 1, scaledwidth - 2, image_ocv.rows * 0.15 - 2);
+			}*/
+			//panel.ProcessUI(panelrect, image_ocv, "EasiAug");
+			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
+
+			//Try rotating the image. 
+			cv::Mat finalmat;
+			int imagerotamount = Config::imageRotation();
+			if (imagerotamount > 0)
+			{
+				float rotangle = imagerotamount * 90;
+				float imagescale = (imagerotamount % 2 == 0) ? 1.0 : image_ocv.cols / (float)image_ocv.rows;
+
+				//cv::Mat rotated;
+				cv::Mat rotated = cv::Mat(cv::Size(image_ocv.rows, image_ocv.cols), CV_8UC4);
+				cv::Point2d pc(image_ocv.cols / 2.0, image_ocv.rows / 2.0);
+				//cv::Point2d pc(image_ocv.rows / 2.0, image_ocv.cols / 2.0);
+				cv::Mat screenrotmatrix = cv::getRotationMatrix2D(pc, -rotangle, imagescale);
+
+				cv::warpAffine(image_ocv, rotated, screenrotmatrix, image_ocv.size());
+
+				cv::add(rotated, ui_mat, finalmat);
+
+				//finalmat = rotated;
+			}
+			else
+			{
+				//cv::add(ui_mat, image_ocv, finalmat);
+				//cv::addWeighted(image_ocv, 1.0, ui_mat, 1, 0.0, finalmat);
+				//finalmat = image_ocv;
+				cv::Mat mask(cv::Size(ui_mat.cols, ui_mat.rows), CV_8UC1);
+				int fromto[] = { 3, 0 };
+				cv::mixChannels(ui_mat, mask, fromto, 1);
+				cv::subtract(image_ocv, cv::Scalar(255, 255, 255, 255), image_ocv, mask);
+				cv::add(image_ocv, ui_mat, image_ocv, mask);
+
+
+
+				finalmat = image_ocv;
+			}
+
+			//finalmat = finalmat + ui_mat;
+
+
+			//cv::imshow("EasiAug", image_ocv);
+			//cv::imshow("EasiAug", rotated);
+			cv::imshow("EasiAug", finalmat);
+			//cv::imshow("EasiAug", finalmat);
 
 			//Input.
 			cv::setMouseCallback("EasiAug", ClickCallback);
