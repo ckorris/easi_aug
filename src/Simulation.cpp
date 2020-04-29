@@ -26,7 +26,7 @@ Simulation::Simulation(sl::Camera *zed)
 	//barrelOffset = barreloffset; //TODO: Remove, as we'll be calculating this based on the settings. 
 }
 
-bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applyphysics,
+bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applyphysics, sl::SensorsData sensordata,
 	int2& collisionpoint, float& collisiondepth, float& totaltime, bool drawline, cv::Mat& drawlinetomat, cv::Scalar linecolor)
 {
 	float downspeed = 0;
@@ -72,9 +72,9 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	
 
 	//Temporarily, the inverse of gun up normal will be used for the gravity angle, until the ZED2 arrives and we have an IMU. 
-	//Nah, actually just make it down. 
-	sl::float3 gravitynormal(-gunupnormal.x, -gunupnormal.y, -gunupnormal.z);
-	//sl::float3 gravitynormal(0, -1, 0);
+	//sl::float3 gravitynormal(-gunupnormal.x, -gunupnormal.y, -gunupnormal.z);
+	//Edit: I GOT MY ZED 2 MOFOS TIME FOR SUM REEL GUD FIZIKZ.
+	sl::float3 gravitynormal = CamUtilities::IMUPoseToGravityVector(sensordata.imu.pose);
 
 	//For drawing. 
 	int2 lastscreenpos;
@@ -96,8 +96,6 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	//TODO: Eventually take into effect rotational drag. 
 	float hopupaddpersample = Config::hopUpRPM() * timebetweendots * timebetweendots; //Same concept as gravity. 
 
-
-
 	//cout << "Start. tbd: " <<  timebetweendots << ", dsaps: " << downspeedaddpersample << ", vel: " << velocityps << ", frn: " << finalrotnormal << ", gravnormal: " << gravitynormal <<  endl;
 
 	//Numbers needed for drag and hop-up/Magnus that don't change sample to sample. 
@@ -106,7 +104,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	float crosssectionalarea = 3.14159267 * pow(bbdiameterm * 0.5, 2);
 	float tempcelsius = Config::temperatureC();
 	float relhumidity01 = Config::relativeHumidity01();
-	float airdensity = CalculateAirDensity(1013.25, tempcelsius, relhumidity01); //Temp values - one atmosphere, 50°C, no humidity.
+	float airdensity = CalculateAirDensity(sensordata.barometer.pressure, tempcelsius, relhumidity01); //Temp values - one atmosphere, 50°C, no humidity.
 	//float airdensity = 122.5; //Temp. In hectapascals. 
 	float airviscosity = CalculateAirViscosity(tempcelsius);
 	float bbmasskg = Config::bbMassGrams() / 1000.0;

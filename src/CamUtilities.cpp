@@ -91,3 +91,17 @@ int2 CamUtilities::CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, i
 	return screenpos;
 }
 
+//Provides a normal pointing in the direction of gravity, given the pose from the ZED2's IMU. 
+sl::float3 CamUtilities::IMUPoseToGravityVector(sl::Pose imupose)
+{
+	//sl::float3 eulerrotrad = imupose.getEulerAngles(true);
+	//sl::float3 downvec(0, -1, 0);
+	sl::Translation downvec(0, -1, 0); //Using a translation because it's multipliable. 
+
+	sl::Translation gravvec;
+	gravvec = downvec * imupose.getOrientation();
+
+	sl::float3 returnnormal(gravvec.x, gravvec.y, gravvec.z);
+	return returnnormal;
+}
+

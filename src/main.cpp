@@ -107,18 +107,37 @@ int main(int argc, char **argv) {
 
 	Simulation sim(&zed);
 
+	SensorsData sensorData;
+
 	// Loop until 'q' is pressed
 	char key = ' ';
 	while (key != 'q') {
 
 		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) {
 
+			//Test sensors. 
+			//zed.getSensorsData(sensorData, TIME_REFERENCE::IMAGE);
+			//cout << sensorData.imu.linear_acceleration << endl;
+			//cout << sensorData.barometer.pressure << endl;
+			//float temperature;
+			//sensorData.temperature.get(SensorsData::TemperatureData::SENSOR_LOCATION::BAROMETER, temperature);
+			//cout << "Temp: " << temperature << " C" << endl;
+			//cout << sensorData.magnetometer.magnetic_field_calibrated << endl;
+			Pose pose = sensorData.imu.pose;
+			//cout << pose.getEulerAngles(false) << endl;
+			//sl::float4 gravdir = pose.getRotationMatrix() * sl::float4(0, -1, 0, 1);
+			//sl::float3 gravnorm = CamUtilities::IMUPoseToGravityVector(pose);
+			//cout << gravnorm << endl;
+
+
 			// Retrieve the left image, depth image in half-resolution
 			zed.retrieveImage(image_zed, VIEW::LEFT, MEM::CPU, new_image_size);
 
 			zed.retrieveMeasure(depth_measure);
 
+			zed.getSensorsData(sensorData, TIME_REFERENCE::IMAGE);
 
+			ui_mat.setTo(cv::Scalar(0, 0, 0, 0));
 
 			//Laser crosshair - no gravity. 
 			if (Config::toggleLaserCrosshair() || Config::toggleLaserPath())
@@ -126,7 +145,7 @@ int main(int argc, char **argv) {
 				int2 collisionpoint_nograv;
 				float collisiondepth_nograv;
 				float traveltime_nograv;
-				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv,
+				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, sensorData, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv,
 					Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0, 1));
 				if (collided && Config::toggleLaserCrosshair())
 				{
@@ -145,7 +164,7 @@ int main(int argc, char **argv) {
 				int2 collisionpoint_grav;
 				float collisiondepth_grav;
 				float traveltime_grav;
-				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
+				bool collided = sim.Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, sensorData, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
 					Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0, 1));
 				if (collided && Config::toggleGravityCrosshair())
 				{
@@ -209,23 +228,6 @@ int main(int argc, char **argv) {
 			//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
 			//cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
-			//Test button. 
-			//cv::Rect testrect;
-			//testrect = cv::Rect(0, new_height - 50, 80, 50);
-			//cv::rectangle(image_ocv, testrect, cv::Scalar(255, 0, 0), -1);
-
-			//Draw drawables. 
-			//cv::Rect panelrect = cv::Rect(1, new_height * 0.8, new_width - 2, new_height * 0.2 - 2); //Bottom. 
-
-			/* //Moving to after rotation.
-			cv::Rect panelrect = cv::Rect(2, 1, new_width - 2, new_height * 0.2 - 2);
-			panel.ProcessUI(panelrect, image_ocv, "EasiAug");
-			*/
-
-
-			
-			
-
 			cv::Rect panelrect;
 			panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
 			/*if (scale == 1)
@@ -251,35 +253,50 @@ int main(int argc, char **argv) {
 			if (imagerotamount > 0)
 			{
 				float rotangle = imagerotamount * 90;
-				float imagescale = (imagerotamount % 2 == 0) ? 1.0 : image_ocv.cols / (float)image_ocv.rows;
+				float imagewidthscale = (imagerotamount % 2 == 0) ? 1.0 : image_ocv.cols / (float)image_ocv.rows;
 
 				//cv::Mat rotated;
-				cv::Mat rotated = cv::Mat(cv::Size(image_ocv.rows, image_ocv.cols), CV_8UC4);
-				cv::Point2d pc(image_ocv.cols / 2.0, image_ocv.rows / 2.0);
+				cv::Mat rotated = (imagerotamount == 2) ? cv::Mat(cv::Size(image_ocv.cols, image_ocv.rows), CV_8UC4) : cv::Mat(cv::Size(image_ocv.rows, image_ocv.cols), CV_8UC4);
+				cv::Point2d pc; 
+				if (imagerotamount == 1)
+				{
+					//pc = cv::Point2d(image_ocv.rows / 2, image_ocv.rows / 2); //If also changing res. 
+					pc = cv::Point2d(image_ocv.cols / 2, image_ocv.rows / 2);
+				}
+				else if (imagerotamount == 2)
+				{
+					pc = cv::Point2d(image_ocv.cols / 2, image_ocv.rows / 2);
+				}
+				else if (imagerotamount == 3)
+				{
+					//pc = cv::Point2d(image_ocv.rows, image_ocv.rows); //If also changing res. 
+					pc = cv::Point2d(image_ocv.cols / 2, image_ocv.rows / 2);
+				}
 				//cv::Point2d pc(image_ocv.rows / 2.0, image_ocv.cols / 2.0);
-				cv::Mat screenrotmatrix = cv::getRotationMatrix2D(pc, -rotangle, imagescale);
+				cv::Mat screenrotmatrix = cv::getRotationMatrix2D(pc, -rotangle, imagewidthscale);
 
 				cv::warpAffine(image_ocv, rotated, screenrotmatrix, image_ocv.size());
 
-				cv::add(rotated, ui_mat, finalmat);
+				//cv::add(rotated, ui_mat, finalmat);
 
-				//finalmat = rotated;
+				finalmat = rotated;
 			}
 			else
 			{
 				//cv::add(ui_mat, image_ocv, finalmat);
 				//cv::addWeighted(image_ocv, 1.0, ui_mat, 1, 0.0, finalmat);
-				//finalmat = image_ocv;
-				cv::Mat mask(cv::Size(ui_mat.cols, ui_mat.rows), CV_8UC1);
-				int fromto[] = { 3, 0 };
-				cv::mixChannels(ui_mat, mask, fromto, 1);
-				cv::subtract(image_ocv, cv::Scalar(255, 255, 255, 255), image_ocv, mask);
-				cv::add(image_ocv, ui_mat, image_ocv, mask);
-
-
-
 				finalmat = image_ocv;
+
+				//finalmat = image_ocv;
 			}
+
+			
+			cv::Mat mask(cv::Size(ui_mat.cols, ui_mat.rows), CV_8UC1);
+			int fromto[] = { 3, 0 };
+			cv::mixChannels(ui_mat, mask, fromto, 1);
+			cv::subtract(finalmat, cv::Scalar(255, 255, 255, 255), finalmat, mask);
+			cv::add(finalmat, ui_mat, finalmat, mask);
+			
 
 			//finalmat = finalmat + ui_mat;
 
