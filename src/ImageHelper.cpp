@@ -15,7 +15,7 @@ float ImageHelper::GetRotationScale()
 	int imagerotamount = Config::imageRotation();
 
 	//TEST
-	return 1.0;
+	//return 1.0;
 
 	//If we're not rotating at all, or rotating 180°, we don't have to do any scaling. 
 	if (imagerotamount % 2 == 0)
@@ -93,28 +93,6 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint)
 	}
 	else
 	{
-		/*
-		//cv::Mat_<float> pointmat(rotscreenpoint, false);
-		cv::Mat_<float> pointmat(2, 1);
-		pointmat.at<float>(0, 0) = (float)inpoint.x;
-		//pointmat.at<float>(0, 0) = 43.2;
-		pointmat(1, 0) = (float)inpoint.y;
-		//pointmat(2, 0) = 1.0;
-		//pointmat(0, 0) = rotscreenpoint.x;
-		cout << "Start: " <<  pointmat.at<float>(0, 0) << ", " << pointmat.at<float>(0, 1) << endl;
-
-		float rotangle = imagerotamount * 90.0;
-
-		cv::Point2d centerpoint = cv::Point2d(zedwidth / 2, zedheight / 2);
-		//cv::Mat imagerotmatrix = cv::getRotationMatrix2D(centerpoint, -rotangle, GetRotationScale());
-		cv::Mat imagerotmatrix = cv::getRotationMatrix2D(centerpoint, -rotangle, 1);
-
-		cv::Mat_<float> outpoint(2, 1);
-		//cv::warpAffine(pointmat, outpoint, imagerotmatrix, pointmat.size());
-		//cv::transform(pointmat, outpoint, imagerotmatrix);
-
-		//cout << "End: " << outpoint.at<float>(0, 0) << ", " << outpoint.at<float>(0, 1) << endl;
-		*/
 		
 		float halfwidth = zedwidth / 2; //Shorthand.
 		float halfheight = zedheight / 2; //Shorthand.
@@ -122,25 +100,40 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint)
 		float xdistfromcenter = -halfwidth + inpoint.x;
 		float ydistfromcenter = -halfheight + inpoint.y;
 
+		//Scale. 
+		float xscaleddist;
+		float yscaleddist;
+		float scalefactor = GetRotationScale();
+		if (scalefactor == 1.0)
+		{
+			xscaleddist = xdistfromcenter;
+			yscaleddist = ydistfromcenter;
+		}
+		else
+		{
+			xscaleddist = xdistfromcenter * scalefactor;
+			yscaleddist = ydistfromcenter * scalefactor;
+		}
+
 		//Gotta test all of these. 
 		if (imagerotamount == 1)
 		{
 			//rotscreenpoint.x = inpoint.y;
 			//rotscreenpoint.y = inpoint.x;
-			rotscreenpoint.x = halfwidth - ydistfromcenter;
-			rotscreenpoint.y = halfheight + xdistfromcenter;
+			rotscreenpoint.x = halfwidth - yscaleddist;
+			rotscreenpoint.y = halfheight + xscaleddist;
 		}
 		else if (imagerotamount == 2)
 		{
 			//rotscreenpoint.x = zedwidth - inpoint.x;
 			//rotscreenpoint.y = zedheight - inpoint.y;
-			rotscreenpoint.x = halfwidth - xdistfromcenter;
-			rotscreenpoint.y = halfheight - ydistfromcenter;
+			rotscreenpoint.x = halfwidth - xscaleddist;
+			rotscreenpoint.y = halfheight - yscaleddist;
 		}
 		else if (imagerotamount == 3)
 		{
-			rotscreenpoint.x = halfwidth + ydistfromcenter;
-			rotscreenpoint.y = halfheight - xdistfromcenter;
+			rotscreenpoint.x = halfwidth + yscaleddist;
+			rotscreenpoint.y = halfheight - xscaleddist;
 			//rotscreenpoint.x = zedheight - inpoint.y;
 			//rotscreenpoint.y = zedwidth - inpoint.x;
 		}
@@ -150,44 +143,7 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint)
 			return inpoint;
 		}
 
-		//Now scale. 
-		float scalefactor = GetRotationScale();
-
 		
-		//if (scalefactor != 1) //No need to do maths if we're not scaling it. This would happen if flipping exactly upside down.
-		if(false) //TEST
-		{
-			//scalefactor = 1.0; //TEST
-
-			cout << "Input: " << inpoint << endl;
-
-			float newimagewidth = (imagerotamount % 2 == 0) ? zedwidth : zedheight;
-			float newimageheight = (imagerotamount % 2 == 0) ? zedheight : zedwidth;
-
-			cout << "New Width: " << newimagewidth << " New Height: " << newimageheight << endl;
-
-			//All this makes sense to me but there's a lot of places for things to go wrong. 
-			float halfwidth = newimagewidth / 2; //Shorthand.
-			float halfheight = newimageheight / 2; //Shorthand.
-
-			cout << "Half width: " << halfwidth << " Half height: " << halfheight << endl;
-
-			cout << "Rotated: " << rotscreenpoint << endl;
-
-			float xdistfromcenter = -halfwidth + rotscreenpoint.x;
-			float ydistfromcenter = -halfheight + rotscreenpoint.y;
-
-			cout << "X Center dist: " << xdistfromcenter << " Y Center Dist: " << ydistfromcenter << endl;
-
-			float xfactorapplied = abs(xdistfromcenter) / halfwidth;
-			float yfactorapplied = abs(ydistfromcenter) / halfheight;
-
-			rotscreenpoint.x = halfwidth + xdistfromcenter * (scalefactor * xfactorapplied);
-			rotscreenpoint.y = halfheight + ydistfromcenter * (scalefactor * yfactorapplied);
-
-			cout << "Out: " << rotscreenpoint << endl;
-			cout << endl;
-		}
 	}
 
 	//For now just return that. Gotta validate the above code before moving to UI. 

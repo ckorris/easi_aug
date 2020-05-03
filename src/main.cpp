@@ -171,54 +171,63 @@ int main(int argc, char **argv) {
 
 					//cout << "Collided at " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
 					cv::circle(image_ocv, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 0, 255.0, 1), -1);
-					if (Config::toggleDistance())
+					
+					//Draw the distance and travel time. 
+					//If statement is to save calculating the rotated point that the text is anchored to. 
+					if (Config::toggleDistance() || Config::toggleTravelTime()) 
 					{
-						char distbuffer[20];
-						int d = sprintf(distbuffer, "%0.2f", collisiondepth_grav);
-						string distsuffix = "m";
-						string disttext = distbuffer + distsuffix; //Not sure why I can't just add the literal. 
-						cv::Size disttextsize = cv::getTextSize(disttext, 1, 1, 1, NULL);
+						cv::Point gravpoint_ui = imageHelper.RawImagePointToRotated(cv::Point(collisionpoint_grav.x, collisionpoint_grav.y));
 
-						cv::Point disttextpoint(collisionpoint_grav.x - 20 - dotradius - disttextsize.width,
-							collisionpoint_grav.y - 20 - dotradius);
-
-						//Rotate coords if we're rotating the screen. 
-						if (screenrot % 2 != 0)
+						if (Config::toggleDistance())
 						{
-							float oldx = disttextpoint.x;
-							disttextpoint.x = disttextpoint.y;
-							disttextpoint.y = oldx;
+							char distbuffer[20];
+							int d = sprintf(distbuffer, "%0.2f", collisiondepth_grav);
+							string distsuffix = "m";
+							string disttext = distbuffer + distsuffix; //Not sure why I can't just add the literal. 
+							cv::Size disttextsize = cv::getTextSize(disttext, 1, 1, 1, NULL);
+
+							cv::Point disttextpoint(gravpoint_ui.x - 20 - dotradius - disttextsize.width,
+								gravpoint_ui.y - 20 - dotradius);
+
+							//Rotate coords if we're rotating the screen. 
+							if (screenrot % 2 != 0)
+							{
+								float oldx = disttextpoint.x;
+								disttextpoint.x = disttextpoint.y;
+								disttextpoint.y = oldx;
+							}
+
+							cv::putText(ui_mat, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 						}
-
-						cv::putText(ui_mat, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
-					}
-					if (Config::toggleTravelTime())
-					{
-						char timebuffer[20];
-						int t = sprintf(timebuffer, "%0.3f", traveltime_grav);
-						string timesuffix = "ms";
-						string timetext = timebuffer + timesuffix;
-						//cv::Size timetextsize = cv::getTextSize(timetext, 1, 1, 1, NULL);
-
-						cv::Point timetextpoint(collisionpoint_grav.x + 20 + dotradius,
-							collisionpoint_grav.y - 20 - dotradius);
-
-						//Rotate coords if we're rotating the screen. 
-						if (screenrot % 2 != 0)
+						if (Config::toggleTravelTime())
 						{
-							float oldx = timetextpoint.x;
-							timetextpoint.x = timetextpoint.y;
-							timetextpoint.y = oldx;
+							char timebuffer[20];
+							int t = sprintf(timebuffer, "%0.3f", traveltime_grav);
+							string timesuffix = "ms";
+							string timetext = timebuffer + timesuffix;
+							//cv::Size timetextsize = cv::getTextSize(timetext, 1, 1, 1, NULL);
+
+							cv::Point timetextpoint(gravpoint_ui.x + 20 + dotradius,
+								gravpoint_ui.y - 20 - dotradius);
+
+
+
+							//Rotate coords if we're rotating the screen. 
+							if (screenrot % 2 != 0)
+							{
+								float oldx = timetextpoint.x;
+								timetextpoint.x = timetextpoint.y;
+								timetextpoint.y = oldx;
+							}
+
+							cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 						}
-
-						cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 					}
-
 					//TEST: Draw shape on crosshair to test ImageHelper::RawImagePointToRotated(). 
-					cv::Point rotpoint = imageHelper.RawImagePointToRotated(cv::Point(collisionpoint_grav.x, collisionpoint_grav.y));
-					cv::circle(ui_mat, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 255, 0, 255), 2);
-					cv::circle(ui_mat, rotpoint, dotradius, cv::Scalar(255, 0, 0, 255), 3);
-					cv::circle(ui_mat, cv::Point(ui_mat.cols / 2, ui_mat.rows / 2), dotradius, cv::Scalar(255, 0, 255, 255), -1);
+					//cv::Point rotpoint = imageHelper.RawImagePointToRotated(cv::Point(collisionpoint_grav.x, collisionpoint_grav.y));
+					//cv::circle(ui_mat, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 255, 0, 255), 2);
+					//cv::circle(ui_mat, rotpoint, dotradius, cv::Scalar(255, 0, 0, 255), 3);
+					//cv::circle(ui_mat, cv::Point(ui_mat.cols / 2, ui_mat.rows / 2), dotradius, cv::Scalar(255, 0, 255, 255), -1);
 					//cout << "CollPoint: " << cv::Point(collisionpoint_grav.x, collisionpoint_grav.y) << " Rotpoint: " << rotpoint << endl;
 				}
 				else
@@ -253,54 +262,12 @@ int main(int argc, char **argv) {
 			//panel.ProcessUI(panelrect, image_ocv, "EasiAug");
 			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
 
-			//Try rotating the image. 
+			//Rotate the image. 
 			cv::Mat finalmat;
-
-			//Moving to ImageHelper.
-			/*
-			int imagerotamount = Config::imageRotation();
-			if (imagerotamount > 0)
-			{
-				float rotangle = imagerotamount * 90;
-				float imagewidthscale = (imagerotamount % 2 == 0) ? 1.0 : image_ocv.cols / (float)image_ocv.rows;
-
-				//cv::Mat rotated;
-				cv::Mat rotated = (imagerotamount == 2) ? cv::Mat(cv::Size(image_ocv.cols, image_ocv.rows), CV_8UC4) : cv::Mat(cv::Size(image_ocv.rows, image_ocv.cols), CV_8UC4);
-				cv::Point2d pc; 
-				if (imagerotamount == 1)
-				{
-					//pc = cv::Point2d(image_ocv.rows / 2, image_ocv.rows / 2); //If also changing res. 
-					pc = cv::Point2d(image_ocv.cols / 2, image_ocv.rows / 2);
-				}
-				else if (imagerotamount == 2)
-				{
-					pc = cv::Point2d(image_ocv.cols / 2, image_ocv.rows / 2);
-				}
-				else if (imagerotamount == 3)
-				{
-					//pc = cv::Point2d(image_ocv.rows, image_ocv.rows); //If also changing res. 
-					pc = cv::Point2d(image_ocv.cols / 2, image_ocv.rows / 2);
-				}
-				//cv::Point2d pc(image_ocv.rows / 2.0, image_ocv.cols / 2.0);
-				cv::Mat screenrotmatrix = cv::getRotationMatrix2D(pc, -rotangle, imagewidthscale);
-
-				cv::warpAffine(image_ocv, rotated, screenrotmatrix, image_ocv.size());
-
-				//cv::add(rotated, ui_mat, finalmat);
-
-				finalmat = rotated;
-			}
-			else
-			{
-				//cv::add(ui_mat, image_ocv, finalmat);
-				//cv::addWeighted(image_ocv, 1.0, ui_mat, 1, 0.0, finalmat);
-				finalmat = image_ocv;
-
-				//finalmat = image_ocv;
-			}
-			*/
 			finalmat = imageHelper.RotateImageToConfig(image_ocv);
 			
+			//Add the UI image to it. 
+			//TODO: We don't rotate the Ui image yet so will break if rotated anything but 0° or 180°.
 			cv::Mat mask(cv::Size(ui_mat.cols, ui_mat.rows), CV_8UC1);
 			int fromto[] = { 3, 0 };
 			cv::mixChannels(ui_mat, mask, fromto, 1);
