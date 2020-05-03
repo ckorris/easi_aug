@@ -189,14 +189,6 @@ int main(int argc, char **argv) {
 							cv::Point disttextpoint(gravpoint_ui.x - 20 - dotradius - disttextsize.width,
 								gravpoint_ui.y - 20 - dotradius);
 
-							//Rotate coords if we're rotating the screen. 
-							if (screenrot % 2 != 0)
-							{
-								float oldx = disttextpoint.x;
-								disttextpoint.x = disttextpoint.y;
-								disttextpoint.y = oldx;
-							}
-
 							cv::putText(ui_mat, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 						}
 						if (Config::toggleTravelTime())
@@ -210,15 +202,6 @@ int main(int argc, char **argv) {
 							cv::Point timetextpoint(gravpoint_ui.x + 20 + dotradius,
 								gravpoint_ui.y - 20 - dotradius);
 
-
-
-							//Rotate coords if we're rotating the screen. 
-							if (screenrot % 2 != 0)
-							{
-								float oldx = timetextpoint.x;
-								timetextpoint.x = timetextpoint.y;
-								timetextpoint.y = oldx;
-							}
 
 							cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 						}
@@ -263,16 +246,19 @@ int main(int argc, char **argv) {
 			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
 
 			//Rotate the image. 
-			cv::Mat finalmat;
-			finalmat = imageHelper.RotateImageToConfig(image_ocv);
+			cv::Mat finalimagemat;
+			finalimagemat = imageHelper.RotateImageToConfig(image_ocv);
 			
+			//Rotate the UI image. 
+			cv::Mat finaluimat = imageHelper.RotateUIToConfig(ui_mat);
+
 			//Add the UI image to it. 
 			//TODO: We don't rotate the Ui image yet so will break if rotated anything but 0° or 180°.
-			cv::Mat mask(cv::Size(ui_mat.cols, ui_mat.rows), CV_8UC1);
+			cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
 			int fromto[] = { 3, 0 };
-			cv::mixChannels(ui_mat, mask, fromto, 1);
-			cv::subtract(finalmat, cv::Scalar(255, 255, 255, 255), finalmat, mask);
-			cv::add(finalmat, ui_mat, finalmat, mask);
+			cv::mixChannels(finaluimat, mask, fromto, 1);
+			cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
+			cv::add(finalimagemat, finaluimat, finalimagemat, mask);
 			
 
 			//finalmat = finalmat + ui_mat;
@@ -280,7 +266,7 @@ int main(int argc, char **argv) {
 
 			//cv::imshow("EasiAug", image_ocv);
 			//cv::imshow("EasiAug", rotated);
-			cv::imshow("EasiAug", finalmat);
+			cv::imshow("EasiAug", finalimagemat);
 			//cv::imshow("EasiAug", finalmat);
 
 			//Input.

@@ -11,10 +11,11 @@ class ImageHelper
 public:
 	ImageHelper(sl::Camera *zedref);
 
-	///Retrieves how much the camera image was scaled on each axis to make it fill the screen after being rotated. 
-	float GetRotationScale();
+
 
 	cv::Mat RotateImageToConfig(cv::Mat unrotatedmat);
+
+	cv::Mat RotateUIToConfig(cv::Mat uimat);
 
 	///Converts a screen space point relative to the ZED image to where it should be placed in the UI
 	///to appear in the same place once the camera and UI rotations are finished. 
@@ -24,4 +25,6 @@ public:
 private:
 	sl::Camera* zed;
 
+	///Retrieves how much the camera image was scaled on each axis to make it fill the screen after being rotated. 
+	float GetRotationScale();
 };
