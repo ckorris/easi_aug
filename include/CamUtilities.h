@@ -3,7 +3,6 @@
 #include <sl/Camera.hpp>
 #include <opencv2/opencv.hpp>
 
-
 using namespace sl;
 using namespace std;
 

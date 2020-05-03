@@ -33,6 +33,7 @@
 #include <Simulation.h>
 #include <Config.h>
 #include <Drawables.h>
+#include <ImageHelper.h>
 
 using namespace std;
 using namespace sl;
@@ -64,8 +65,6 @@ int main(int argc, char **argv) {
 		return -1;
 	}
 
-	// Display help in console
-	//printHelp();
 
 	// Set runtime parameters after opening the camera
 	RuntimeParameters runtime_parameters;
@@ -74,8 +73,6 @@ int main(int argc, char **argv) {
 
 	// Prepare new image size to retrieve half-resolution images
 	Resolution image_size = zed.getCameraInformation().camera_configuration.resolution;
-
-
 
 	int new_width = image_size.width;
 	int new_height = image_size.height;
@@ -106,6 +103,8 @@ int main(int argc, char **argv) {
 	Simulation sim(&zed, startposition);*/
 
 	Simulation sim(&zed);
+
+	ImageHelper imageHelper(&zed);
 
 	SensorsData sensorData;
 
@@ -214,6 +213,13 @@ int main(int argc, char **argv) {
 
 						cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 					}
+
+					//TEST: Draw shape on crosshair to test ImageHelper::RawImagePointToRotated(). 
+					cv::Point rotpoint = imageHelper.RawImagePointToRotated(cv::Point(collisionpoint_grav.x, collisionpoint_grav.y));
+					cv::circle(ui_mat, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 255, 0, 255), 2);
+					cv::circle(ui_mat, rotpoint, dotradius, cv::Scalar(255, 0, 0, 255), 3);
+					cv::circle(ui_mat, cv::Point(ui_mat.cols / 2, ui_mat.rows / 2), dotradius, cv::Scalar(255, 0, 255, 255), -1);
+					//cout << "CollPoint: " << cv::Point(collisionpoint_grav.x, collisionpoint_grav.y) << " Rotpoint: " << rotpoint << endl;
 				}
 				else
 				{
@@ -249,6 +255,9 @@ int main(int argc, char **argv) {
 
 			//Try rotating the image. 
 			cv::Mat finalmat;
+
+			//Moving to ImageHelper.
+			/*
 			int imagerotamount = Config::imageRotation();
 			if (imagerotamount > 0)
 			{
@@ -289,7 +298,8 @@ int main(int argc, char **argv) {
 
 				//finalmat = image_ocv;
 			}
-
+			*/
+			finalmat = imageHelper.RotateImageToConfig(image_ocv);
 			
 			cv::Mat mask(cv::Size(ui_mat.cols, ui_mat.rows), CV_8UC1);
 			int fromto[] = { 3, 0 };
@@ -367,13 +377,4 @@ int slMatType2cvMatType(sl::MAT_TYPE sltype)
 	return cv_type;
 }
 
-/**
-* This function displays help in console
-**/
-void printHelp() {
-	cout << " Press 's' to save Side by side images" << endl;
-	cout << " Press 'p' to save Point Cloud" << endl;
-	cout << " Press 'd' to save Depth image" << endl;
-	cout << " Press 'm' to switch Point Cloud format" << endl;
-	cout << " Press 'n' to switch Depth format" << endl;
-}
+
