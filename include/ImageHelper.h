@@ -19,8 +19,9 @@ public:
 
 	///Converts a screen space point relative to the ZED image to where it should be placed in the UI
 	///to appear in the same place once the camera and UI rotations are finished. 
-	cv::Point RawImagePointToRotated(cv::Point inpoint);
+	cv::Point RawImagePointToRotated(cv::Point inpoint, bool scale = true);
 
+	int2 ScreenTouchToUIPoint(int x, int y);
 
 private:
 	sl::Camera* zed;

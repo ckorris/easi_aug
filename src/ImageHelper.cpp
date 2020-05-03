@@ -35,7 +35,7 @@ cv::Mat ImageHelper::RotateImageToConfig(cv::Mat unrotatedmat)
 {
 	int imagerotamount = Config::imageRotation();
 
-	if (imagerotamount == 0) 
+	if (imagerotamount == 0)
 	{
 		return unrotatedmat; //It doesn't need to be rotated. Don't change anything. 
 	}
@@ -87,7 +87,7 @@ cv::Mat ImageHelper::RotateUIToConfig(cv::Mat uimat)
 	cv::Mat rotatedmat(cv::Size(zedres.width, zedres.height), CV_8UC4);
 
 	cv::Point2d centerpoint;
-	
+
 	if (screenrotamount == 1)
 	{
 		centerpoint = cv::Point2d(zedres.width / 2.0, zedres.width / 2.0);
@@ -100,7 +100,7 @@ cv::Mat ImageHelper::RotateUIToConfig(cv::Mat uimat)
 	{
 		centerpoint = cv::Point2d(zedres.height / 2.0, zedres.height / 2.0);
 	}
-	
+
 	float rotangle = screenrotamount * 90.0;
 	cv::Mat screenrotmatrix = cv::getRotationMatrix2D(centerpoint, -rotangle, 1); //No need for scale, as the UI was built with res in mind. 
 	cv::warpAffine(uimat, rotatedmat, screenrotmatrix, rotatedmat.size());
@@ -111,10 +111,10 @@ cv::Mat ImageHelper::RotateUIToConfig(cv::Mat uimat)
 
 ///Converts a screen space point relative to the ZED image to where it should be placed in the UI
 ///to appear in the same place once the camera and UI rotations are finished. 
-cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint)
+cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint, bool scale )
 {
 	int imagerotamount = Config::imageRotation();
-	
+
 	sl::Resolution zedres = zed->getCameraInformation().camera_configuration.resolution;
 	float zedwidth = zedres.width; //Shorthand.
 	float zedheight = zedres.height; //Shorthand. 
@@ -128,7 +128,7 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint)
 	}
 	else
 	{
-		
+
 		float halfwidth = zedwidth / 2; //Shorthand.
 		float halfheight = zedheight / 2; //Shorthand.
 
@@ -139,7 +139,8 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint)
 		float xscaleddist;
 		float yscaleddist;
 		float scalefactor = GetRotationScale();
-		if (scalefactor == 1.0)
+
+		if (scale == false || scalefactor == 1.0)
 		{
 			xscaleddist = xdistfromcenter;
 			yscaleddist = ydistfromcenter;
@@ -181,7 +182,7 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint)
 
 	//Now rotate to account for the final UI position. 
 	int screenrotamount = Config::screenRotation();
-	
+
 	if (screenrotamount == 0)
 	{
 		return rotscreenpoint;
@@ -214,8 +215,38 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint)
 		return rotuipoint;
 	}
 
+}
 
-	//For now just return that. Gotta validate the above code before moving to UI. 
-	//return rotscreenpoint;
+int2 ImageHelper::ScreenTouchToUIPoint(int x, int y)
+{
+	int screenrotamount = Config::screenRotation();
+	int2 returnint;
+	if (screenrotamount == 0)
+	{
+		returnint.x = x;
+		returnint.y = y;
+		return returnint;
+	}
+	else
+	{
+		sl::Resolution zedres = zed->getCameraInformation().camera_configuration.resolution;
+		float zedwidth = zedres.width; //Shorthand.
+		float zedheight = zedres.height; //Shorthand.
 
+		if (screenrotamount == 1)
+		{
+			returnint.x = y;
+			returnint.y = zedwidth - x;
+		}
+		else if (screenrotamount == 2)
+		{
+			returnint.x = zedwidth - x;
+			returnint.y = zedheight - y;
+		}
+		else if (screenrotamount == 3)
+		{
+			returnint.x = zedheight - y;
+			returnint.y = x;
+		}
+	}
 }

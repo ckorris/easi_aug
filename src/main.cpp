@@ -40,7 +40,8 @@ using namespace sl;
 
 cv::Mat slMat2cvMat(Mat& input);
 int slMatType2cvMatType(sl::MAT_TYPE sltype);
-void printHelp();
+
+//ImageHelper imageHelper;
 
 void ClickCallback(int event, int x, int y, int flags, void* userdata); //Forward declaration. 
 
@@ -228,21 +229,7 @@ int main(int argc, char **argv) {
 
 			cv::Rect panelrect;
 			panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
-			/*if (scale == 1)
-			{
-				panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
-			}
-			else
-			{
-				
-				int scaledwidth = image_ocv.rows / scale;
-				int leftoffset = image_ocv.cols / 2.0 - scaledwidth / 2.0;
-				
-				//int leftoffset = image_ocv.cols / 2 - image_ocv.rows / 2;
-
-				panelrect = cv::Rect(leftoffset + 1, 1, scaledwidth - 2, image_ocv.rows * 0.15 - 2);
-			}*/
-			//panel.ProcessUI(panelrect, image_ocv, "EasiAug");
+			
 			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
 
 			//Rotate the image. 
@@ -270,7 +257,7 @@ int main(int argc, char **argv) {
 			//cv::imshow("EasiAug", finalmat);
 
 			//Input.
-			cv::setMouseCallback("EasiAug", ClickCallback);
+			cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);
 
 
 			// Handle key event
@@ -281,12 +268,18 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
+//void ClickCallback(int event, int x, int y, int flags, void* userdata)
 void ClickCallback(int event, int x, int y, int flags, void* userdata)
 {
 	if (event == CV_EVENT_LBUTTONDOWN)
 	{
 		//Clickable::ProcessAllClicks(x, y);
-		panel.ProcessAllClicks(x, y);
+		ImageHelper *imageHelper = static_cast<ImageHelper*>(userdata);
+		int2 rotateduipoints = imageHelper->ScreenTouchToUIPoint(x, y);
+		//int2 rotateduipoints = int2(x, y);
+
+		panel.ProcessAllClicks(rotateduipoints.x, rotateduipoints.y);
+		//panel.ProcessAllClicks(x, y);
 	}
 }
 
