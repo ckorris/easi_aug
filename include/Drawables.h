@@ -15,7 +15,7 @@ public:
 	void Enable();
 	void Disable();
 
-	void ProcessAllClicks(int x, int y);
+	virtual void ProcessAllClicks(int x, int y);
 	vector < unique_ptr<Drawable>> children;
 protected:
 
@@ -148,12 +148,17 @@ protected:
 
 
 
+//////////Menus////////// 
+
+
+
 class Sidebar : public Drawable
 {
 public:
 	Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 	void ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname) override;
+	void ProcessAllClicks(int x, int y) override;
 
 	bool CheckSelected(int index);
 	void SelectDrawable(int index);
@@ -161,7 +166,7 @@ public:
 private:
 	cv::Rect openPanelRect;
 	vector<unique_ptr<Drawable>> menus;
-	int selectedIndex = 1;
+	int selectedIndex = 2;
 	//Drawable selectedDrawable;
 
 	//CalibrationMenu calibMenu;
@@ -186,6 +191,33 @@ class ProjectileMenu : public Drawable
 {
 public:
 	ProjectileMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+
+protected:
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+};
+
+class DisplayMenu : public Drawable
+{
+public:
+	DisplayMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+
+protected:
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+};
+
+class EnvironmentMenu : public Drawable
+{
+public:
+	EnvironmentMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+
+protected:
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+};
+
+class StatsMenu : public Drawable
+{
+public:
+	StatsMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 protected:
 	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;

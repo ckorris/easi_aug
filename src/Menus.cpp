@@ -15,6 +15,7 @@ Sidebar::Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, flo
 	//Calibration menu.
 	menus.emplace_back(new CalibrationMenu(0, 1, 0, 1));
 	menus.emplace_back(new ProjectileMenu(0, 1, 0, 1));
+	menus.emplace_back(new DisplayMenu(0, 1, 0, 1));
 
 
 	//Buttons. For now, no images, just indexes.
@@ -33,6 +34,7 @@ Sidebar::Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, flo
 
 	Drawable::children.emplace_back(new SidebarButton(0, this, 0.0, 1.0, 0.0, 0.2));
 	Drawable::children.emplace_back(new SidebarButton(1, this, 0.0, 1.0, 0.2, 0.4));
+	Drawable::children.emplace_back(new SidebarButton(2, this, 0.0, 1.0, 0.4, 0.6));
 
 
 
@@ -48,6 +50,18 @@ void Sidebar::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
 		menus[selectedIndex]->ProcessUI(openPanelRect, drawto, windowname);
 	}
 	
+}
+
+void Sidebar::ProcessAllClicks(int x, int y)
+{
+	Drawable::ProcessAllClicks(x, y); //Base.
+
+	//Process the clicks for only the enabled menu. 
+	if (selectedIndex >= 0 && selectedIndex < menus.size())
+	{
+		menus[selectedIndex]->ProcessAllClicks(x, y);
+	}
+
 }
 
 bool Sidebar::ReturnTrue()
@@ -108,6 +122,8 @@ void CalibrationMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 	//Don't do anything special. Should draw all of the above automatically. 
 }
 
+
+
 ProjectileMenu::ProjectileMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
@@ -129,6 +145,48 @@ ProjectileMenu::ProjectileMenu(float anchorxmin, float anchorxmax, float anchory
 }
 
 void ProjectileMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//Don't do anything special. Should draw all of the above automatically. 
+}
+
+
+DisplayMenu::DisplayMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	//Draw toggles. 
+	//Toggle laser crosshair.
+	bool(*drawLaserCrosshairGetter)() = []() { return Config::toggleLaserCrosshair(); };
+	void(*drawLaserCrosshairSetter)(bool) = [](bool b) { Config::toggleLaserCrosshair(b); };
+	Drawable::children.emplace_back(new Label("L-XHR:", 0.0, 0.125, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawLaserCrosshairGetter, drawLaserCrosshairSetter, 0.125, 0.25, 0.5, 1));
+	//Toggle gravity crosshair.
+	bool(*drawGravityCrosshairGetter)() = []() { return Config::toggleGravityCrosshair(); };
+	void(*drawGravityCrosshairSetter)(bool) = [](bool b) { Config::toggleGravityCrosshair(b); };
+	Drawable::children.emplace_back(new Label("G-XHR:", 0.0, 0.125, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(drawGravityCrosshairGetter, drawGravityCrosshairSetter, 0.125, 0.25, 0.5, 1));
+	//Toggle laser path.
+	bool(*drawLaserPathGetter)() = []() { return Config::toggleLaserPath(); };
+	void(*drawLaserPathSetter)(bool) = [](bool b) { Config::toggleLaserPath(b); };
+	Drawable::children.emplace_back(new Label("L-PTH:", 0.25, 0.375, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawLaserPathGetter, drawLaserPathSetter, 0.375, 0.5, 0, 0.5));
+	//Toggle gravity path.q
+	bool(*drawGravityPathGetter)() = []() { return Config::toggleGravityPath(); };
+	void(*drawGravityPathSetter)(bool) = [](bool b) { Config::toggleGravityPath(b); };
+	Drawable::children.emplace_back(new Label("G-PTH:", 0.25, 0.375, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(drawGravityPathGetter, drawGravityPathSetter, 0.375, 0.5, 0.5, 1));
+	//Toggle distance.
+	bool(*drawDistanceGetter)() = []() { return Config::toggleDistance(); };
+	void(*drawDistanceSetter)(bool) = [](bool b) { Config::toggleDistance(b); };
+	Drawable::children.emplace_back(new Label("DIST:", 0.5, 0.625, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawDistanceGetter, drawDistanceSetter, 0.625, 0.75, 0, 0.5));
+	//Toggle travel time.
+	bool(*travelTimeGetter)() = []() { return Config::toggleTravelTime(); };
+	void(*travelTimeSetter)(bool) = [](bool b) { Config::toggleTravelTime(b); };
+	Drawable::children.emplace_back(new Label("TIME:", 0.5, 0.625, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(travelTimeGetter, travelTimeSetter, 0.625, 0.75, 0.5, 1));
+}
+
+void DisplayMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
 	//Don't do anything special. Should draw all of the above automatically. 
 }
