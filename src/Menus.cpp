@@ -1,0 +1,134 @@
+//#include <Menus.h>
+#include <Drawables.h>
+#include <Config.h>
+
+
+
+
+Sidebar::Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	openPanelRect = openpanelrect;
+	//calibMenu = CalibrationMenu(0, 1, 0, 1);
+	//projMenu = ProjectileMenu(0, 1, 0, 1);
+
+	//Calibration menu.
+	menus.emplace_back(new CalibrationMenu(0, 1, 0, 1));
+	menus.emplace_back(new ProjectileMenu(0, 1, 0, 1));
+
+
+	//Buttons. For now, no images, just indexes.
+	//bool(*checkselected)(int) = [this](int i) { return i == selectedIndex; };
+	//auto checkselected = [this](int i) { return i == selectedIndex; };
+	//bool (*checkselected)(int index);
+	//checkselected = this->CheckSelected;
+
+	//bool(*checkselected)() = []() { return true; };
+	bool(Sidebar::*checkselected)(int index);
+	checkselected = &Sidebar::CheckSelected;
+
+	//auto setselected = [this](int i) { SelectDrawable(i); };
+	//void(*setselected)(int index);
+	//setselected = this->SelectDrawable;
+
+	Drawable::children.emplace_back(new SidebarButton(0, this, 0.0, 1.0, 0.0, 0.2));
+	Drawable::children.emplace_back(new SidebarButton(1, this, 0.0, 1.0, 0.2, 0.4));
+
+
+
+}
+
+void Sidebar::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
+{
+	Drawable::ProcessUI(parentrect, drawto, windowname); //Base. 
+	
+	//Process the UI for only the enabled menu.
+	if (selectedIndex >= 0 && selectedIndex < menus.size())
+	{ 
+		menus[selectedIndex]->ProcessUI(openPanelRect, drawto, windowname);
+	}
+	
+}
+
+bool Sidebar::ReturnTrue()
+{
+	return true;
+}
+
+bool Sidebar::CheckSelected(int index)
+{
+	return index == selectedIndex;
+}
+
+void Sidebar::SelectDrawable(int index)
+{
+	//TODO: More. 
+	selectedIndex = index;
+}
+
+
+
+
+
+
+CalibrationMenu::CalibrationMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	//Cam pos arrows.
+	//X pos.
+	float(*camXPosGetter)() = []() {return Config::camXPos(); };
+	void(*camXPosSetter)(float) = [](float v) {Config::camXPos(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXPosGetter, camXPosSetter, 0.01, 0.05, "X: ", cv::Scalar(0, 255, 0, 1), 0.0, 0.17, 0, 1));
+	//Y pos.
+	float(*camYPosGetter)() = []() {return Config::camYPos(); };
+	void(*camYPosSetter)(float) = [](float v) {Config::camYPos(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYPosGetter, camYPosSetter, 0.01, 0.05, "Y: ", cv::Scalar(0, 0, 255, 1), 0.17, 0.34, 0, 1));
+	//Z pos.
+	float(*camZPosGetter)() = []() {return Config::camZPos(); };
+	void(*camZPosSetter)(float) = [](float v) {Config::camZPos(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZPosGetter, camZPosSetter, 0.01, 0.05, "Z: ", cv::Scalar(255, 0, 0, 1), 0.34, 0.5, 0, 1));
+
+	//Cam rot arrows.
+	//X rot. 
+	float(*camXRotGetter)() = []() {return Config::camXRot(); };
+	void(*camXRotSetter)(float) = [](float v) {Config::camXRot(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXRotGetter, camXRotSetter, 0.1, 2, "rX: ", cv::Scalar(0, 255, 0, 1), 0.5, 0.67, 0, 1));
+	//Y rot. 
+	float(*camYRotGetter)() = []() {return Config::camYRot(); };
+	void(*camYRotSetter)(float) = [](float v) {Config::camYRot(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYRotGetter, camYRotSetter, 0.1, 2, "rY: ", cv::Scalar(0, 0, 255, 1), 0.67, 0.84, 0, 1));
+	//Z rot. 
+	float(*camZRotGetter)() = []() {return Config::camZRot(); };
+	void(*camZRotSetter)(float) = [](float v) {Config::camZRot(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZRotGetter, camZRotSetter, 0.1, 2, "rZ: ", cv::Scalar(255, 0, 0, 1), 0.84, 1, 0, 1));
+}
+
+void CalibrationMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//Don't do anything special. Should draw all of the above automatically. 
+}
+
+ProjectileMenu::ProjectileMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	//Speed arrows.
+	float(*speedgetter)() = []() {return Config::forwardSpeedMPS(); };
+	void(*speedsetter)(float) = [](float v) {Config::forwardSpeedMPS(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, 1, 5, "FPS: ", cv::Scalar(0, 0, 255, 1), 0, 0.33, 0, 1));
+
+	//Hop-up arrows.
+	float(*hopupgetter)() = []() {return Config::hopUpRPM(); };
+	void(*hopupsetter)(float) = [](float v) {Config::hopUpRPM(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 1000, 10000, "HOP: ", cv::Scalar(0, 0, 255, 1), 0.33, 0.67, 0, 1));
+
+	//Mass arrows.
+	float(*massgetter)() = []() {return Config::bbMassGrams(); };
+	void(*masssetter)(float) = [](float v) {Config::bbMassGrams(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(massgetter, masssetter, 0.01, 0.1, "MASS: ", cv::Scalar(0, 0, 255, 1), 0.67, 1, 0, 1));
+
+}
+
+void ProjectileMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//Don't do anything special. Should draw all of the above automatically. 
+}

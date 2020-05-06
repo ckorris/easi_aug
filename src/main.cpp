@@ -1,32 +1,5 @@
-///////////////////////////////////////////////////////////////////////////
-//
-// Copyright (c) 2020, STEREOLABS.
-//
-// All rights reserved.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-// "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-// LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-// A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-// OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-// SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-// LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-// THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-///////////////////////////////////////////////////////////////////////////
-
-/***********************************************************************************************
- ** This sample demonstrates how to use the ZED SDK with OpenCV. 					  	      **
- ** Depth and images are captured with the ZED SDK, converted to OpenCV format and displayed. **
- ***********************************************************************************************/
-
- // ZED includes
 #include <sl/Camera.hpp>
 
-// OpenCV includes
 #include <opencv2/opencv.hpp>
 
 #include <CamUtilities.h>
@@ -34,6 +7,7 @@
 #include <Config.h>
 #include <Drawables.h>
 #include <ImageHelper.h>
+#include <Menus.h>
 
 using namespace std;
 using namespace sl;
@@ -45,7 +19,9 @@ int slMatType2cvMatType(sl::MAT_TYPE sltype);
 
 void ClickCallback(int event, int x, int y, int flags, void* userdata); //Forward declaration. 
 
-EmptyPanel panel(0, 1, 0, 1);
+//cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
+cv::Rect menurect(50, 0, 450, 180);
+Sidebar panel(menurect, 0, 1, 0, 1);
 
 int main(int argc, char **argv) {
 
@@ -149,6 +125,12 @@ int main(int argc, char **argv) {
 					Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0, 1));
 				if (collided && Config::toggleLaserCrosshair())
 				{
+					float dotradius = 30 / collisiondepth_nograv;
+					if (dotradius <= 0)
+					{
+						cout << "Dotradius was less than zero: " << dotradius << " Depth: " << collisiondepth_nograv << endl;
+						dotradius = 2.0;
+					}
 					//cout << "Collided at " << collisionpoint_nograv.x << ", " << collisionpoint_nograv.y << endl;
 					cv::circle(image_ocv, cv::Point(collisionpoint_nograv.x, collisionpoint_nograv.y), 30 / collisiondepth_nograv, cv::Scalar(0, 255.0, 0), -1);
 				}
@@ -169,6 +151,11 @@ int main(int argc, char **argv) {
 				if (collided && Config::toggleGravityCrosshair())
 				{
 					float dotradius = 30 / collisiondepth_grav;
+					if (dotradius <= 0)
+					{
+						cout << "Dotradius was less than zero: " << dotradius << " Depth: " << collisiondepth_grav << endl;
+						dotradius = 2.0;
+					}
 
 					//cout << "Collided at " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
 					cv::circle(image_ocv, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 0, 255.0, 1), -1);
@@ -228,7 +215,8 @@ int main(int argc, char **argv) {
 			//cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
 			cv::Rect panelrect;
-			panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
+			//panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
+			panelrect = cv::Rect(0, 0, 50, 250);
 			
 			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
 

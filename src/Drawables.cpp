@@ -1,5 +1,6 @@
 #include <Drawables.h>
 #include <Config.h>
+//#include <Menus.h>
 
 using namespace std;
 
@@ -339,4 +340,50 @@ void ToggleButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 			cv::Point(screenBounds.x + screenBounds.width - marginwidth, screenBounds.y + marginwidth),
 			cv::Scalar(255, 255, 255, 1), 3);
 	}
+}
+
+
+SidebarButton::SidebarButton(int index, Sidebar* sidebar,
+	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	menuIndex = index;
+	parentSidebar = sidebar;
+	//checkSelected = checkselected;
+	//onSelected = onselected;
+}
+
+void SidebarButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	bool selected = parentSidebar->CheckSelected(menuIndex);
+	//bool selected = checkSelected(menuIndex);
+	//bool selected = true;
+	if (!selected) 
+	{
+		//Draw a light rectangle with lighter shading on top and left to show it sticking out. 
+		cv::rectangle(drawto, screenBounds, cv::Scalar(200, 200, 200, 255), -1);
+		cv::line(drawto, cv::Point(screenBounds.x, screenBounds.y), cv::Point(screenBounds.x + screenBounds.width, screenBounds.y),
+			cv::Scalar(220, 220, 220, 255), 1);
+		cv::line(drawto, cv::Point(screenBounds.x, screenBounds.y), cv::Point(screenBounds.x, screenBounds.y + screenBounds.height),
+			cv::Scalar(210, 210, 210, 255), 1);
+	}
+	else
+	{
+		//Draw a dark rectangle with darker shading on bottom and right to show it sticking in. 
+		cv::rectangle(drawto, screenBounds, cv::Scalar(120, 120, 120, 255), -1);
+		cv::line(drawto, cv::Point(screenBounds.x, screenBounds.y + screenBounds.height), 
+			cv::Point(screenBounds.x + screenBounds.width, screenBounds.y + screenBounds.height),
+			cv::Scalar(80, 80, 80, 255), 1);
+		cv::line(drawto, cv::Point(screenBounds.x + screenBounds.width, screenBounds.y), 
+			cv::Point(screenBounds.x + screenBounds.width, screenBounds.y + screenBounds.height),
+			cv::Scalar(120, 120, 120, 255), 1);
+	}
+
+	//TODO: Draw an image on top that's specified in the constructor. 
+}
+
+void SidebarButton::OnClicked()
+{
+	//onSelected(menuIndex);
+	parentSidebar->SelectDrawable(menuIndex);
 }

@@ -134,9 +134,6 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 			float speedps = sqrt(pow(velocityps.x, 2) + pow(velocityps.y, 2) + pow(velocityps.z, 2));
 			sl::float3 velocitynorm = velocityps / speedps;
 
-
-
-
 			//Gravity. Simplest first. 
 			velocityps += gravitynormal * downspeedaddpersample;
 
@@ -205,7 +202,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 		float zeddepth;
 		depthmat.getValue(screenpos.x, screenpos.y, &zeddepth);
 
-		bool hit = pointdepth > zeddepth; //ZED actually reports positive depth. Who woulda thinkitt? 
+		bool hit = zeddepth > 0.0 && pointdepth > zeddepth; //ZED actually reports positive depth. Who woulda thinkitt? 
 		if (hit)
 		{
 			//collisionpoint = &lastvalidpoint;
