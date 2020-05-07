@@ -351,6 +351,30 @@ SidebarButton::SidebarButton(int index, Sidebar* sidebar,
 	parentSidebar = sidebar;
 	//checkSelected = checkselected;
 	//onSelected = onselected;
+
+	//Temp - will be passed reference later. 
+	cv::Mat rawicon = cv::imread("../images/calib_icon.png", -1);
+	if (rawicon.empty())
+	{
+		cout << "Couldn't find image." << endl;
+	}
+
+	icon = cv::Mat(rawicon.rows, rawicon.cols, CV_8UC4);
+	icon.setTo(cv::Scalar(0, 0, 0, 255));
+	int fromto[]{ 0, 0, 1, 1, 2, 2};
+	cv::mixChannels(rawicon, icon, fromto, 3);
+
+	
+	//Alpha mask. 
+	alphamask = cv::Mat(icon.rows, icon.cols, CV_8UC1);
+	int alphafromto[]{ 3, 0 };
+	cv::mixChannels(rawicon, alphamask, alphafromto, 1);
+	
+
+	rawicon.release();
+	//rawicon.empty();
+
+
 }
 
 void SidebarButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -379,7 +403,19 @@ void SidebarButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 			cv::Scalar(120, 120, 120, 255), 1);
 	}
 
-	//TODO: Draw an image on top that's specified in the constructor. 
+	//Test draw image on button. 
+	cv::Rect iconrect = cv::Rect(screenBounds.x + 4, screenBounds.y + 4, screenBounds.width - 8, screenBounds.height - 8);
+	if (icon.cols != iconrect.width || icon.rows != iconrect.height)
+	{
+		cv::Size newsize(screenBounds.width - 8, screenBounds.height - 8);
+		cv::resize(icon, icon, newsize);
+		cv::resize(alphamask, alphamask, newsize);
+	}
+	//cv::Rect iconrect = cv::Rect(screenBounds.x + 4, screenBounds.y + 4, screenBounds.width - 8, screenBounds.height - 8);
+	cv::Mat imageroi = drawto(iconrect);
+	cv::bitwise_and(icon, icon, imageroi, alphamask);
+	//imageroi.release();
+
 }
 
 void SidebarButton::OnClicked()

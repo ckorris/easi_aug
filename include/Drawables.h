@@ -144,6 +144,9 @@ protected:
 	Sidebar* parentSidebar;
 	//bool(Sidebar::*checkSelected)(int);
 	//void(*onSelected)(int);
+
+	cv::Mat icon;
+	cv::Mat alphamask;
 };
 
 

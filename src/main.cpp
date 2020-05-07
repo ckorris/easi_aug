@@ -85,6 +85,14 @@ int main(int argc, char **argv) {
 
 	SensorsData sensorData;
 
+	//Test image.
+	cv::Mat testimage = cv::imread("../images/calib_icon.bmp");
+	if (testimage.empty())
+	{
+		cout << "Couldn't find image." << endl;
+	}
+
+
 	// Loop until 'q' is pressed
 	char key = ' ';
 	while (key != 'q') {
@@ -235,14 +243,38 @@ int main(int argc, char **argv) {
 			cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
 			cv::add(finalimagemat, finaluimat, finalimagemat, mask);
 			
+			/*
+			//TEST add loaded image to the output. 
+			cv::Rect roi(0, 0, testimage.cols, testimage.rows);
+			cv::Mat outmat(finalimagemat.rows, finalimagemat.cols, CV_8UC4);
+			outmat.setTo(cv::Scalar(0, 255, 0, 255));
+			cv::Mat test(testimage.rows, testimage.cols, CV_8UC4);
+
+			cv::Mat finalroi = finalimagemat(roi);
+			test.copyTo(finalroi);
+			
+			int threechannel[] = { 0, 0, 1, 1, 2, 2 };
+			cv::mixChannels(testimage, test, threechannel, 3);
+			*/
+
+
+			//test.setTo(cv::Scalar(255, 0, 0, 255));
+			//cv::add(outmat(roi), test, outmat);
+			//finalimagemat(roi) = outmat;
+			//outmat = finalimagemat + test;
+			//cv::mixChannels()
+
+			cv::imshow("EasiAug", finalimagemat);
+
 
 			//finalmat = finalmat + ui_mat;
 
 
 			//cv::imshow("EasiAug", image_ocv);
 			//cv::imshow("EasiAug", rotated);
-			cv::imshow("EasiAug", finalimagemat);
-			//cv::imshow("EasiAug", finalmat);
+			//cv::imshow("EasiAug", finalimagemat);
+
+			//cv::imshow("EasiAug", testimage);
 
 			//Input.
 			cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);
