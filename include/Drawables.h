@@ -15,7 +15,7 @@ public:
 	void Enable();
 	void Disable();
 
-	virtual void ProcessAllClicks(int x, int y);
+	virtual void ProcessAllClicks(int x, int y, bool isdown); 
 	vector < unique_ptr<Drawable>> children;
 protected:
 
@@ -40,7 +40,9 @@ protected:
 	cv::Rect screenBounds;
 	void UpdateRectBounds(cv::Rect bounds) { screenBounds = bounds; };
 
+
 	virtual void OnClicked();
+	virtual void OnClickReleased();
 };
 
 class EmptyPanel : public Drawable
@@ -102,7 +104,14 @@ public:
 
 protected:
 
+	void ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname) override;
 	void OnClicked() override;
+	void OnClickReleased() override;
+
+	bool isHeld = false;
+	float timeHeld = 0.0;
+	const float HOLD_DELAY = 0.5; //How long you need to hold the button before you start incrementing consistently.
+	const float HOLD_INCREMENT = 0.1; 
 
 	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
 
@@ -186,7 +195,7 @@ public:
 	Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 	void ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname) override;
-	void ProcessAllClicks(int x, int y) override;
+	void ProcessAllClicks(int x, int y, bool isdown) override;
 
 	bool CheckSelected(int index);
 	void SelectDrawable(int index);

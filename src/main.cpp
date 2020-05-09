@@ -265,14 +265,16 @@ int main(int argc, char **argv) {
 //void ClickCallback(int event, int x, int y, int flags, void* userdata)
 void ClickCallback(int event, int x, int y, int flags, void* userdata)
 {
-	if (event == CV_EVENT_LBUTTONDOWN)
+	if (event == CV_EVENT_LBUTTONDOWN || event == CV_EVENT_LBUTTONUP)
 	{
 		//Clickable::ProcessAllClicks(x, y);
 		ImageHelper *imageHelper = static_cast<ImageHelper*>(userdata);
 		int2 rotateduipoints = imageHelper->ScreenTouchToUIPoint(x, y);
 		//int2 rotateduipoints = int2(x, y);
 
-		panel.ProcessAllClicks(rotateduipoints.x, rotateduipoints.y);
+		bool isdown = event == CV_EVENT_LBUTTONDOWN; 
+
+		panel.ProcessAllClicks(rotateduipoints.x, rotateduipoints.y, isdown);
 		//panel.ProcessAllClicks(x, y);
 	}
 	

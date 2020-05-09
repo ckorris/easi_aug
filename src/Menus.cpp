@@ -59,14 +59,14 @@ void Sidebar::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
 	
 }
 
-void Sidebar::ProcessAllClicks(int x, int y)
+void Sidebar::ProcessAllClicks(int x, int y, bool isdown)
 {
-	Drawable::ProcessAllClicks(x, y); //Base.
+	Drawable::ProcessAllClicks(x, y, isdown); //Base.
 
 	//Process the clicks for only the enabled menu. 
 	if (selectedIndex >= 0 && selectedIndex < menus.size())
 	{
-		menus[selectedIndex]->ProcessAllClicks(x, y);
+		menus[selectedIndex]->ProcessAllClicks(x, y, isdown);
 	}
 
 }

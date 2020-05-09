@@ -1,5 +1,6 @@
 #include <Drawables.h>
 #include <Config.h>
+#include <TimeHelper.h>
 //#include <Menus.h>
 
 using namespace std;
@@ -88,16 +89,23 @@ void Drawable::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 	//cout << "Drawable Draw" << endl;
 }
 
-void Drawable::ProcessAllClicks(int x, int y)
+void Drawable::ProcessAllClicks(int x, int y, bool isdown)
 {
 	if (isEnabled == true && screenBounds.contains(cv::Point(x, y)))
 	{
-		OnClicked();
+		if (isdown == true)
+		{
+			OnClicked();
+		}
+		else
+		{
+			OnClickReleased();
+		}
 
 		for (int i = 0; i < Drawable::children.size(); i++)
 		{
 			//children[i].ProcessAllClicks(x, y);
-			Drawable::children[i]->ProcessAllClicks(x, y);
+			Drawable::children[i]->ProcessAllClicks(x, y, isdown);
 		}
 	}
 	
@@ -106,6 +114,11 @@ void Drawable::ProcessAllClicks(int x, int y)
 void Drawable::OnClicked()
 {
 	
+}
+
+void Drawable::OnClickReleased()
+{
+
 }
 
 
@@ -276,14 +289,39 @@ ArrowButton::ArrowButton(float (*getter)(), void(*setter)(float), float changeam
 	arrowColor = color;
 }
 
+void ArrowButton::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
+{
+	Drawable::ProcessUI(parentrect, drawto, windowname);
+
+	if (isHeld == true)
+	{
+		timeHeld += Time::deltaTime();
+		if (timeHeld - HOLD_DELAY >= HOLD_INCREMENT)
+		{
+			timeHeld = HOLD_DELAY + remainder(timeHeld - HOLD_DELAY, HOLD_INCREMENT);
+			OnClicked();
+		}
+	}
+}
+
 
 void ArrowButton::OnClicked()
 {
+	if (isHeld == false)
+	{
+		isHeld = true;
+		timeHeld = 0.0;
+	}
 
 	float val = this->settingGetter();
 	val += changeAmount;
 	this->settingSetter(val);
-	cout << "New setting: " << val << endl;
+	//cout << "New setting: " << val << endl;
+}
+
+void ArrowButton::OnClickReleased()
+{
+	isHeld = false;
 }
 
 void ArrowButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
