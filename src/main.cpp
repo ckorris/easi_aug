@@ -7,6 +7,7 @@
 #include <Config.h>
 #include <Drawables.h>
 #include <ImageHelper.h>
+#include <TimeHelper.h>
 //#include <Menus.h>
 
 using namespace std;
@@ -85,6 +86,9 @@ int main(int argc, char **argv) {
 	while (key != 'q') {
 
 		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) {
+
+			//Log a new frame in TimeHelper, so that we can accurately get deltaTime later. 
+			Time::LogNewFrame();
 
 			//Test sensors. 
 			//zed.getSensorsData(sensorData, TIME_REFERENCE::IMAGE);
@@ -271,6 +275,7 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 		panel.ProcessAllClicks(rotateduipoints.x, rotateduipoints.y);
 		//panel.ProcessAllClicks(x, y);
 	}
+	
 }
 
 /**
