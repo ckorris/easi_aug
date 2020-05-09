@@ -310,7 +310,7 @@ void ArrowButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 
 ToggleButton::ToggleButton(bool(*getter)(), void(*setter)(bool),
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
-	:Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+	: Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
 	settingGetter = getter;
 	settingSetter = setter;
@@ -347,18 +347,67 @@ void ToggleButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 	}
 }
 
+ImageButton::ImageButton(void(*onclick)(), string imagepath, cv::Scalar backgroundcolor, 
+	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	onClick = onclick;
+	backgroundColor = backgroundcolor;
 
+	cv::Mat rawicon = cv::imread(imagepath, -1);
+	if (rawicon.empty())
+	{
+		cout << "Couldn't find image." << endl;
+	}
+
+	icon = cv::Mat(rawicon.rows, rawicon.cols, CV_8UC4);
+	icon.setTo(cv::Scalar(0, 0, 0, 255));
+	int fromto[]{ 0, 0, 1, 1, 2, 2 };
+	cv::mixChannels(rawicon, icon, fromto, 3);
+
+	//Alpha mask. 
+	alphamask = cv::Mat(icon.rows, icon.cols, CV_8UC1);
+	int alphafromto[]{ 3, 0 };
+	cv::mixChannels(rawicon, alphamask, alphafromto, 1);
+
+	rawicon.release();
+}
+
+void ImageButton::OnClicked()
+{
+	onClick();
+}
+
+void ImageButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//Draw background rectangle. 
+	cv::rectangle(drawto, screenBounds, backgroundColor, -1);
+
+	//Draw outline rectangle.
+	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 0, 255), 1);
+
+	//Draw image on button. 
+	cv::Rect iconrect = cv::Rect(screenBounds.x + 4, screenBounds.y + 4, screenBounds.width - 8, screenBounds.height - 8);
+	if (icon.cols != iconrect.width || icon.rows != iconrect.height)
+	{
+		cv::Size newsize(screenBounds.width - 8, screenBounds.height - 8);
+		cv::resize(icon, icon, newsize);
+		cv::resize(alphamask, alphamask, newsize);
+	}
+	//cv::Rect iconrect = cv::Rect(screenBounds.x + 4, screenBounds.y + 4, screenBounds.width - 8, screenBounds.height - 8);
+	cv::Mat imageroi = drawto(iconrect);
+	cv::bitwise_and(icon, icon, imageroi, alphamask);
+}
+
+
+//TODO: Inherit from ImageButton? 
 SidebarButton::SidebarButton(int index, Sidebar* sidebar, string imagepath,
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
 	menuIndex = index;
 	parentSidebar = sidebar;
-	//checkSelected = checkselected;
-	//onSelected = onselected;
 
-	//Temp - will be passed reference later. 
-	//cv::Mat rawicon = cv::imread("../images/calib_icon.png", -1);
 	cv::Mat rawicon = cv::imread(imagepath, -1);
 	if (rawicon.empty())
 	{
@@ -370,17 +419,18 @@ SidebarButton::SidebarButton(int index, Sidebar* sidebar, string imagepath,
 	int fromto[]{ 0, 0, 1, 1, 2, 2};
 	cv::mixChannels(rawicon, icon, fromto, 3);
 
-	
 	//Alpha mask. 
 	alphamask = cv::Mat(icon.rows, icon.cols, CV_8UC1);
 	int alphafromto[]{ 3, 0 };
 	cv::mixChannels(rawicon, alphamask, alphafromto, 1);
 	
-
 	rawicon.release();
-	//rawicon.empty();
+}
 
-
+void SidebarButton::OnClicked()
+{
+	//onSelected(menuIndex);
+	parentSidebar->SelectDrawable(menuIndex);
 }
 
 void SidebarButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -409,7 +459,7 @@ void SidebarButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 			cv::Scalar(120, 120, 120, 255), 1);
 	}
 
-	//Test draw image on button. 
+	//Draw image on button. 
 	cv::Rect iconrect = cv::Rect(screenBounds.x + 4, screenBounds.y + 4, screenBounds.width - 8, screenBounds.height - 8);
 	if (icon.cols != iconrect.width || icon.rows != iconrect.height)
 	{
@@ -420,12 +470,7 @@ void SidebarButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 	//cv::Rect iconrect = cv::Rect(screenBounds.x + 4, screenBounds.y + 4, screenBounds.width - 8, screenBounds.height - 8);
 	cv::Mat imageroi = drawto(iconrect);
 	cv::bitwise_and(icon, icon, imageroi, alphamask);
-	//imageroi.release();
 
 }
 
-void SidebarButton::OnClicked()
-{
-	//onSelected(menuIndex);
-	parentSidebar->SelectDrawable(menuIndex);
-}
+

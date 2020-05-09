@@ -128,6 +128,29 @@ protected:
 	void(*settingSetter)(bool);
 };
 
+
+class ImageButton : public Drawable
+{
+public:
+	ImageButton(void(*onclick)(), string imagepath, cv::Scalar backgroundcolor,
+		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+
+protected:
+
+	void OnClicked() override;
+
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+
+	void(*onClick)();
+
+	cv::Scalar backgroundColor;
+
+	cv::Mat icon;
+	cv::Mat alphamask;
+};
+
+
+
 class Sidebar; //Forward delcaring so we can use in SidebarButton. 
 
 class SidebarButton : public Drawable

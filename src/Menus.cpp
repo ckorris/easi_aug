@@ -165,32 +165,41 @@ DisplayMenu::DisplayMenu(float anchorxmin, float anchorxmax, float anchorymin, f
 	bool(*drawLaserCrosshairGetter)() = []() { return Config::toggleLaserCrosshair(); };
 	void(*drawLaserCrosshairSetter)(bool) = [](bool b) { Config::toggleLaserCrosshair(b); };
 	Drawable::children.emplace_back(new Label("L-XHR:", 0.0, 0.125, 0, 0.5));
-	Drawable::children.emplace_back(new ToggleButton(drawLaserCrosshairGetter, drawLaserCrosshairSetter, 0.125, 0.25, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawLaserCrosshairGetter, drawLaserCrosshairSetter, 0.125, 0.25, 0.1, 0.4));
 	//Toggle gravity crosshair.
 	bool(*drawGravityCrosshairGetter)() = []() { return Config::toggleGravityCrosshair(); };
 	void(*drawGravityCrosshairSetter)(bool) = [](bool b) { Config::toggleGravityCrosshair(b); };
 	Drawable::children.emplace_back(new Label("G-XHR:", 0.0, 0.125, 0.5, 1));
-	Drawable::children.emplace_back(new ToggleButton(drawGravityCrosshairGetter, drawGravityCrosshairSetter, 0.125, 0.25, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(drawGravityCrosshairGetter, drawGravityCrosshairSetter, 0.125, 0.25, 0.6, 0.9));
 	//Toggle laser path.
 	bool(*drawLaserPathGetter)() = []() { return Config::toggleLaserPath(); };
 	void(*drawLaserPathSetter)(bool) = [](bool b) { Config::toggleLaserPath(b); };
 	Drawable::children.emplace_back(new Label("L-PTH:", 0.25, 0.375, 0, 0.5));
-	Drawable::children.emplace_back(new ToggleButton(drawLaserPathGetter, drawLaserPathSetter, 0.375, 0.5, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawLaserPathGetter, drawLaserPathSetter, 0.375, 0.5, 0.1, 0.4));
 	//Toggle gravity path.q
 	bool(*drawGravityPathGetter)() = []() { return Config::toggleGravityPath(); };
 	void(*drawGravityPathSetter)(bool) = [](bool b) { Config::toggleGravityPath(b); };
 	Drawable::children.emplace_back(new Label("G-PTH:", 0.25, 0.375, 0.5, 1));
-	Drawable::children.emplace_back(new ToggleButton(drawGravityPathGetter, drawGravityPathSetter, 0.375, 0.5, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(drawGravityPathGetter, drawGravityPathSetter, 0.375, 0.5, 0.6, 0.9));
 	//Toggle distance.
 	bool(*drawDistanceGetter)() = []() { return Config::toggleDistance(); };
 	void(*drawDistanceSetter)(bool) = [](bool b) { Config::toggleDistance(b); };
 	Drawable::children.emplace_back(new Label("DIST:", 0.5, 0.625, 0, 0.5));
-	Drawable::children.emplace_back(new ToggleButton(drawDistanceGetter, drawDistanceSetter, 0.625, 0.75, 0, 0.5));
+	Drawable::children.emplace_back(new ToggleButton(drawDistanceGetter, drawDistanceSetter, 0.625, 0.75, 0.1, 0.4));
 	//Toggle travel time.
 	bool(*travelTimeGetter)() = []() { return Config::toggleTravelTime(); };
 	void(*travelTimeSetter)(bool) = [](bool b) { Config::toggleTravelTime(b); };
 	Drawable::children.emplace_back(new Label("TIME:", 0.5, 0.625, 0.5, 1));
-	Drawable::children.emplace_back(new ToggleButton(travelTimeGetter, travelTimeSetter, 0.625, 0.75, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(travelTimeGetter, travelTimeSetter, 0.625, 0.75, 0.6, 0.9));
+
+
+	//Rotate buttons.
+	//Screen rotation. Increments the screen rotation by one, but after 3 it goes back to zero. 
+	void(*displayrotator)() = []() { Config::screenRotation((Config::screenRotation() + 1) % 4); };
+	Drawable::children.emplace_back(new ImageButton(displayrotator, "../images/display_rotate_icon.png", BACKGROUND_COLOR, 0.8, 1, 0, 0.5));
+	//Image rotation. Increments the image rotation by one, but after 3 it goes back to zero. 
+	void(*imagerotator)() = []() { Config::imageRotation((Config::imageRotation() + 1) % 4); };
+	Drawable::children.emplace_back(new ImageButton(imagerotator, "../images/cam_rotate_icon.png", BACKGROUND_COLOR, 0.8, 1, 0.5, 1));
 }
 
 void DisplayMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)

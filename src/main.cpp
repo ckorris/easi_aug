@@ -51,20 +51,17 @@ int main(int argc, char **argv) {
 	// Prepare new image size to retrieve half-resolution images
 	Resolution image_size = zed.getCameraInformation().camera_configuration.resolution;
 
-	int new_width = image_size.width;
-	int new_height = image_size.height;
+	int zedwidth = image_size.width;
+	int zedheight = image_size.height;
 
-	Resolution new_image_size(new_width, new_height);
-
-
-	// To share data between sl::Mat and cv::Mat, use slMat2cvMat()
-	// Only the headers and pointer to the sl::Mat are copied, not the data itself
-	Mat zedimage(new_image_size, MAT_TYPE::U8_C4);
-	//cv::Mat image_ocv = slMat2cvMat(image_zed);
+	//Resolution new_image_size(zedwidth, zedheight);
+	Mat zedimage(image_size, MAT_TYPE::U8_C4);
 
 	int cvmattype = slMatType2cvMatType(zedimage.getDataType());
-	cv::Mat image_ocv = cv::Mat(new_height, new_width, cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
+	cv::Mat image_ocv = cv::Mat(zedheight, zedwidth, cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
 
+	cv::Mat ui_mat; //Declared so we keep using the same memory each loop. 
+	/*
 	//Make the UI image. 
 	int screenrot = Config::screenRotation();
 	int uiwidth = (screenrot % 2 == 0) ? image_ocv.cols : image_ocv.rows;
@@ -72,13 +69,9 @@ int main(int argc, char **argv) {
 
 	cv::Mat ui_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
 	ui_mat.setTo(cv::Scalar(0, 0, 0, 0));
+	*/
 
-	Mat depth_measure(new_width, new_height, MAT_TYPE::F32_C1);
-
-	//Make starting pose.
-	/*sl::float3 startposition;
-	startposition = sl::float3(0.06, -0.026, 0.0062);
-	Simulation sim(&zed, startposition);*/
+	Mat depth_measure(zedwidth, zedheight, MAT_TYPE::F32_C1);
 
 	Simulation sim(&zed);
 
@@ -109,12 +102,18 @@ int main(int argc, char **argv) {
 
 
 			// Retrieve the left image, depth image in half-resolution
-			zed.retrieveImage(zedimage, VIEW::LEFT, MEM::CPU, new_image_size);
+			zed.retrieveImage(zedimage, VIEW::LEFT, MEM::CPU, image_size);
 
 			zed.retrieveMeasure(depth_measure);
 
 			zed.getSensorsData(sensorData, TIME_REFERENCE::IMAGE);
 
+
+			//Make the UI image. 
+			int screenrot = Config::screenRotation();
+			int uiwidth = (screenrot % 2 == 0) ? image_ocv.cols : image_ocv.rows;
+			int uiheight = (screenrot % 2 == 0) ? image_ocv.rows : image_ocv.cols;
+			ui_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
 			ui_mat.setTo(cv::Scalar(0, 0, 0, 0));
 
 			//Laser crosshair - no gravity. 
@@ -221,7 +220,7 @@ int main(int argc, char **argv) {
 			panelrect = cv::Rect(0, 0, 50, 250);
 
 			//Calculate the menu size and assign it. 
-			cv::Rect menurect = cv::Rect(panelrect.width, 0, new_height - panelrect.width, (new_height - panelrect.width) / 3.0);
+			cv::Rect menurect = cv::Rect(panelrect.width, 0, zedheight - panelrect.width, (zedheight - panelrect.width) / 3.0);
 			panel.openPanelRect = menurect;
 			
 			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
