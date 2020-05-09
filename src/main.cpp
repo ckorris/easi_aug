@@ -7,7 +7,7 @@
 #include <Config.h>
 #include <Drawables.h>
 #include <ImageHelper.h>
-#include <Menus.h>
+//#include <Menus.h>
 
 using namespace std;
 using namespace sl;
@@ -84,13 +84,6 @@ int main(int argc, char **argv) {
 	ImageHelper imageHelper(&zed);
 
 	SensorsData sensorData;
-
-	//Test image.
-	cv::Mat testimage = cv::imread("../images/calib_icon.bmp");
-	if (testimage.empty())
-	{
-		cout << "Couldn't find image." << endl;
-	}
 
 
 	// Loop until 'q' is pressed
@@ -190,8 +183,8 @@ int main(int argc, char **argv) {
 						if (Config::toggleTravelTime())
 						{
 							char timebuffer[20];
-							int t = sprintf(timebuffer, "%0.3f", traveltime_grav);
-							string timesuffix = "ms";
+							int t = sprintf(timebuffer, "%0.2f", traveltime_grav);
+							string timesuffix = "s";
 							string timetext = timebuffer + timesuffix;
 							//cv::Size timetextsize = cv::getTextSize(timetext, 1, 1, 1, NULL);
 
@@ -242,39 +235,12 @@ int main(int argc, char **argv) {
 			cv::mixChannels(finaluimat, mask, fromto, 1);
 			cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
 			cv::add(finalimagemat, finaluimat, finalimagemat, mask);
-			
-			/*
-			//TEST add loaded image to the output. 
-			cv::Rect roi(0, 0, testimage.cols, testimage.rows);
-			cv::Mat outmat(finalimagemat.rows, finalimagemat.cols, CV_8UC4);
-			outmat.setTo(cv::Scalar(0, 255, 0, 255));
-			cv::Mat test(testimage.rows, testimage.cols, CV_8UC4);
-
-			cv::Mat finalroi = finalimagemat(roi);
-			test.copyTo(finalroi);
-			
-			int threechannel[] = { 0, 0, 1, 1, 2, 2 };
-			cv::mixChannels(testimage, test, threechannel, 3);
-			*/
-
-
-			//test.setTo(cv::Scalar(255, 0, 0, 255));
-			//cv::add(outmat(roi), test, outmat);
-			//finalimagemat(roi) = outmat;
-			//outmat = finalimagemat + test;
-			//cv::mixChannels()
-
-			cv::imshow("EasiAug", finalimagemat);
-
-
-			//finalmat = finalmat + ui_mat;
-
+		
 
 			//cv::imshow("EasiAug", image_ocv);
 			//cv::imshow("EasiAug", rotated);
-			//cv::imshow("EasiAug", finalimagemat);
+			cv::imshow("EasiAug", finalimagemat);
 
-			//cv::imshow("EasiAug", testimage);
 
 			//Input.
 			cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);

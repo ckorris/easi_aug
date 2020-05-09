@@ -32,11 +32,16 @@ Sidebar::Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, flo
 	//void(*setselected)(int index);
 	//setselected = this->SelectDrawable;
 
-	Drawable::children.emplace_back(new SidebarButton(0, this, 0.0, 1.0, 0.0, 0.2));
-	Drawable::children.emplace_back(new SidebarButton(1, this, 0.0, 1.0, 0.2, 0.4));
-	Drawable::children.emplace_back(new SidebarButton(2, this, 0.0, 1.0, 0.4, 0.6));
-
-
+	//Calibration.
+	Drawable::children.emplace_back(new SidebarButton(0, this, "../images/calib_icon.png", 0.0, 1.0, 0.0, 0.2));
+	//Projectile.
+	Drawable::children.emplace_back(new SidebarButton(1, this, "../images/projectile_icon.png", 0.0, 1.0, 0.2, 0.4));
+	//Display.
+	Drawable::children.emplace_back(new SidebarButton(2, this, "../images/display_icon.png", 0.0, 1.0, 0.4, 0.6));
+	//Environment.
+	Drawable::children.emplace_back(new SidebarButton(3, this, "../images/environment_icon.png", 0.0, 1.0, 0.6, 0.8));
+	//Stats.
+	Drawable::children.emplace_back(new SidebarButton(4, this, "../images/stats_icon.png", 0.0, 1.0, 0.8, 1.0));
 
 }
 

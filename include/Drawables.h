@@ -131,7 +131,7 @@ class Sidebar; //Forward delcaring so we can use in SidebarButton.
 class SidebarButton : public Drawable
 {
 public:
-	SidebarButton(int index, Sidebar* sidebar,
+	SidebarButton(int index, Sidebar* sidebar, string imagepath,
 		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 	
 protected:

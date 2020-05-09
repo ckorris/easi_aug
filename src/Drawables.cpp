@@ -343,7 +343,7 @@ void ToggleButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 }
 
 
-SidebarButton::SidebarButton(int index, Sidebar* sidebar,
+SidebarButton::SidebarButton(int index, Sidebar* sidebar, string imagepath,
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
@@ -353,7 +353,8 @@ SidebarButton::SidebarButton(int index, Sidebar* sidebar,
 	//onSelected = onselected;
 
 	//Temp - will be passed reference later. 
-	cv::Mat rawicon = cv::imread("../images/calib_icon.png", -1);
+	//cv::Mat rawicon = cv::imread("../images/calib_icon.png", -1);
+	cv::Mat rawicon = cv::imread(imagepath, -1);
 	if (rawicon.empty())
 	{
 		cout << "Couldn't find image." << endl;
