@@ -16,6 +16,8 @@ Sidebar::Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, flo
 	menus.emplace_back(new CalibrationMenu(0, 1, 0, 1));
 	menus.emplace_back(new ProjectileMenu(0, 1, 0, 1));
 	menus.emplace_back(new DisplayMenu(0, 1, 0, 1));
+	menus.emplace_back(new EnvironmentMenu(0, 1, 0, 1));
+	menus.emplace_back(new StatsMenu(0, 1, 0, 1));
 
 
 	//Buttons. For now, no images, just indexes.
@@ -97,29 +99,29 @@ CalibrationMenu::CalibrationMenu(float anchorxmin, float anchorxmax, float ancho
 	//X pos.
 	float(*camXPosGetter)() = []() {return Config::camXPos(); };
 	void(*camXPosSetter)(float) = [](float v) {Config::camXPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camXPosGetter, camXPosSetter, 0.01, 0.05, "X: ", cv::Scalar(0, 255, 0, 1), 0.0, 0.17, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXPosGetter, camXPosSetter, 0.01, "X-POS", "%1.3fm", cv::Scalar(0, 255, 0, 1), 0.01, 0.16, 0, 1));
 	//Y pos.
 	float(*camYPosGetter)() = []() {return Config::camYPos(); };
 	void(*camYPosSetter)(float) = [](float v) {Config::camYPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camYPosGetter, camYPosSetter, 0.01, 0.05, "Y: ", cv::Scalar(0, 0, 255, 1), 0.17, 0.34, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYPosGetter, camYPosSetter, 0.01,  "Y-POS", "%1.3fm", cv::Scalar(0, 0, 255, 1), 0.17, 0.32, 0, 1));
 	//Z pos.
 	float(*camZPosGetter)() = []() {return Config::camZPos(); };
 	void(*camZPosSetter)(float) = [](float v) {Config::camZPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camZPosGetter, camZPosSetter, 0.01, 0.05, "Z: ", cv::Scalar(255, 0, 0, 1), 0.34, 0.5, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZPosGetter, camZPosSetter, 0.01, "Z-POS", "%1.3fm", cv::Scalar(255, 0, 0, 1), 0.33, 0.48, 0, 1));
 
 	//Cam rot arrows.
 	//X rot. 
 	float(*camXRotGetter)() = []() {return Config::camXRot(); };
 	void(*camXRotSetter)(float) = [](float v) {Config::camXRot(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camXRotGetter, camXRotSetter, 0.1, 2, "rX: ", cv::Scalar(0, 255, 0, 1), 0.5, 0.67, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXRotGetter, camXRotSetter, 0.1, "X-ROT", "%1.3f", cv::Scalar(0, 255, 0, 1), 0.53, 0.68, 0, 1));
 	//Y rot. 
 	float(*camYRotGetter)() = []() {return Config::camYRot(); };
 	void(*camYRotSetter)(float) = [](float v) {Config::camYRot(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camYRotGetter, camYRotSetter, 0.1, 2, "rY: ", cv::Scalar(0, 0, 255, 1), 0.67, 0.84, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYRotGetter, camYRotSetter, 0.1, "Y-ROT", "%1.3f", cv::Scalar(0, 0, 255, 1), 0.69, 0.84, 0, 1));
 	//Z rot. 
 	float(*camZRotGetter)() = []() {return Config::camZRot(); };
 	void(*camZRotSetter)(float) = [](float v) {Config::camZRot(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camZRotGetter, camZRotSetter, 0.1, 2, "rZ: ", cv::Scalar(255, 0, 0, 1), 0.84, 1, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZRotGetter, camZRotSetter, 0.1, "Z-ROT", "%1.3f", cv::Scalar(255, 0, 0, 1), 0.85, 1, 0, 1));
 }
 
 void CalibrationMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -135,17 +137,17 @@ ProjectileMenu::ProjectileMenu(float anchorxmin, float anchorxmax, float anchory
 	//Speed arrows.
 	float(*speedgetter)() = []() {return Config::forwardSpeedMPS(); };
 	void(*speedsetter)(float) = [](float v) {Config::forwardSpeedMPS(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, 1, 5, "FPS: ", cv::Scalar(0, 0, 255, 1), 0, 0.33, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, 1, "SPEED", "%1.1f m/s", cv::Scalar(0, 0, 255, 1), 0.01, 0.31, 0, 1));
 
 	//Hop-up arrows.
 	float(*hopupgetter)() = []() {return Config::hopUpRPM(); };
 	void(*hopupsetter)(float) = [](float v) {Config::hopUpRPM(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 1000, 10000, "HOP: ", cv::Scalar(0, 0, 255, 1), 0.33, 0.67, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 1000, "HOP-UP", "%1.0f RPM", cv::Scalar(0, 0, 255, 1), 0.35, 0.65, 0, 1));
 
 	//Mass arrows.
 	float(*massgetter)() = []() {return Config::bbMassGrams(); };
 	void(*masssetter)(float) = [](float v) {Config::bbMassGrams(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(massgetter, masssetter, 0.01, 0.1, "MASS: ", cv::Scalar(0, 0, 255, 1), 0.67, 1, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(massgetter, masssetter, 0.01, "BB MASS", "%1.2fg", cv::Scalar(0, 0, 255, 1), 0.69, 0.99, 0, 1));
 
 }
 
@@ -163,7 +165,7 @@ DisplayMenu::DisplayMenu(float anchorxmin, float anchorxmax, float anchorymin, f
 	bool(*drawLaserCrosshairGetter)() = []() { return Config::toggleLaserCrosshair(); };
 	void(*drawLaserCrosshairSetter)(bool) = [](bool b) { Config::toggleLaserCrosshair(b); };
 	Drawable::children.emplace_back(new Label("L-XHR:", 0.0, 0.125, 0, 0.5));
-	Drawable::children.emplace_back(new ToggleButton(drawLaserCrosshairGetter, drawLaserCrosshairSetter, 0.125, 0.25, 0.5, 1));
+	Drawable::children.emplace_back(new ToggleButton(drawLaserCrosshairGetter, drawLaserCrosshairSetter, 0.125, 0.25, 0, 0.5));
 	//Toggle gravity crosshair.
 	bool(*drawGravityCrosshairGetter)() = []() { return Config::toggleGravityCrosshair(); };
 	void(*drawGravityCrosshairSetter)(bool) = [](bool b) { Config::toggleGravityCrosshair(b); };
@@ -194,4 +196,35 @@ DisplayMenu::DisplayMenu(float anchorxmin, float anchorxmax, float anchorymin, f
 void DisplayMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
 	//Don't do anything special. Should draw all of the above automatically. 
+}
+
+EnvironmentMenu::EnvironmentMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+	//Temperature arrows.
+	float(*tempgetter)() = []() {return Config::temperatureC(); };
+	void(*tempsetter)(float) = [](float v) {Config::temperatureC(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(tempgetter, tempsetter, 1, "TEMP", "%1.0f C", cv::Scalar(0, 0, 255, 1), 0.01, 0.31, 0, 1));
+
+	//Relative humidity arrows.
+	float(*relhumidgetter)() = []() {return Config::relativeHumidity01(); };
+	void(*relhumidsetter)(float) = [](float v) {Config::relativeHumidity01(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(relhumidgetter, relhumidsetter, 1000, "REL. HUMID", "%1.0f%%", cv::Scalar(0, 0, 255, 1), 0.35, 0.65, 0, 1));
+}
+
+void EnvironmentMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//TODO: Sample ZED sensor readings. 
+}
+
+
+StatsMenu::StatsMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
+{
+
+}
+
+void StatsMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//TODO: Draw stats. 
 }

@@ -53,11 +53,12 @@ protected:
 	
 };
 
+
 class SettingIncrementorPanel : public Drawable
 {
 public:
-	SettingIncrementorPanel(float(*getter)(), void(*setter)(float), float smallincrement, float bigincrement, 
-		string label, cv::Scalar arrowcolor, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+	SettingIncrementorPanel(float(*getter)(), void(*setter)(float), float increment, string label, string displayformat,
+		cv::Scalar arrowcolor, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 protected:
 	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
@@ -81,13 +82,14 @@ protected:
 class ValueLabel : public Drawable
 {
 public:
-	ValueLabel(float(*getter)(), string label, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+	ValueLabel(float(*getter)(), string label, const string displayformat, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 protected: 
 	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
 
 	float(*settingGetter)();
 	string labelPrefix;
+	string displayFormat;
 };
 
 class ArrowButton : public Drawable
@@ -151,7 +153,7 @@ protected:
 
 
 
-//////////Menus////////// 
+//////////Sidebar and Menus////////// 
 
 
 
@@ -166,10 +168,12 @@ public:
 	bool CheckSelected(int index);
 	void SelectDrawable(int index);
 
-private:
 	cv::Rect openPanelRect;
+
+private:
+	
 	vector<unique_ptr<Drawable>> menus;
-	int selectedIndex = 2;
+	int selectedIndex = 1;
 	//Drawable selectedDrawable;
 
 	//CalibrationMenu calibMenu;

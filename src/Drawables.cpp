@@ -116,12 +116,12 @@ EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, flo
 	//Speed arrows.
 	float(*speedgetter)() = []() {return Config::forwardSpeedMPS(); };
 	void(*speedsetter)(float) = [](float v) {Config::forwardSpeedMPS(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, 1, 5, "FPS: ", cv::Scalar(0, 0, 255, 1), 0, 0.1, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(speedgetter, speedsetter, 1, "FPS ", "%1.1f", cv::Scalar(0, 0, 255, 1), 0, 0.1, 0, 1));
 	
 	//Hop-up arrows.
 	float(*hopupgetter)() = []() {return Config::hopUpRPM(); };
 	void(*hopupsetter)(float) = [](float v) {Config::hopUpRPM(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 1000, 10000, "HOP: ", cv::Scalar(0, 0, 255, 1), 0.1, 0.2, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 1000, "HOP ","%1.0f", cv::Scalar(0, 0, 255, 1), 0.1, 0.2, 0, 1));
 
 	//Draw toggles. 
 	//Toggle laser crosshair.
@@ -159,29 +159,29 @@ EmptyPanel::EmptyPanel(float anchorxmin, float anchorxmax, float anchorymin, flo
 	//X pos.
 	float(*camXPosGetter)() = []() {return Config::camXPos(); };
 	void(*camXPosSetter)(float) = [](float v) {Config::camXPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camXPosGetter, camXPosSetter, 0.01, 0.1, "X: ", cv::Scalar(0, 255, 0, 1), 0.52, 0.59, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXPosGetter, camXPosSetter, 0.01, "X-POS ", "%1.3f", cv::Scalar(0, 255, 0, 1), 0.52, 0.59, 0, 1));
 	//Y pos.
 	float(*camYPosGetter)() = []() {return Config::camYPos(); };
 	void(*camYPosSetter)(float) = [](float v) {Config::camYPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camYPosGetter, camYPosSetter, 0.01, 0.1, "Y: ", cv::Scalar(0, 0, 255, 1), 0.60, 0.67, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYPosGetter, camYPosSetter, 0.01, "Y-POS ", "%1.3f", cv::Scalar(0, 0, 255, 1), 0.60, 0.67, 0, 1));
 	//Z pos.
 	float(*camZPosGetter)() = []() {return Config::camZPos(); };
 	void(*camZPosSetter)(float) = [](float v) {Config::camZPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camZPosGetter, camZPosSetter, 0.01, 0.1, "Z: ", cv::Scalar(255, 0, 0, 1), 0.68, 0.75, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZPosGetter, camZPosSetter, 0.01, "Z-POS ", "%1.3f", cv::Scalar(255, 0, 0, 1), 0.68, 0.75, 0, 1));
 
 	//Cam rot arrows.
 	//X rot. 
 	float(*camXRotGetter)() = []() {return Config::camXRot(); };
 	void(*camXRotSetter)(float) = [](float v) {Config::camXRot(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camXRotGetter, camXRotSetter, 0.05, 1, "rX: ", cv::Scalar(0, 255, 0, 1), 0.77, 0.84, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXRotGetter, camXRotSetter, 0.05, "X-ROT: ", "%1.3f", cv::Scalar(0, 255, 0, 1), 0.77, 0.84, 0, 1));
 	//Y rot. 
 	float(*camYRotGetter)() = []() {return Config::camYRot(); };
 	void(*camYRotSetter)(float) = [](float v) {Config::camYRot(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camYRotGetter, camYRotSetter, 0.05, 1, "rY: ", cv::Scalar(0, 0, 255, 1), 0.85, 0.92, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYRotGetter, camYRotSetter, 0.05, "Y-ROT ", "%1.3f", cv::Scalar(0, 0, 255, 1), 0.85, 0.92, 0, 1));
 	//Z rot. 
 	float(*camZRotGetter)() = []() {return Config::camZRot(); };
 	void(*camZRotSetter)(float) = [](float v) {Config::camZRot(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camZRotGetter, camZRotSetter, 0.05, 1, "rZ: ", cv::Scalar(255, 0, 0, 1), 0.93, 1, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZRotGetter, camZRotSetter, 0.05, "Z-ROT ", "%1.3f", cv::Scalar(255, 0, 0, 1), 0.93, 1, 0, 1));
 }
 
 void EmptyPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -193,8 +193,8 @@ void EmptyPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 	cv::rectangle(drawto, drawrect, BACKGROUND_COLOR, -1);
 }
 
-SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)(float), float smallincrement, float bigincrement,
-	string label, cv::Scalar arrowcolor, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)(float), float increment, string label,
+	string displayformat, cv::Scalar arrowcolor, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
 	settingGetter = getter;
@@ -204,13 +204,16 @@ SettingIncrementorPanel::SettingIncrementorPanel(float(*getter)(), void(*setter)
 	//ArrowButton plusfivearrow(getter, setter, 5.0, 0, 1, 0, 0.17);
 	//ArrowButton plusonearrow(getter, setter, 1.0, 0, 1, 0.17, 0.34);
 
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, bigincrement, arrowcolor, 0, 1, 0.0, 0.2)); //Plus 5 arrow.
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, smallincrement, arrowcolor, 0, 1, 0.2, 0.4)); // Plus 1 arrow.
+	Drawable::children.emplace_back(new Label(label, 0, 1, 0, 0.167));
+	//Drawable::children.emplace_back(new ArrowButton(getter, setter, bigincrement, arrowcolor, 0, 1, 0.0, 0.2)); //Plus 5 arrow.
+	//Drawable::children.emplace_back(new ArrowButton(getter, setter, smallincrement, arrowcolor, 0, 1, 0.2, 0.4)); // Plus 1 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, increment, arrowcolor, 0, 1, 0.167, 0.5)); // Plus 1 arrow.
 
-	Drawable::children.emplace_back(new ValueLabel(getter, label, 0, 1, 0.4, 0.6)); // Plus 1 arrow.
+	Drawable::children.emplace_back(new ValueLabel(getter, "", displayformat, 0, 1, 0.5, 0.667)); // Plus 1 arrow.
 
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, -smallincrement, arrowcolor, 0, 1, .6, 0.8)); //Minus 1 arrow.
-	Drawable::children.emplace_back(new ArrowButton(getter, setter, -bigincrement, arrowcolor, 0, 1, 0.8, 1)); //Minus 5 arrow.
+	//Drawable::children.emplace_back(new ArrowButton(getter, setter, -smallincrement, arrowcolor, 0, 1, .6, 0.8)); //Minus 1 arrow.
+	//Drawable::children.emplace_back(new ArrowButton(getter, setter, -bigincrement, arrowcolor, 0, 1, 0.8, 1)); //Minus 5 arrow.
+	Drawable::children.emplace_back(new ArrowButton(getter, setter, -increment, arrowcolor, 0, 1, 0.667, 1)); //Minus 5 arrow.
 }
 
 void SettingIncrementorPanel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -236,18 +239,20 @@ void Label::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 
 
 
-ValueLabel::ValueLabel(float(*getter)(), string label, 
+ValueLabel::ValueLabel(float(*getter)(), string label, string displayformat,
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
 	settingGetter = getter;
 	labelPrefix = label;
+	displayFormat = displayformat;
 }
 
 void ValueLabel::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
 	char buffer[20];
-	int n = sprintf(buffer, "%1.2f", this->settingGetter());
+	//int n = sprintf(buffer, "%1.2f", this->settingGetter());
+	int n = sprintf(buffer, displayFormat.c_str(), this->settingGetter());
 
 	string printval = labelPrefix + buffer;
 

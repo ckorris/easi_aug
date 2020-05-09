@@ -20,8 +20,8 @@ int slMatType2cvMatType(sl::MAT_TYPE sltype);
 void ClickCallback(int event, int x, int y, int flags, void* userdata); //Forward declaration. 
 
 //cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
-cv::Rect menurect(50, 0, 450, 180);
-Sidebar panel(menurect, 0, 1, 0, 1);
+cv::Rect tempmenurect(50, 0, 450, 180);
+Sidebar panel(tempmenurect, 0, 1, 0, 1);
 
 int main(int argc, char **argv) {
 
@@ -29,16 +29,16 @@ int main(int argc, char **argv) {
 	Camera zed;
 
 	// Set configuration parameters
-	InitParameters init_parameters;
-	init_parameters.camera_resolution = Config::camResolution();
-	init_parameters.depth_mode = Config::camPerformanceMode();
-	init_parameters.coordinate_units = UNIT::METER;
-	if (argc > 1) init_parameters.input.setFromSVOFile(argv[1]);
+	InitParameters initparams;
+	initparams.camera_resolution = Config::camResolution();
+	initparams.depth_mode = Config::camPerformanceMode();
+	initparams.coordinate_units = UNIT::METER;
+	if (argc > 1) initparams.input.setFromSVOFile(argv[1]);
 
 	// Open the camera
-	ERROR_CODE zed_open_state = zed.open(init_parameters);
+	ERROR_CODE zed_open_state = zed.open(initparams);
 	if (zed_open_state != ERROR_CODE::SUCCESS) {
-		cout << "[Sample] Error Camera Open: " << zed_open_state << "\nExit program." << endl;
+		cout << "Can't open ZED camera.: " << zed_open_state << "\nExiting program." << endl;
 		return -1;
 	}
 
@@ -56,13 +56,14 @@ int main(int argc, char **argv) {
 
 	Resolution new_image_size(new_width, new_height);
 
+
 	// To share data between sl::Mat and cv::Mat, use slMat2cvMat()
 	// Only the headers and pointer to the sl::Mat are copied, not the data itself
-	Mat image_zed(new_image_size, MAT_TYPE::U8_C4);
+	Mat zedimage(new_image_size, MAT_TYPE::U8_C4);
 	//cv::Mat image_ocv = slMat2cvMat(image_zed);
 
-	int cvmattype = slMatType2cvMatType(image_zed.getDataType());
-	cv::Mat image_ocv = cv::Mat(new_height, new_width, cvmattype, image_zed.getPtr<sl::uchar1>(MEM::CPU));
+	int cvmattype = slMatType2cvMatType(zedimage.getDataType());
+	cv::Mat image_ocv = cv::Mat(new_height, new_width, cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
 
 	//Make the UI image. 
 	int screenrot = Config::screenRotation();
@@ -108,7 +109,7 @@ int main(int argc, char **argv) {
 
 
 			// Retrieve the left image, depth image in half-resolution
-			zed.retrieveImage(image_zed, VIEW::LEFT, MEM::CPU, new_image_size);
+			zed.retrieveImage(zedimage, VIEW::LEFT, MEM::CPU, new_image_size);
 
 			zed.retrieveMeasure(depth_measure);
 
@@ -218,6 +219,10 @@ int main(int argc, char **argv) {
 			cv::Rect panelrect;
 			//panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
 			panelrect = cv::Rect(0, 0, 50, 250);
+
+			//Calculate the menu size and assign it. 
+			cv::Rect menurect = cv::Rect(panelrect.width, 0, new_height - panelrect.width, (new_height - panelrect.width) / 3.0);
+			panel.openPanelRect = menurect;
 			
 			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
 
