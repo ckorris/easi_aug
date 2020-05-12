@@ -19,7 +19,7 @@ public:
 	vector < unique_ptr<Drawable>> children;
 protected:
 
-	const cv::Scalar TEXT_COLOR = cv::Scalar(0, 0, 255, 1);
+	const cv::Scalar TEXT_COLOR = cv::Scalar(255, 255, 255, 1);
 	const cv::Scalar BACKGROUND_COLOR = cv::Scalar(70, 70, 70, 1);
 
 	//static vector<Drawable> allEnabledDrawables;
@@ -141,7 +141,7 @@ protected:
 class ImageButton : public Drawable
 {
 public:
-	ImageButton(void(*onclick)(), string imagepath, cv::Scalar backgroundcolor,
+	ImageButton(void(*onclick)(), string imagepath, bool drawbackground,
 		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
 
 protected:
@@ -152,7 +152,7 @@ protected:
 
 	void(*onClick)();
 
-	cv::Scalar backgroundColor;
+	bool drawBackground;
 
 	cv::Mat icon;
 	cv::Mat alphamask;
@@ -205,13 +205,12 @@ public:
 private:
 	
 	vector<unique_ptr<Drawable>> menus;
-	int selectedIndex = 1;
+	int selectedIndex = 0;
 	//Drawable selectedDrawable;
 
-	//CalibrationMenu calibMenu;
-	//ProjectileMenu projMenu;
-
-	bool ReturnTrue();
+	//ImageButton* openSidebarButton;
+	//unique_ptr<ImageButton> openSidebarButton;
+	//bool isToggled = false;
 };
 
 

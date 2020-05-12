@@ -4,6 +4,9 @@
 
 
 
+static bool sidebarToggled = false;
+//ImageButton* openSidebarButton;
+unique_ptr<ImageButton> openSidebarButton;
 
 Sidebar::Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
@@ -34,28 +37,58 @@ Sidebar::Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, flo
 	//void(*setselected)(int index);
 	//setselected = this->SelectDrawable;
 
-	//Calibration.
-	Drawable::children.emplace_back(new SidebarButton(0, this, "../images/calib_icon.png", 0.0, 1.0, 0.0, 0.2));
-	//Projectile.
-	Drawable::children.emplace_back(new SidebarButton(1, this, "../images/projectile_icon.png", 0.0, 1.0, 0.2, 0.4));
-	//Display.
-	Drawable::children.emplace_back(new SidebarButton(2, this, "../images/display_icon.png", 0.0, 1.0, 0.4, 0.6));
-	//Environment.
-	Drawable::children.emplace_back(new SidebarButton(3, this, "../images/environment_icon.png", 0.0, 1.0, 0.6, 0.8));
-	//Stats.
-	Drawable::children.emplace_back(new SidebarButton(4, this, "../images/stats_icon.png", 0.0, 1.0, 0.8, 1.0));
+	//Open menu button. Note this one is not added to children; it's drawn separately. 
+	void(*openSidebar)() = []() {sidebarToggled = true; };
+	//ImageButton togglesidebar(openSidebar, "../images/hamburger_icon.png", cv::Scalar(0, 0, 0, 0), 0, 1.0, 0.0, 0.2);
+	//ImageButton togglesidebar(openSidebar, "../images/hamburger_icon.png", cv::Scalar(0, 0, 0, 0), 0, 1.0, 0.0, 0.2);
+	//unique_ptr<ImageButton> togglepointer(new ImageButton(openSidebar, "../images/hamburger_icon.png", cv::Scalar(0, 0, 0, 0), 0, 1.0, 0.0, 0.2));
+	
+	openSidebarButton = make_unique<ImageButton>(ImageButton(openSidebar, "../images/hamburger_icon.png", false, 0, 1.0, 0.0, 0.167));
 
+	//Calibration.
+	Drawable::children.emplace_back(new SidebarButton(0, this, "../images/calib_icon.png", 0.0, 1.0, 0.0, 0.167));
+	//Projectile.
+	Drawable::children.emplace_back(new SidebarButton(1, this, "../images/projectile_icon.png", 0.0, 1.0, 0.167, 0.333));
+	//Display.
+	Drawable::children.emplace_back(new SidebarButton(2, this, "../images/display_icon.png", 0.0, 1.0, 0.333, 0.5));
+	//Environment.
+	Drawable::children.emplace_back(new SidebarButton(3, this, "../images/environment_icon.png", 0.0, 1.0, 0.5, 0.667));
+	//Stats.
+	Drawable::children.emplace_back(new SidebarButton(4, this, "../images/stats_icon.png", 0.0, 1.0, 0.667, 0.833));
+
+	//Close menu button.
+	void(*closeSidebar)() = []() {sidebarToggled = false; };
+	Drawable::children.emplace_back(new ImageButton(closeSidebar, "../images/hamburger_icon.png", false, 0.0, 1.0, 0.833, 1.0));
 }
 
 void Sidebar::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
 {
-	Drawable::ProcessUI(parentrect, drawto, windowname); //Base. 
 	
-	//Process the UI for only the enabled menu.
-	if (selectedIndex >= 0 && selectedIndex < menus.size())
-	{ 
-		menus[selectedIndex]->ProcessUI(openPanelRect, drawto, windowname);
+	
+	if (sidebarToggled == true)
+	{
+		//cv::Rect togglebuttonbounds = cv::Rect(screenBounds.x, screenBounds.y + screenBounds.height, 
+		//	screenBounds.x, screenBounds.height / 5.0);
+
+		Drawable::ProcessUI(parentrect, drawto, windowname); //Base. 
+
+		//Process the UI for only the enabled menu.
+		if (selectedIndex >= 0 && selectedIndex < menus.size())
+		{
+			//Draw background behind the menu.
+			cv::rectangle(drawto, openPanelRect, BACKGROUND_COLOR, -1);
+
+			//Draw the menu itself. 
+			menus[selectedIndex]->ProcessUI(openPanelRect, drawto, windowname);
+		}
 	}
+	else //isToggled == false
+	{
+		//openSidebarButton->ProcessUI(parentrect, drawto, windowname);
+		openSidebarButton->ProcessUI(parentrect, drawto, windowname);
+	}
+
+
 	
 }
 
@@ -64,16 +97,15 @@ void Sidebar::ProcessAllClicks(int x, int y, bool isdown)
 	Drawable::ProcessAllClicks(x, y, isdown); //Base.
 
 	//Process the clicks for only the enabled menu. 
-	if (selectedIndex >= 0 && selectedIndex < menus.size())
+	if (sidebarToggled && selectedIndex >= 0 && selectedIndex < menus.size())
 	{
 		menus[selectedIndex]->ProcessAllClicks(x, y, isdown);
 	}
+	else
+	{
+		openSidebarButton->ProcessAllClicks(x, y, isdown);
+	}
 
-}
-
-bool Sidebar::ReturnTrue()
-{
-	return true;
 }
 
 bool Sidebar::CheckSelected(int index)
@@ -142,7 +174,7 @@ ProjectileMenu::ProjectileMenu(float anchorxmin, float anchorxmax, float anchory
 	//Hop-up arrows.
 	float(*hopupgetter)() = []() {return Config::hopUpRPM(); };
 	void(*hopupsetter)(float) = [](float v) {Config::hopUpRPM(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 1000, "HOP-UP", "%1.0f RPM", cv::Scalar(0, 0, 255, 1), 0.35, 0.65, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(hopupgetter, hopupsetter, 2000, "HOP-UP", "%1.0f RPM", cv::Scalar(0, 0, 255, 1), 0.35, 0.65, 0, 1));
 
 	//Mass arrows.
 	float(*massgetter)() = []() {return Config::bbMassGrams(); };
@@ -196,10 +228,10 @@ DisplayMenu::DisplayMenu(float anchorxmin, float anchorxmax, float anchorymin, f
 	//Rotate buttons.
 	//Screen rotation. Increments the screen rotation by one, but after 3 it goes back to zero. 
 	void(*displayrotator)() = []() { Config::screenRotation((Config::screenRotation() + 1) % 4); };
-	Drawable::children.emplace_back(new ImageButton(displayrotator, "../images/display_rotate_icon.png", BACKGROUND_COLOR, 0.8, 1, 0, 0.5));
+	Drawable::children.emplace_back(new ImageButton(displayrotator, "../images/display_rotate_icon.png", true, 0.8, 1, 0, 0.5));
 	//Image rotation. Increments the image rotation by one, but after 3 it goes back to zero. 
 	void(*imagerotator)() = []() { Config::imageRotation((Config::imageRotation() + 1) % 4); };
-	Drawable::children.emplace_back(new ImageButton(imagerotator, "../images/cam_rotate_icon.png", BACKGROUND_COLOR, 0.8, 1, 0.5, 1));
+	Drawable::children.emplace_back(new ImageButton(imagerotator, "../images/cam_rotate_icon.png", true, 0.8, 1, 0.5, 1));
 }
 
 void DisplayMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)

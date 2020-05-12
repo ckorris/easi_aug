@@ -242,6 +242,7 @@ Label::Label(string label, float anchorxmin, float anchorxmax, float anchorymin,
 
 void Label::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
+
 	cv::Size textsize = cv::getTextSize(labelText, 1, 1, 1, NULL);
 
 	cv::Point centerpoint(screenBounds.x + (screenBounds.width / 2.0) - (textsize.width / 2.0),
@@ -298,7 +299,7 @@ void ArrowButton::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowna
 		timeHeld += Time::deltaTime();
 		if (timeHeld - HOLD_DELAY >= HOLD_INCREMENT)
 		{
-			timeHeld = HOLD_DELAY + remainder(timeHeld - HOLD_DELAY, HOLD_INCREMENT);
+			timeHeld = HOLD_DELAY + fmod(timeHeld - HOLD_DELAY, HOLD_INCREMENT);
 			OnClicked();
 		}
 	}
@@ -385,12 +386,12 @@ void ToggleButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 	}
 }
 
-ImageButton::ImageButton(void(*onclick)(), string imagepath, cv::Scalar backgroundcolor, 
+ImageButton::ImageButton(void(*onclick)(), string imagepath, bool drawbackground, 
 	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
 	onClick = onclick;
-	backgroundColor = backgroundcolor;
+	drawBackground = drawbackground;
 
 	cv::Mat rawicon = cv::imread(imagepath, -1);
 	if (rawicon.empty())
@@ -418,11 +419,14 @@ void ImageButton::OnClicked()
 
 void ImageButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
-	//Draw background rectangle. 
-	cv::rectangle(drawto, screenBounds, backgroundColor, -1);
+	if (drawBackground)
+	{
+		//Draw background rectangle. 
+		cv::rectangle(drawto, screenBounds, BACKGROUND_COLOR, -1);
 
-	//Draw outline rectangle.
-	cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 0, 255), 1);
+		//Draw outline rectangle.
+		cv::rectangle(drawto, screenBounds, cv::Scalar(0, 0, 0, 255), 1);
+	}
 
 	//Draw image on button. 
 	cv::Rect iconrect = cv::Rect(screenBounds.x + 4, screenBounds.y + 4, screenBounds.width - 8, screenBounds.height - 8);

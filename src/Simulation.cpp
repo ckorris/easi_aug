@@ -85,8 +85,9 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	float timebetweendots = distbetweensamples / speedmps; //How long does it take for the projectile to travel between two dots? Currently assuming forward speed doesn't change.
 
 	//sl::float3 fvelchange = finalrotnormal * distbetweensamples; //Change in position from forward velocity each frame. 
-	sl::float3 velocityps = finalrotnormal * distbetweensamples; //Startingvelocity
-	float downspeedaddpersample = GRAVITY_ACCEL * timebetweendots * timebetweendots; //GRAVITY_ACCEL * timebetweendots is downward accel added per dot but STILL IN MPS. Multiply again to get how much it should change. 
+	//sl::float3 velocityps = finalrotnormal * distbetweensamples; //Startingvelocity. //This was per sample, but we're changing to real velocity in MPS. 
+	sl::float3 velocity = finalrotnormal * speedmps; //Startingvelocity
+	//float downspeedaddpersample = GRAVITY_ACCEL * timebetweendots * timebetweendots; //GRAVITY_ACCEL * timebetweendots is downward accel added per dot but STILL IN MPS. Multiply again to get how much it should change. 
 
 	//Cache the spin speed in rotations per second(rps). 
 	float spinrpm = Config::hopUpRPM();
@@ -123,31 +124,35 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	while (currentpoint.z < MAX_DISTANCE) //Sliiiightly concerned this will be infinite. 
 	{
 		//Catch potential infinite loop. 
-		if (velocityps.z <= 0)
+		if (velocity.z <= 0)
 		{
 			//cout << "Velocity z factor is less than or equal to zero. Aborting simulation." << endl;
 			break;
 		}
 
+		//Calculate the time that passes in order to travel the distance per sample. 
+		float speed = sqrt(pow(velocity.x, 2) + pow(velocity.y, 2) + pow(velocity.z, 2));
+		float sampletime = distbetweensamples / speed;
+
 		if (applyphysics)
 		{
-			float speedps = sqrt(pow(velocityps.x, 2) + pow(velocityps.y, 2) + pow(velocityps.z, 2));
-			sl::float3 velocitynorm = velocityps / speedps;
+			sl::float3 velocitynorm = velocity / speed;
 
 			//Gravity. Simplest first. 
-			velocityps += gravitynormal * downspeedaddpersample;
+			velocity += gravitynormal * GRAVITY_ACCEL * sampletime;
 
 
 			//Drag. 
-			//float dragforcenewtons = CalculateDragForce(0.47, airdensity, crosssectionalarea, speedps); //Using temp drag coefficient.
-			float dragcoefficient = CalculateDragCoefficient(spinrpm, speedps / timebetweendots, bbdiameterm, airdensity, airviscosity);
-			float dragforcenewtons = CalculateDragForce(dragcoefficient, airdensity, crosssectionalarea, speedps / timebetweendots);
+			//float dragcoefficient = CalculateDragCoefficient(spinrpm, speed / timebetweendots, bbdiameterm, airdensity, airviscosity); //Using per-sample speed. 
+			float dragcoefficient = CalculateDragCoefficient(spinrpm, speed, bbdiameterm, airdensity, airviscosity);
+			float dragforcenewtons = CalculateDragForce(dragcoefficient, airdensity, crosssectionalarea, speed);
 			//cout <<"Air Density: " << airdensity <<  " Newtons: " << dragforcenewtons << endl;
 			//velocityps -= velocityps.norm() * (dragforcenewtons / bbmasskg);// *timebetweendots;
-			float dragspeedchange = dragforcenewtons * timebetweendots * timebetweendots / bbmasskg;
+			//float dragspeedchange = dragforcenewtons * timebetweendots * timebetweendots / bbmasskg;
+			float dragspeedchange = dragforcenewtons * sampletime / bbmasskg;
 
 			//velocityps -= velocityps / speedps * speedchange * timebetweendots;
-			velocityps -= velocitynorm * dragspeedchange;
+			velocity -= velocitynorm * dragspeedchange;
 
 
 			//Hop-up/Magnus.
@@ -156,7 +161,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 			//Calculate hop-up normal. It's orthogonal to the velocity. 
 			//We get that by rotating around the cross product of the gun up normal and velocity by 90 degrees. 
 			//Recall that the gun up normal is the upward direction of the gun, ie the direction the backspin will push the bb. 
-			sl::float3 hopupcross = CrossProduct(velocityps, gunupnormal);
+			sl::float3 hopupcross = CrossProduct(velocity, gunupnormal);
 			//Normalize it. 
 			float hopupcrossmagnitude = sqrt(pow(hopupcross.x, 2) + pow(hopupcross.y, 2) + pow(hopupcross.z, 2));
 			hopupcross = hopupcross / hopupcrossmagnitude;
@@ -165,22 +170,26 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 			//cout << "HNorm: " << hopupnormal << " aps: " << hopupaddpersample << endl;
 			//velocityps += hopupnormal * hopupaddpersample; 
 
-				float liftcoefficient = CalculateLiftCoefficient(spinrpm, speedps / timebetweendots, bbdiameterm); //If change to speed works, apply to drag. 
-				float liftforcenewtons = CalculateLiftForce(liftcoefficient, airdensity, crosssectionalarea, speedps / timebetweendots); //Force across a second. 
+				//float liftcoefficient = CalculateLiftCoefficient(spinrpm, speed / timebetweendots, bbdiameterm); //If change to speed works, apply to drag. 
+				float liftcoefficient = CalculateLiftCoefficient(spinrpm, speed, bbdiameterm); //If change to speed works, apply to drag. 
+				//float liftforcenewtons = CalculateLiftForce(liftcoefficient, airdensity, crosssectionalarea, speed / timebetweendots); //Force across a second. 
+				float liftforcenewtons = CalculateLiftForce(liftcoefficient, airdensity, crosssectionalarea, speed); //Force across a second. 
 				//That force is how much force will occur over a second. First we multiply by timebetweendots to account for the fact that
 				//we're only getting a small fraction of a section of force. Then we multiply again because the velocity value we're
 				//adding it to is meant to store the change in position per sample, and is not in MPS (rather, meters per sample). 
-				float liftspeedchange = liftforcenewtons * timebetweendots * timebetweendots / bbmasskg; //Speed change this sample. 
-				velocityps += hopupnormal * liftspeedchange;
+				//float liftspeedchange = liftforcenewtons * timebetweendots * timebetweendots / bbmasskg; //Speed change this sample. 
+				float liftspeedchange = liftforcenewtons * sampletime / bbmasskg; //Speed change. 
+				velocity += hopupnormal * liftspeedchange;
 
 				//cout << "CL: " << liftcoefficient << " H Speed Change: " << liftspeedchange << endl;
 			}
 		}
 
-		currentpoint += velocityps;
+		currentpoint += velocity * sampletime;
 
 		float pointdepth = currentpoint.z; //Shorthand. 
-		totaltime += timebetweendots;
+		//totaltime += timebetweendots;
+		totaltime += sampletime;
 
 		//If it's behind the camera, don't bother calculating the rest. 
 		if (pointdepth < 0)

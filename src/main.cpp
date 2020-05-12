@@ -221,7 +221,7 @@ int main(int argc, char **argv) {
 
 			cv::Rect panelrect;
 			//panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
-			panelrect = cv::Rect(0, 0, 50, 250);
+			panelrect = cv::Rect(0, 0, 50, 300);
 
 			//Calculate the menu size and assign it. 
 			cv::Rect menurect = cv::Rect(panelrect.width, 0, zedheight - panelrect.width, (zedheight - panelrect.width) / 3.0);
