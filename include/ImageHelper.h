@@ -21,7 +21,8 @@ public:
 	///to appear in the same place once the camera and UI rotations are finished. 
 	cv::Point RawImagePointToRotated(cv::Point inpoint, bool scale = true);
 
-	int2 ScreenTouchToUIPoint(int x, int y);
+	//int2 ScreenTouchToUIPoint(int x, int y);
+	void ScreenTouchToUIPoint(int* x, int* y);
 
 private:
 	sl::Camera* zed;

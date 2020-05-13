@@ -213,11 +213,11 @@ int main(int argc, char **argv) {
 			}
 
 			//Below should be uncommented for non-full screen window. 
-			cv::namedWindow("EasiAug");
+			//cv::namedWindow("EasiAug");
 
 			//Below should be uncommented if you want to have it be fullscreen automatically. Better for Jetson but worse for development on desktop.
-			//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
-			//cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+			cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+			cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
 			cv::Rect panelrect;
 			//panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
@@ -267,14 +267,20 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 {
 	if (event == CV_EVENT_LBUTTONDOWN || event == CV_EVENT_LBUTTONUP)
 	{
+		cout << "Before: X: " << x << " Y: " << y << endl;
+
 		//Clickable::ProcessAllClicks(x, y);
 		ImageHelper *imageHelper = static_cast<ImageHelper*>(userdata);
-		int2 rotateduipoints = imageHelper->ScreenTouchToUIPoint(x, y);
+		//int2 rotateduipoints = imageHelper->ScreenTouchToUIPoint(x, y);
+		imageHelper->ScreenTouchToUIPoint(&x, &y);
 		//int2 rotateduipoints = int2(x, y);
 
 		bool isdown = event == CV_EVENT_LBUTTONDOWN; 
 
-		panel.ProcessAllClicks(rotateduipoints.x, rotateduipoints.y, isdown);
+		cout << "After: X: " << x << " Y: " << y << endl;
+
+		//panel.ProcessAllClicks(rotateduipoints.x, rotateduipoints.y, isdown);
+		panel.ProcessAllClicks(x, y, isdown);
 		//panel.ProcessAllClicks(x, y);
 	}
 	

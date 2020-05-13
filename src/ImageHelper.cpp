@@ -217,15 +217,18 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint, bool scale )
 
 }
 
-int2 ImageHelper::ScreenTouchToUIPoint(int x, int y)
+//int2 ImageHelper::ScreenTouchToUIPoint(int* x, int* y)
+void ImageHelper::ScreenTouchToUIPoint(int* x, int* y)
 {
 	int screenrotamount = Config::screenRotation();
 	int2 returnint;
 	if (screenrotamount == 0)
 	{
+		/*
 		returnint.x = x;
 		returnint.y = y;
 		return returnint;
+		*/
 	}
 	else
 	{
@@ -235,18 +238,25 @@ int2 ImageHelper::ScreenTouchToUIPoint(int x, int y)
 
 		if (screenrotamount == 1)
 		{
-			returnint.x = y;
-			returnint.y = zedwidth - x;
+			int oldx = *x;
+			*x = *y;
+			*y = (zedwidth - oldx);
+			//returnint.y = zedwidth - x;
 		}
 		else if (screenrotamount == 2)
 		{
-			returnint.x = zedwidth - x;
-			returnint.y = zedheight - y;
+			*x = (zedwidth - *x);
+			*y = (zedheight - *y);
+			//returnint.x = zedwidth - x;
+			//returnint.y = zedheight - y;
 		}
 		else if (screenrotamount == 3)
 		{
-			returnint.x = zedheight - y;
-			returnint.y = x;
+			int oldx = *x;
+			*x = (zedheight - *y);
+			*y = oldx;
+			//returnint.x = zedheight - y;
+			//returnint.y = x;
 		}
 	}
 }
