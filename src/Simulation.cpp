@@ -5,6 +5,7 @@
 
 #include <Simulation.h>
 #include <Config.h>
+#include <Stats.h>
 
 
 using namespace sl;
@@ -26,22 +27,17 @@ Simulation::Simulation(sl::Camera *zed)
 	//barrelOffset = barreloffset; //TODO: Remove, as we'll be calculating this based on the settings. 
 }
 
-bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensamples, bool applyphysics, sl::SensorsData sensordata,
+bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetweensamples, bool applyphysics, sl::SensorsData sensordata,
 	int2& collisionpoint, float& collisiondepth, float& totaltime, bool drawline, cv::Mat& drawlinetomat, cv::Scalar linecolor)
 {
 	float downspeed = 0;
 	totaltime = 0;
-
 
 	sl::float3 camPosOffset(0, 0, 0);
 	camPosOffset.x = Config::camXPos();
 	camPosOffset.y = Config::camYPos();
 	camPosOffset.z = Config::camZPos();
 
-	//cout << camPosOffset.x << endl;
-
-	//sl::float3 lastvalidpoint = barrelOffset;
-	//sl::float3 currentpoint = barrelOffset;
 	sl::float3 lastvalidpoint = camPosOffset;
 	sl::float3 currentpoint = camPosOffset;
 
@@ -69,7 +65,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	float zanglerad = Config::camZRot() * 3.14159267 / 180.0;
 	gunupnormal.x = vectorup.x * cos(zanglerad) - vectorup.y * sin(zanglerad);
 	gunupnormal.y = vectorup.x * sin(zanglerad) + vectorup.y * cos(zanglerad);
-	
+
 
 	//Temporarily, the inverse of gun up normal will be used for the gravity angle, until the ZED2 arrives and we have an IMU. 
 	//sl::float3 gravitynormal(-gunupnormal.x, -gunupnormal.y, -gunupnormal.z);
@@ -82,11 +78,9 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 
 
 	//Downward acceleration to add each sample due to gravity.
-	float timebetweendots = distbetweensamples / speedmps; //How long does it take for the projectile to travel between two dots? Currently assuming forward speed doesn't change.
+	float timebetweendots = distbetweensamples / startspeedmps; //How long does it take for the projectile to travel between two dots? Currently assuming forward speed doesn't change.
 
-	//sl::float3 fvelchange = finalrotnormal * distbetweensamples; //Change in position from forward velocity each frame. 
-	//sl::float3 velocityps = finalrotnormal * distbetweensamples; //Startingvelocity. //This was per sample, but we're changing to real velocity in MPS. 
-	sl::float3 velocity = finalrotnormal * speedmps; //Startingvelocity
+	sl::float3 velocity = finalrotnormal * startspeedmps; //Startingvelocity
 	//float downspeedaddpersample = GRAVITY_ACCEL * timebetweendots * timebetweendots; //GRAVITY_ACCEL * timebetweendots is downward accel added per dot but STILL IN MPS. Multiply again to get how much it should change. 
 
 	//Cache the spin speed in rotations per second(rps). 
@@ -100,6 +94,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	//cout << "Start. tbd: " <<  timebetweendots << ", dsaps: " << downspeedaddpersample << ", vel: " << velocityps << ", frn: " << finalrotnormal << ", gravnormal: " << gravitynormal <<  endl;
 
 	//Numbers needed for drag and hop-up/Magnus that don't change sample to sample. 
+	//TODO: Don't calculate if not using physics - and also don't update stats. 
 	float bbdiameterm = Config::bbDiameterMM() / 1000;
 	//float crosssectionalarea = 3.14159267 * pow(Config::bbDiameterMM() / 1000 * 0.5, 2);
 	float crosssectionalarea = 3.14159267 * pow(bbdiameterm * 0.5, 2);
@@ -120,7 +115,15 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	//sl::float3 rotangle = RotateVectorAroundAxis(sl::float3(0, 0, 1), sl::float3(1, 0, 0), 45.0);
 	//cout << "New Angle: " << rotangle.x << ", " << rotangle.y << ", " << rotangle.z << endl;
 
-	//for (float d = 0; d < MAX_DISTANCE; d += fvelchange.z) //Must only add the Z component of forward normal. 
+	//Update stats with air values, which won't change between samples. 
+	Stats::UpdateAirPressure(sensordata.barometer.pressure);
+	Stats::UpdateAirDensity(airdensity);
+	Stats::UpdateAirViscosity(airviscosity);
+
+
+	bool isfirstsample = true;
+
+
 	while (currentpoint.z < MAX_DISTANCE) //Sliiiightly concerned this will be infinite. 
 	{
 		//Catch potential infinite loop. 
@@ -134,6 +137,13 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 		float speed = sqrt(pow(velocity.x, 2) + pow(velocity.y, 2) + pow(velocity.z, 2));
 		float sampletime = distbetweensamples / speed;
 
+		//Declare physics values outside if statement so we can use them to update stats later if needed.
+		//This does rely us on checking applyphysics again at that point to avoid passing inappropriate zeroes. 
+		float dragcoefficient = 0;
+		float dragforcenewtons = 0;
+		float liftcoefficient = 0;
+		float liftforcenewtons = 0;
+
 		if (applyphysics)
 		{
 			sl::float3 velocitynorm = velocity / speed;
@@ -141,14 +151,12 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 			//Gravity. Simplest first. 
 			velocity += gravitynormal * GRAVITY_ACCEL * sampletime;
 
-
 			//Drag. 
 			//float dragcoefficient = CalculateDragCoefficient(spinrpm, speed / timebetweendots, bbdiameterm, airdensity, airviscosity); //Using per-sample speed. 
-			float dragcoefficient = CalculateDragCoefficient(spinrpm, speed, bbdiameterm, airdensity, airviscosity);
-			float dragforcenewtons = CalculateDragForce(dragcoefficient, airdensity, crosssectionalarea, speed);
+			dragcoefficient = CalculateDragCoefficient(spinrpm, speed, bbdiameterm, airdensity, airviscosity);
+			dragforcenewtons = CalculateDragForce(dragcoefficient, airdensity, crosssectionalarea, speed);
 			//cout <<"Air Density: " << airdensity <<  " Newtons: " << dragforcenewtons << endl;
-			//velocityps -= velocityps.norm() * (dragforcenewtons / bbmasskg);// *timebetweendots;
-			//float dragspeedchange = dragforcenewtons * timebetweendots * timebetweendots / bbmasskg;
+
 			float dragspeedchange = dragforcenewtons * sampletime / bbmasskg;
 
 			//velocityps -= velocityps / speedps * speedchange * timebetweendots;
@@ -158,31 +166,37 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 			//Hop-up/Magnus.
 			if (spinrpm != 0) //If it's not spinning, don't spend the cycles doing all this. 
 			{
-			//Calculate hop-up normal. It's orthogonal to the velocity. 
-			//We get that by rotating around the cross product of the gun up normal and velocity by 90 degrees. 
-			//Recall that the gun up normal is the upward direction of the gun, ie the direction the backspin will push the bb. 
-			sl::float3 hopupcross = CrossProduct(velocity, gunupnormal);
-			//Normalize it. 
-			float hopupcrossmagnitude = sqrt(pow(hopupcross.x, 2) + pow(hopupcross.y, 2) + pow(hopupcross.z, 2));
-			hopupcross = hopupcross / hopupcrossmagnitude;
+				//Calculate hop-up normal. It's orthogonal to the velocity. 
+				//We get that by rotating around the cross product of the gun up normal and velocity by 90 degrees. 
+				//Recall that the gun up normal is the upward direction of the gun, ie the direction the backspin will push the bb. 
+				sl::float3 hopupcross = CrossProduct(velocity, gunupnormal);
+				//Normalize it. 
+				float hopupcrossmagnitude = sqrt(pow(hopupcross.x, 2) + pow(hopupcross.y, 2) + pow(hopupcross.z, 2));
+				hopupcross = hopupcross / hopupcrossmagnitude;
 
-			sl::float3 hopupnormal = RotateVectorAroundAxis(velocitynorm, hopupcross, 90); //TODO: Make sure it's rotating the right way. 
-			//cout << "HNorm: " << hopupnormal << " aps: " << hopupaddpersample << endl;
-			//velocityps += hopupnormal * hopupaddpersample; 
+				sl::float3 hopupnormal = RotateVectorAroundAxis(velocitynorm, hopupcross, 90); 
 
-				//float liftcoefficient = CalculateLiftCoefficient(spinrpm, speed / timebetweendots, bbdiameterm); //If change to speed works, apply to drag. 
-				float liftcoefficient = CalculateLiftCoefficient(spinrpm, speed, bbdiameterm); //If change to speed works, apply to drag. 
-				//float liftforcenewtons = CalculateLiftForce(liftcoefficient, airdensity, crosssectionalarea, speed / timebetweendots); //Force across a second. 
-				float liftforcenewtons = CalculateLiftForce(liftcoefficient, airdensity, crosssectionalarea, speed); //Force across a second. 
-				//That force is how much force will occur over a second. First we multiply by timebetweendots to account for the fact that
-				//we're only getting a small fraction of a section of force. Then we multiply again because the velocity value we're
-				//adding it to is meant to store the change in position per sample, and is not in MPS (rather, meters per sample). 
-				//float liftspeedchange = liftforcenewtons * timebetweendots * timebetweendots / bbmasskg; //Speed change this sample. 
+
+				liftcoefficient = CalculateLiftCoefficient(spinrpm, speed, bbdiameterm); //If change to speed works, apply to drag. 
+				liftforcenewtons = CalculateLiftForce(liftcoefficient, airdensity, crosssectionalarea, speed); //Force across a second. 
+				//That force is how much force will occur over a second. 
 				float liftspeedchange = liftforcenewtons * sampletime / bbmasskg; //Speed change. 
 				velocity += hopupnormal * liftspeedchange;
 
 				//cout << "CL: " << liftcoefficient << " H Speed Change: " << liftspeedchange << endl;
 			}
+
+			if (isfirstsample)
+			{
+				Stats::UpdateDragCoefficientBarrel(dragcoefficient);
+				Stats::UpdateDragForceBarrel(dragforcenewtons);
+				Stats::UpdateMagnusCoefficientBarrel(liftcoefficient);
+				Stats::UpdateMagnusForceBarrel(liftforcenewtons);
+
+
+				isfirstsample = false;
+			}
+
 		}
 
 		currentpoint += velocity * sampletime;
@@ -218,6 +232,17 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 			int2 lastscreenpos = CamUtilities::CameraToScreenPos(lastvalidpoint, projectionMatrix, swidth, sheight);
 			collisionpoint = lastscreenpos;
 			collisiondepth = lastvalidpoint.z;
+
+			//Update stats for the impact point. 
+			Stats::UpdateSpeedImpact(speed);
+			if (applyphysics)
+			{
+				Stats::UpdateDragCoefficientImpact(dragcoefficient);
+				Stats::UpdateDragForceImpact(dragforcenewtons);
+				Stats::UpdateMagnusCoefficientImpact(liftcoefficient);
+				Stats::UpdateMagnusForceImpact(liftforcenewtons);
+			}
+
 			return true;
 		}
 		else
@@ -240,6 +265,17 @@ bool Simulation::Simulate(sl::Mat depthmat, float speedmps, float distbetweensam
 	collisionpoint = CamUtilities::CameraToScreenPos(lastvalidpoint, projectionMatrix, depthmat.getWidth(), depthmat.getHeight());
 	collisiondepth = lastvalidpoint.z;
 	//cout << "Failed. Downspeed at failure: " << downspeed << endl;
+
+	//Update stats to show that they are empty. 
+	if (applyphysics)
+	{
+		Stats::UpdateDragCoefficientImpact(0);
+		Stats::UpdateDragForceImpact(0);
+		Stats::UpdateMagnusCoefficientImpact(0);
+		Stats::UpdateMagnusForceImpact(0);
+	}
+
+
 	return false; //We didn't hit anything. 
 }
 
@@ -296,9 +332,9 @@ float Simulation::CalculateDragCoefficient(float spinrpm, float linearspeedmps, 
 
 	//If we have any spin, we then take that and apply a new formula. 
 	if (spinrpm == 0) return (float)spinlessCD; //If no spin, we can quit here. 
-	
+
 	//Calculate the surface speed, which to my understanding is the speed at which a point on the outside of the circle is moving. 
-	float surfacespeed = bbdiametermeters * 3.14159267 * spinrpm / 60; 
+	float surfacespeed = bbdiametermeters * 3.14159267 * spinrpm / 60;
 
 	//Calculate the ratio of spin velocity to linear velocity. Those two are represented as V and U mathematically, hence calling it vu.
 	float vu = surfacespeed / linearspeedmps;

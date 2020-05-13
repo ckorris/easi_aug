@@ -1,6 +1,7 @@
 //#include <Menus.h>
 #include <Drawables.h>
 #include <Config.h>
+#include <Stats.h>
 
 
 
@@ -22,26 +23,11 @@ Sidebar::Sidebar(cv::Rect openpanelrect, float anchorxmin, float anchorxmax, flo
 	menus.emplace_back(new EnvironmentMenu(0, 1, 0, 1));
 	menus.emplace_back(new StatsMenu(0, 1, 0, 1));
 
-
-	//Buttons. For now, no images, just indexes.
-	//bool(*checkselected)(int) = [this](int i) { return i == selectedIndex; };
-	//auto checkselected = [this](int i) { return i == selectedIndex; };
-	//bool (*checkselected)(int index);
-	//checkselected = this->CheckSelected;
-
-	//bool(*checkselected)() = []() { return true; };
 	bool(Sidebar::*checkselected)(int index);
 	checkselected = &Sidebar::CheckSelected;
 
-	//auto setselected = [this](int i) { SelectDrawable(i); };
-	//void(*setselected)(int index);
-	//setselected = this->SelectDrawable;
-
 	//Open menu button. Note this one is not added to children; it's drawn separately. 
 	void(*openSidebar)() = []() {sidebarToggled = true; };
-	//ImageButton togglesidebar(openSidebar, "../images/hamburger_icon.png", cv::Scalar(0, 0, 0, 0), 0, 1.0, 0.0, 0.2);
-	//ImageButton togglesidebar(openSidebar, "../images/hamburger_icon.png", cv::Scalar(0, 0, 0, 0), 0, 1.0, 0.0, 0.2);
-	//unique_ptr<ImageButton> togglepointer(new ImageButton(openSidebar, "../images/hamburger_icon.png", cv::Scalar(0, 0, 0, 0), 0, 1.0, 0.0, 0.2));
 	
 	openSidebarButton = make_unique<ImageButton>(ImageButton(openSidebar, "../images/hamburger_icon.png", false, 0, 1.0, 0.0, 0.167));
 
@@ -249,8 +235,21 @@ EnvironmentMenu::EnvironmentMenu(float anchorxmin, float anchorxmax, float ancho
 
 	//Relative humidity arrows.
 	float(*relhumidgetter)() = []() {return Config::relativeHumidity01(); };
-	void(*relhumidsetter)(float) = [](float v) {Config::relativeHumidity01(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(relhumidgetter, relhumidsetter, 1000, "REL. HUMID", "%1.0f%%", cv::Scalar(0, 0, 255, 1), 0.35, 0.65, 0, 1));
+	void(*relhumidsetter)(float) = [](float v) {Config::relativeHumidity01(v); }; //TODO: String format below shows percentage, but also decimal, eg. 0.77%. Should be 77%.
+	Drawable::children.emplace_back(new SettingIncrementorPanel(relhumidgetter, relhumidsetter, 0.01, "REL. HUMID", "%1.2f%%", cv::Scalar(0, 0, 255, 1), 0.35, 0.65, 0, 1));
+
+	//Stats readouts related to the air. 
+	//Air pressure from the ZED's barometer.
+	float(*airpressuregetter)() = []() {return Stats::GetLatestAirPressure(); };
+	Drawable::children.emplace_back(new ValueLabel(airpressuregetter, "Pressure: ", "%1.2f HPA", 0.69, 1, 0, 0.334));
+
+	//Air density in KG/m3. 
+	float(*airdensitygetter)() = []() {return Stats::GetLatestAirDensity(); };
+	Drawable::children.emplace_back(new ValueLabel(airdensitygetter, "Density: ", "%1.2f kg/m3", 0.69, 1, 0.334, 0.667));
+
+	//Air viscosity in centiPoise. Note the multiplication in the getter, which converts from the Poise figure retrieved from Stats. 
+	float(*airviscositygetter)() = []() {return Stats::GetLatestAirViscosity() * 100; };
+	Drawable::children.emplace_back(new ValueLabel(airviscositygetter, "Viscosity: ", "%1.6f cP", 0.69, 1, 0.667, 1));
 }
 
 void EnvironmentMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -262,7 +261,42 @@ void EnvironmentMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 StatsMenu::StatsMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
+	//First column: Speed. 
+	//Barrel speed. This is directly from the config and viewable elsewhere but is just for convenience. 
+	float(*speedbarrelgetter)() = []() {return Config::forwardSpeedMPS(); };
+	Drawable::children.emplace_back(new ValueLabel(speedbarrelgetter, "Speed @Brl: ", "%1.1f mps", 0.0, 0.334, 0.0, 0.5));
 
+	//Impact speed. 
+	float(*speedimpactgetter)() = []() {return Stats::GetLatestSpeedImpact(); };
+	Drawable::children.emplace_back(new ValueLabel(speedimpactgetter, "Speed @Imp: ", "%1.1f mps", 0.0, 0.334, 0.5, 1));
+
+	//Second column: Drag. 
+	//Drag coefficient at barrel. 
+	float(*dragcoefbarrelgetter)() = []() {return Stats::GetDragCoefficientBarrel(); };
+	Drawable::children.emplace_back(new ValueLabel(dragcoefbarrelgetter, "cD @Brl: ", "%1.4f", 0.334, 0.667, 0.0, 0.25));
+	//Drag coefficient at impact. 
+	float(*dragcoefimpactgetter)() = []() {return Stats::GetDragCoefficientImpact(); };
+	Drawable::children.emplace_back(new ValueLabel(dragcoefimpactgetter, "cD @Imp: ", "%1.4f", 0.334, 0.667, 0.25, 0.5));
+	//Drag force at barrel. 
+	float(*dragforcebarrelgetter)() = []() {return Stats::GetDragForceBarrel(); };
+	Drawable::children.emplace_back(new ValueLabel(dragforcebarrelgetter, "fD @Brl: ", "%1.4f", 0.334, 0.667, 0.5, 0.75));
+	//Drag force at barrel. 
+	float(*dragforceimpactgetter)() = []() {return Stats::GetDragForceImpact(); };
+	Drawable::children.emplace_back(new ValueLabel(dragforceimpactgetter, "fD @Imp: ", "%1.4f", 0.334, 0.667, 0.75, 1.0));
+
+	//Third column: Magnus/Lift/Hop-Up. 
+	//Lift coefficient at barrel. 
+	float(*magnuscoefbarrelgetter)() = []() {return Stats::GetMagnusCoefficientBarrel(); };
+	Drawable::children.emplace_back(new ValueLabel(magnuscoefbarrelgetter, "cL @Brl: ", "%1.4f", 0.667, 1.0, 0.0, 0.25));
+	//Lift coefficient at impact. 
+	float(*magnuscoefimpactgetter)() = []() {return Stats::GetMagnusCoefficientImpact(); };
+	Drawable::children.emplace_back(new ValueLabel(magnuscoefimpactgetter, "cL @Imp: ", "%1.4f", 0.667, 1.0, 0.25, 0.5));
+	//Lift force at barrel. 
+	float(*magnusforcebarrelgetter)() = []() {return Stats::GetMagnusForceBarrel(); };
+	Drawable::children.emplace_back(new ValueLabel(magnusforcebarrelgetter, "fL @Brl: ", "%1.4f", 0.667, 1.0, 0.5, 0.75));
+	//Lift force at barrel. 
+	float(*magnusforceimpactgetter)() = []() {return Stats::GetMagnusForceImpact(); };
+	Drawable::children.emplace_back(new ValueLabel(magnusforceimpactgetter, "fL @Imp: ", "%1.4f", 0.667, 1.0, 0.75, 1.0));
 }
 
 void StatsMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
