@@ -28,6 +28,12 @@ public:
 
 	static float CalculateLiftForce(float liftcoefficient, float airdensitykgm3, float surfaream2, float speedms);
 
+	static float CalculateMomentOfInertia(float bbmasskg, float bbdiameterm);
+
+	static float CalculateSpinDragTorque(float airdensitykgm3, float airviscosity, float bbdiameterm, float spinrpm, float viscousfrictioncoefficient);
+
+	//static float CalculateSpinDragTorque()
+
 private:
 	sl::Camera *currentZED;
 	cv::Mat projectionMatrix;

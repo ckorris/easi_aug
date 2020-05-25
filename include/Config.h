@@ -32,6 +32,7 @@ static const string BB_MASS_GRAMS_NAME = "BBMassGrams";
 static const string BB_DIAMETER_MM_NAME = "BBDiameterMM";
 static const string TEMPERATURE_NAME = "TemperatureC";
 static const string RELATIVE_HUMIDITY_NAME = "RelativeHumidity01";
+static const string BB_TO_AIR_FRIC_COEF_NAME = "BBToAirFrictionCoefficient";
 
 class Config
 {
@@ -244,6 +245,15 @@ public:
 	static inline const void camZRot(float newvalue)
 	{
 		SetFloatSetting(CAM_Z_ROT_NAME, newvalue);
+	}
+
+	static inline float bbToAirFrictionCoef()
+	{
+		return GetFloatSetting(BB_TO_AIR_FRIC_COEF_NAME);
+	}
+	static inline const void bbToAirFrictionCoef(float newvalue)
+	{
+		SetFloatSetting(BB_TO_AIR_FRIC_COEF_NAME, newvalue);
 	}
 
 

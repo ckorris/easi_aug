@@ -17,6 +17,8 @@ const float MAX_DISTANCE = 40.0;
 const float GAS_CONSTANT_DRY_AIR = 287.058; //J / (kg*K).
 const float GAS_CONSTANT_WATER_VAPOR = 461.495; //J / (kg*K).
 
+const float PI = 3.14159267;
+
 Simulation::Simulation(sl::Camera *zed)
 {
 	currentZED = zed;
@@ -47,12 +49,12 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 	//where Z rot does not (yet) matter (because the IMU should account for that when we add gravity). 
 	//Y rot first. 
 	sl::float3 yrotnormal = forwardnormal;
-	float yanglerad = Config::camYRot() * 3.14159267 / 180.0;
+	float yanglerad = Config::camYRot() * PI / 180.0;
 	yrotnormal.z = forwardnormal.z * cos(yanglerad) - forwardnormal.x * sin(yanglerad);
 	yrotnormal.x = forwardnormal.z * sin(yanglerad) + forwardnormal.x * cos(yanglerad);
 
 	sl::float3 finalrotnormal = yrotnormal;
-	float xanglerad = Config::camXRot() * 3.14159267 / 180.0;
+	float xanglerad = Config::camXRot() * PI / 180.0;
 	finalrotnormal.z = yrotnormal.z * cos(xanglerad) - yrotnormal.y * sin(xanglerad);
 	finalrotnormal.y = yrotnormal.z * sin(xanglerad) - yrotnormal.y * cos(xanglerad);
 
@@ -62,7 +64,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 
 	sl::float3 vectorup(0, 1, 0); //Could just put 0 and 1 in the math directly, but this makes code easier to read. 
 	sl::float3 gunupnormal = vectorup;
-	float zanglerad = Config::camZRot() * 3.14159267 / 180.0;
+	float zanglerad = Config::camZRot() * PI / 180.0;
 	gunupnormal.x = vectorup.x * cos(zanglerad) - vectorup.y * sin(zanglerad);
 	gunupnormal.y = vectorup.x * sin(zanglerad) + vectorup.y * cos(zanglerad);
 
@@ -70,7 +72,9 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 	//Temporarily, the inverse of gun up normal will be used for the gravity angle, until the ZED2 arrives and we have an IMU. 
 	//sl::float3 gravitynormal(-gunupnormal.x, -gunupnormal.y, -gunupnormal.z);
 	//Edit: I GOT MY ZED 2 MOFOS TIME FOR SUM REEL GUD FIZIKZ.
-	sl::float3 gravitynormal = CamUtilities::IMUPoseToGravityVector(sensordata.imu.pose);
+	//sl::float3 gravitynormal = CamUtilities::IMUPoseToGravityVector(sensordata.imu.pose);
+	sl::float3 gravitynormal = sensordata.imu.linear_acceleration;
+	gravitynormal.x = -gravitynormal.x; //Not sure why it's reverse, I guess because of OpenGL convention, but this fixes it. 
 
 	//For drawing. 
 	int2 lastscreenpos;
@@ -96,14 +100,16 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 	//Numbers needed for drag and hop-up/Magnus that don't change sample to sample. 
 	//TODO: Don't calculate if not using physics - and also don't update stats. 
 	float bbdiameterm = Config::bbDiameterMM() / 1000;
-	//float crosssectionalarea = 3.14159267 * pow(Config::bbDiameterMM() / 1000 * 0.5, 2);
-	float crosssectionalarea = 3.14159267 * pow(bbdiameterm * 0.5, 2);
+	//float crosssectionalarea = PI * pow(Config::bbDiameterMM() / 1000 * 0.5, 2);
+	float crosssectionalarea = PI * pow(bbdiameterm * 0.5, 2);
 	float tempcelsius = Config::temperatureC();
 	float relhumidity01 = Config::relativeHumidity01();
 	float airdensity = CalculateAirDensity(sensordata.barometer.pressure, tempcelsius, relhumidity01); //Temp values - one atmosphere, 50°C, no humidity.
 	//float airdensity = 122.5; //Temp. In hectapascals. 
 	float airviscosity = CalculateAirViscosity(tempcelsius);
 	float bbmasskg = Config::bbMassGrams() / 1000.0;
+	float momentofinertia = CalculateMomentOfInertia(bbmasskg, bbdiameterm); 
+	float rotdragfriccoef = Config::bbToAirFrictionCoef(); //Friction coefficient for spin decay. 
 
 	//DEBUG
 	//float testdragforce = CalculateDragForce(0.47, 122.5, crosssectionalarea, 65);
@@ -121,9 +127,10 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 	Stats::UpdateAirViscosity(airviscosity);
 
 
-	bool isfirstsample = true;
+	//bool isfirstsample = true;
 
-
+	int samplecount = 0; //Mostly for debug but also used here and there. 
+	//cout << "Start RPM = " << spinrpm << endl;
 	while (currentpoint.z < MAX_DISTANCE) //Sliiiightly concerned this will be infinite. 
 	{
 		//Catch potential infinite loop. 
@@ -143,6 +150,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 		float dragforcenewtons = 0;
 		float liftcoefficient = 0;
 		float liftforcenewtons = 0;
+
 
 		if (applyphysics)
 		{
@@ -176,7 +184,6 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 
 				sl::float3 hopupnormal = RotateVectorAroundAxis(velocitynorm, hopupcross, 90); 
 
-
 				liftcoefficient = CalculateLiftCoefficient(spinrpm, speed, bbdiameterm); //If change to speed works, apply to drag. 
 				liftforcenewtons = CalculateLiftForce(liftcoefficient, airdensity, crosssectionalarea, speed); //Force across a second. 
 				//That force is how much force will occur over a second. 
@@ -184,9 +191,41 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 				velocity += hopupnormal * liftspeedchange;
 
 				//cout << "CL: " << liftcoefficient << " H Speed Change: " << liftspeedchange << endl;
+
+				//Spin decay. 
+				//Temporarily while I can't experiment at all (need equipment and lack of the plague) I'm using a 
+				//straight percentage reduction of the spin as a percentage per second. 
+
+				spinrpm -= spinrpm * rotdragfriccoef * sampletime;
+
+				/*
+				float spindragtorque = CalculateSpinDragTorque(airdensity, airviscosity, bbdiameterm, spinrpm, rotdragfriccoef);
+				float dragangularaccel = spindragtorque / momentofinertia; //This is in radians per second. 
+				//rad/sec to RPM: Divide by 2PI for rots/sec. Mult by 60 for rots/minute (rpm). 
+				//float spindecaythissample = dragangularaccel / (2 * PI)  * 60.0 * sampletime;
+				float sampledecayradpersec = dragangularaccel * sampletime;
+				float sampledecayRPM = sampledecayradpersec / (2 * PI) * 60;
+				//int spindecaythissample = (int)round(dragangularaccel / (2 * PI)  * 60.0 * sampletime);
+				spinrpm -= (int)round(sampledecayRPM);
+
+				
+				if (samplecount < 1)
+				{
+					cout << "Sample " << samplecount << " torque: " << spindragtorque << ": dragangularaccel = " << dragangularaccel << 
+						"Sample time: " << sampletime << ". Decay this sample: " << sampledecayradpersec << "rad/sec. RPM change = " << sampledecayRPM << endl;
+				}
+				*/
+
+
+				if (spinrpm < 0) spinrpm = 0;
+				
+
 			}
 
-			if (isfirstsample)
+
+
+			//if (isfirstsample)
+			if (samplecount == 0)
 			{
 				Stats::UpdateDragCoefficientBarrel(dragcoefficient);
 				Stats::UpdateDragForceBarrel(dragforcenewtons);
@@ -194,7 +233,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 				Stats::UpdateMagnusForceBarrel(liftforcenewtons);
 
 
-				isfirstsample = false;
+				//isfirstsample = false;
 			}
 
 		}
@@ -251,13 +290,16 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 			{
 				if (drawthistime)
 				{
-					cv::line(drawlinetomat, cv::Point(lastscreenpos.x, lastscreenpos.y), cv::Point(screenpos.x, screenpos.y), linecolor);
+					//cv::line(drawlinetomat, cv::Point(lastscreenpos.x, lastscreenpos.y), cv::Point(screenpos.x, screenpos.y), linecolor);
+					cv::line(drawlinetomat, cv::Point(lastscreenpos.x, lastscreenpos.y), cv::Point(screenpos.x, screenpos.y), linecolor, 2);
 				}
 				drawthistime = !drawthistime;
 			}
 
 			lastvalidpoint = currentpoint;
 			lastscreenpos = screenpos;
+
+			samplecount++;
 		}
 	}
 
@@ -299,7 +341,7 @@ float Simulation::CalculateAirDensity(float totalairpressurehpa, float tempcelsi
 	return airdensity;
 }
 
-float Simulation::CalculateAirViscosity(float tempcelsius)
+float Simulation::CalculateAirViscosity(float tempcelsius) //Pascal seconds
 {
 	float tempkelvins = tempcelsius + 273.15;
 
@@ -309,7 +351,8 @@ float Simulation::CalculateAirViscosity(float tempcelsius)
 	//Used as reference: https://www.cfd-online.com/Wiki/Sutherland's_law and https://www.lmnoeng.com/Flow/GasViscosity.php
 
 	//return 0.00001716 * pow(tempkelvins / 273.15, 1.5) * (383.55 / (tempkelvins + 110.4));
-	return (0.000001458 * pow(tempkelvins, 1.5)) / (tempkelvins + 110.4);
+	float viscositycp = (0.00001458 * pow(tempkelvins, 1.5)) / (tempkelvins + 110.4); //Poise. 
+	return viscositycp * 0.1; //To Pascal seconds. 
 }
 
 
@@ -334,7 +377,7 @@ float Simulation::CalculateDragCoefficient(float spinrpm, float linearspeedmps, 
 	if (spinrpm == 0) return (float)spinlessCD; //If no spin, we can quit here. 
 
 	//Calculate the surface speed, which to my understanding is the speed at which a point on the outside of the circle is moving. 
-	float surfacespeed = bbdiametermeters * 3.14159267 * spinrpm / 60;
+	float surfacespeed = bbdiametermeters * PI * spinrpm / 60;
 
 	//Calculate the ratio of spin velocity to linear velocity. Those two are represented as V and U mathematically, hence calling it vu.
 	float vu = surfacespeed / linearspeedmps;
@@ -361,7 +404,7 @@ float Simulation::CalculateLiftCoefficient(float spinrpm, float linearspeedmps, 
 	//https://web.archive.org/web/20040617080904/http://home.comcast.net/~dyrgcmn/pball/pballIntro.html
 
 	//Calculate the surface speed, which to my understanding is the speed at which a point on the outside of the circle is moving. 
-	float surfacespeed = bbdiametermeters * 3.14159267 * spinrpm / 60;
+	float surfacespeed = bbdiametermeters * PI * spinrpm / 60;
 
 	//Calculate the ratio of spin velocity to linear velocity. Those two are represented as V and U mathematically, hence calling it vu.
 	float vu = surfacespeed / linearspeedmps;
@@ -395,7 +438,7 @@ sl::float3 Simulation::CrossProduct(sl::float3 v1, sl::float3 v2)
 sl::float3 Simulation::RotateVectorAroundAxis(sl::float3 srcvec, sl::float3 axis, float angledegrees)
 {
 	//Convert to radians. 
-	float anglerad = angledegrees * 3.14159267 / 180;
+	float anglerad = angledegrees * PI / 180;
 
 	float sinang = sin(anglerad); //Shorthand.
 	float cosang = cos(anglerad); //Shorthand. 
@@ -425,6 +468,68 @@ sl::float3 Simulation::RotateVectorAroundAxis(sl::float3 srcvec, sl::float3 axis
 	cv::Mat multmat = rotmatrix * srcvecmat;
 
 	return sl::float3(multmat.at<float>(0), multmat.at<float>(1), multmat.at<float>(2));
+}
 
+float Simulation::CalculateMomentOfInertia(float bbmasskg, float bbdiamaterm)
+{
+	//Moment of inertia for a sphere is known as 2/5mr². 
+	//I found this on Wikipedia and a textbook I own. Wikipedia link:  
+	//https://en.wikipedia.org/wiki/List_of_moments_of_inertia
+	return .4 * bbmasskg * pow(bbdiamaterm * 0.5, 2);
+}
 
+//Should return in Newton-meters. 
+float Simulation::CalculateSpinDragTorque(float airdensitykgm3, float airviscosity, float bbdiameterm, float spinrpm,
+	float viscousfriccoef)
+{
+	//This is based on, again, the Airsoft Trajectory Project, however this section is incomplete, namely
+	//in that it doesn't provide info for providing the viscous friction coefficient. For this reason, 
+	//I'm putting that coefficient as a configurable setting and will tweak it based on experimental data. 
+	//I found only one site that provides friction coeffients for various materials against air, but it does
+	//not include plastics: https://www.tribonet.org/wiki/friction-coefficients-in-atmosphere-and-vacuum/
+	//However, I'm guessing it's relatively small, <0.1, as the listed coefficient for 
+	//Teflon (polytetrafluoroethylene) is the closest material to BB plastic (non-biodegradable airsoft
+	//BBs are made of acrylonitrile butadiene styrene, or ABS). And literally my only basis for comparison
+	//is that both are polymers. So yeah... gonna tweak the setting based on testing. 
+
+	//Also trying equations from: https://www.deepdyve.com/lp/wiley/a-high-reynolds-number-rotating-disk-rheometer-E3TzStyy9q
+
+	float bbradius = bbdiameterm / 2.0; //Shorthand. 
+
+	//TEST: Set density and viscosity to those in example 6.2 here: 
+	//https://www.sciencedirect.com/topics/engineering/rotational-reynolds-number
+	//airdensitykgm3 = 5.2;
+	//airviscosity = 0.00003;
+
+	
+	//NEXT STEP: Take the math for the Cm (moment coefficient) there, which applies to cylinders, 
+	//and figure out how to apply to spheres. See about finding about area relationships with radius or something. 
+	//That number should give us the power, which we should be able to convert to torque rather simply. 
+	//Also crap, we might have to do the same thing for the reynolds number. Yeah, Re = 233 for 3mm, 933 for 6mm. 
+
+	//Calculate angular velocity from RPM into radians per sec. I *THINK* this is proper units. 
+	//float angvelocityradpersec = spinrpm / 60.0 * 2 * PI;
+	float angvelocityradpersec = spinrpm * 2 * PI / 60.0 ;
+
+	//Calculate the Reynolds number for centerline rotation. 
+	//float reynoldsrot = airdensitykgm3 * pow(bbradius, 2) * angvelocityradpersec / viscousfriccoef;
+	float reynoldsrot = pow(bbradius, 2) * angvelocityradpersec * airdensitykgm3 / airviscosity;
+
+	
+
+	//float reynoldsrot = 6220.0;
+
+	//Calculate the torque coefficient due to drag. 
+	//This is taken straight from ATP, but I can't find that formula elsewhere online,  (especially the constants)
+	//so this is an act of faith. I totally understand the author's hesitation to publish details, as there really 
+	//are lots of blanks and mixed signals in calculating this stuff. 
+	float torquecoef = 6.45 / pow(reynoldsrot, 0.5) + 32.1 / reynoldsrot;
+
+	//cout << "AngRadPerSec: " << angvelocityradpersec << " Air density: " << airdensitykgm3 << " Viscosity: " << airviscosity << 
+	//	" Reynolds: " << reynoldsrot << " torque coef: " << torquecoef << endl;
+
+	//Calculate the actual torque due to drag. 
+	float dragtorque = 0.5 * torquecoef * airdensitykgm3 * pow(bbradius, 3) * pow(angvelocityradpersec, 2);
+	//float dragtorque = 0.5 * torquecoef * airviscosity * pow(bbradius, 3) * pow(angvelocityradpersec, 2);
+	return dragtorque;
 }

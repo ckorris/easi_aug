@@ -106,10 +106,6 @@ void Sidebar::SelectDrawable(int index)
 }
 
 
-
-
-
-
 CalibrationMenu::CalibrationMenu(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 	: Drawable::Drawable(anchorxmin, anchorxmax, anchorymin, anchorymax)
 {
@@ -166,7 +162,13 @@ ProjectileMenu::ProjectileMenu(float anchorxmin, float anchorxmax, float anchory
 	float(*massgetter)() = []() {return Config::bbMassGrams(); };
 	void(*masssetter)(float) = [](float v) {Config::bbMassGrams(v); };
 	Drawable::children.emplace_back(new SettingIncrementorPanel(massgetter, masssetter, 0.01, "BB MASS", "%1.2fg", cv::Scalar(0, 0, 255, 1), 0.69, 0.99, 0, 1));
+	
 
+	/* //Use this to test the spin friction coefficient. At time of writing, this is actually just a percentage of the total RPM taken off every sample (times delta time). 
+	float(*dfcoefgetter)() = []() {return Config::bbToAirFrictionCoef(); };
+	void(*dfcoefsetter)(float) = [](float v) {Config::bbToAirFrictionCoef(v); };
+	Drawable::children.emplace_back(new SettingIncrementorPanel(dfcoefgetter, dfcoefsetter, 0.01, "dF COEF", "%1.6f", cv::Scalar(0, 0, 255, 1), 0.69, 0.99, 0, 1));
+	*/
 }
 
 void ProjectileMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -248,8 +250,8 @@ EnvironmentMenu::EnvironmentMenu(float anchorxmin, float anchorxmax, float ancho
 	Drawable::children.emplace_back(new ValueLabel(airdensitygetter, "Density: ", "%1.2f kg/m3", 0.69, 1, 0.334, 0.667));
 
 	//Air viscosity in centiPoise. Note the multiplication in the getter, which converts from the Poise figure retrieved from Stats. 
-	float(*airviscositygetter)() = []() {return Stats::GetLatestAirViscosity() * 100; };
-	Drawable::children.emplace_back(new ValueLabel(airviscositygetter, "Viscosity: ", "%1.6f cP", 0.69, 1, 0.667, 1));
+	float(*airviscositygetter)() = []() {return Stats::GetLatestAirViscosity(); };
+	Drawable::children.emplace_back(new ValueLabel(airviscositygetter, "Viscosity: ", "%1.6f Pa/s", 0.69, 1, 0.667, 1));
 }
 
 void EnvironmentMenu::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
