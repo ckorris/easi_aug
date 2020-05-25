@@ -19,18 +19,14 @@ Drawable::Drawable(float anchorxmin, float anchorxmax, float anchorymin, float a
 }
 
 vector<unique_ptr<Drawable>> Drawable::allEnabledDrawables;
-//vector<unique_ptr<Drawable>> Drawable::children;
 
 void Drawable::Enable()
 {
-	//Drawable::allEnabledDrawables.push_back(*this);
-
 	isEnabled = true;
 
 	//Enable children. 
 	for (int i = 0; i < children.size(); i++)
 	{
-		//children[i].Enable();
 		children[i]->Enable();
 	}
 }
@@ -42,7 +38,6 @@ void Drawable::Disable()
 	//Disable children. 
 	for (int i = 0; i < children.size(); i++)
 	{
-		//children[i].Disable();
 		children[i]->Disable();
 	}
 }
@@ -86,7 +81,7 @@ void Drawable::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
 
 void Drawable::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 {
-	//cout << "Drawable Draw" << endl;
+
 }
 
 void Drawable::ProcessAllClicks(int x, int y, bool isdown)
@@ -104,7 +99,6 @@ void Drawable::ProcessAllClicks(int x, int y, bool isdown)
 
 		for (int i = 0; i < Drawable::children.size(); i++)
 		{
-			//children[i].ProcessAllClicks(x, y);
 			Drawable::children[i]->ProcessAllClicks(x, y, isdown);
 		}
 	}

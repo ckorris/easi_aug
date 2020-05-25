@@ -90,22 +90,8 @@ int main(int argc, char **argv) {
 			//Log a new frame in TimeHelper, so that we can accurately get deltaTime later. 
 			Time::LogNewFrame();
 
-			//Test sensors. 
-			//zed.getSensorsData(sensorData, TIME_REFERENCE::IMAGE);
-			//cout << sensorData.imu.linear_acceleration << endl;
-			//cout << sensorData.barometer.pressure << endl;
-			//float temperature;
-			//sensorData.temperature.get(SensorsData::TemperatureData::SENSOR_LOCATION::BAROMETER, temperature);
-			//cout << "Temp: " << temperature << " C" << endl;
-			//cout << sensorData.magnetometer.magnetic_field_calibrated << endl;
-			//Pose pose = sensorData.imu.pose;
-			//cout << pose.getEulerAngles(false) << endl;
-			//sl::float3 gravnorm = CamUtilities::IMUPoseToGravityVector(pose);
-			//cout << gravnorm << endl;
 
-			//cout << "Pose: " << pose.getEulerAngles(false) << " GravDir: " << CamUtilities::IMUPoseToGravityVector(pose) << endl;
-			//cout << sensorData.imu.linear_acceleration << endl;
-
+			//cout << Time::fps() << endl;
 
 			// Retrieve the left image, depth image in half-resolution
 			zed.retrieveImage(zedimage, VIEW::LEFT, MEM::CPU, image_size);
@@ -121,6 +107,14 @@ int main(int argc, char **argv) {
 			int uiheight = (screenrot % 2 == 0) ? image_ocv.rows : image_ocv.cols;
 			ui_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
 			ui_mat.setTo(cv::Scalar(0, 0, 0, 0));
+
+			//Draw the FPS in the top right. 
+			char fpsbuffer[5];
+			int n = sprintf(fpsbuffer, "%1.0f", Time::intermittentFPS());
+			cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL);
+			cv::putText(ui_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100));
+
+
 
 			//Laser crosshair - no gravity. 
 			if (Config::toggleLaserCrosshair() || Config::toggleLaserPath())
@@ -192,7 +186,6 @@ int main(int argc, char **argv) {
 							int t = sprintf(timebuffer, "%0.2f", traveltime_grav);
 							string timesuffix = "s";
 							string timetext = timebuffer + timesuffix;
-							//cv::Size timetextsize = cv::getTextSize(timetext, 1, 1, 1, NULL);
 
 							cv::Point timetextpoint(gravpoint_ui.x + 20 + dotradius,
 								gravpoint_ui.y - 20 - dotradius);
@@ -201,18 +194,13 @@ int main(int argc, char **argv) {
 							cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 						}
 					}
-					//TEST: Draw shape on crosshair to test ImageHelper::RawImagePointToRotated(). 
-					//cv::Point rotpoint = imageHelper.RawImagePointToRotated(cv::Point(collisionpoint_grav.x, collisionpoint_grav.y));
-					//cv::circle(ui_mat, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 255, 0, 255), 2);
-					//cv::circle(ui_mat, rotpoint, dotradius, cv::Scalar(255, 0, 0, 255), 3);
-					//cv::circle(ui_mat, cv::Point(ui_mat.cols / 2, ui_mat.rows / 2), dotradius, cv::Scalar(255, 0, 255, 255), -1);
-					//cout << "CollPoint: " << cv::Point(collisionpoint_grav.x, collisionpoint_grav.y) << " Rotpoint: " << rotpoint << endl;
 				}
 				else
 				{
 					//cout << "Did not collide. Last was " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
 				}
 			}
+
 
 			//Below should be uncommented for non-full screen window. 
 			cv::namedWindow("EasiAug");
@@ -239,7 +227,6 @@ int main(int argc, char **argv) {
 			cv::Mat finaluimat = imageHelper.RotateUIToConfig(ui_mat);
 
 			//Add the UI image to it. 
-			//TODO: We don't rotate the Ui image yet so will break if rotated anything but 0° or 180°.
 			cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
 			int fromto[] = { 3, 0 };
 			cv::mixChannels(finaluimat, mask, fromto, 1);
@@ -247,8 +234,6 @@ int main(int argc, char **argv) {
 			cv::add(finalimagemat, finaluimat, finalimagemat, mask);
 		
 
-			//cv::imshow("EasiAug", image_ocv);
-			//cv::imshow("EasiAug", rotated);
 			cv::imshow("EasiAug", finalimagemat);
 
 

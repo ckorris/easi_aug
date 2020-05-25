@@ -15,6 +15,8 @@ public:
 
 	static float fps();
 
+	static float intermittentFPS();
+
 	//static float fps_smoothed();
 
 
