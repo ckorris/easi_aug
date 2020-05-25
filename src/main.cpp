@@ -110,7 +110,7 @@ int main(int argc, char **argv) {
 
 			//Draw the FPS in the top right. 
 			char fpsbuffer[5];
-			int n = sprintf(fpsbuffer, "%1.0f", Time::intermittentFPS());
+			int n = sprintf(fpsbuffer, "%1.0f", Time::smoothedFPS());
 			cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL);
 			cv::putText(ui_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100));
 
