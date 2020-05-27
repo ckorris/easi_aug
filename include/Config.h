@@ -34,10 +34,13 @@ static const string TEMPERATURE_NAME = "TemperatureC";
 static const string RELATIVE_HUMIDITY_NAME = "RelativeHumidity01";
 static const string BB_TO_AIR_FRIC_COEF_NAME = "BBToAirFrictionCoefficient";
 
+//Strings.
+static const string SVO_RECORD_DIRECTORY = "SVORecordDirectory";
+
 class Config
 {
 public: 
-	static string ListAllSettings();
+	//static string ListAllSettings();
 
 #pragma region SettingsProperties
 	//BOOL
@@ -199,7 +202,6 @@ public:
 	static inline float camXPos()
 	{
 		return GetFloatSetting(CAM_X_POS_NAME);
-		//return GetFloatSetting("CamXPos");
 	}
 	static inline const void camXPos(float newvalue)
 	{
@@ -256,7 +258,15 @@ public:
 		SetFloatSetting(BB_TO_AIR_FRIC_COEF_NAME, newvalue);
 	}
 
-
+	//STRING
+	static inline string svoRecordDirectory()
+	{
+		return GetStringSetting(SVO_RECORD_DIRECTORY);
+	}
+	static inline const void svoRecordDirectory(string newvalue)
+	{
+		SetStringSetting(SVO_RECORD_DIRECTORY, newvalue);
+	}
 
 
 	
@@ -278,8 +288,8 @@ private:
 	static float GetFloatSetting(string settingname);
 	static void SetFloatSetting(string settingname, float value);
 
-	//Constant string names for values. 
-	//Booleans.
-	//const string TOGGLE_LASER_CROSSHAIR_NAME = "ToggleLaserCrosshair";
+
+	static string GetStringSetting(string settingname);
+	static void SetStringSetting(string settingname, string value);
 	
 };

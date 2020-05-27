@@ -15,6 +15,7 @@ static bool isLoaded;
 static map<string, bool> boolSettings;
 static map<string, int> intSettings; //Also holds bools
 static map<string, float> floatSettings;
+static map<string, string> stringSettings;
 
 /*
 //Bool properties.
@@ -25,13 +26,13 @@ static bool toggleGravityCrosshair;
 static bool toggleGravityPath;
 
 //Int properties.
-static int screenRotation; //Increments of 90° clockwise. 
-static int camResolution; //sl::RESOLUTION. 0 = 2k, 1 = 1080, 2 = 720, 3 = VGA. 
-static int camPerformanceMode; //sl::DEPTH_MODE. 0 - None, 1 = Performance, 2 = Quality, 3 = Ultra. 
+static int screenRotation; //Increments of 90° clockwise.
+static int camResolution; //sl::RESOLUTION. 0 = 2k, 1 = 1080, 2 = 720, 3 = VGA.
+static int camPerformanceMode; //sl::DEPTH_MODE. 0 - None, 1 = Performance, 2 = Quality, 3 = Ultra.
 
 //Float properties.
 static float forwardSpeedMPS; //Forward velocity of the round in meters per second. (1 meter = 3.28 feet)
-static float hopUpSpeedMPS; //Upward velocity of the round from the hop up/spin/Magnus effect in meters per second. 
+static float hopUpSpeedMPS; //Upward velocity of the round from the hop up/spin/Magnus effect in meters per second.
 static float camXPos;
 static float camYPos;
 static float camZPos;
@@ -44,7 +45,7 @@ static float camZRotDegrees;
 
 
 
-enum ConfigValueTypes{boolvalue = 0, intvalue = 1, floatvalue = 2};
+enum ConfigValueTypes { boolvalue = 0, intvalue = 1, floatvalue = 2, stringvalue = 3 };
 
 bool Config::LoadSettingsFromDisk(string filename)
 {
@@ -68,11 +69,12 @@ bool Config::LoadSettingsFromDisk(string filename)
 		if (typechar == 'b') valtype = ConfigValueTypes::boolvalue;
 		else if (typechar == 'i') valtype = ConfigValueTypes::intvalue;
 		else if (typechar == 'f') valtype = ConfigValueTypes::floatvalue;
+		else if (typechar == 's') valtype = ConfigValueTypes::stringvalue;
 		else if (typechar == '#') continue; //Continue without error message so we can use # as a comment. 
 		else
 		{
 			cout << "Couldn't parse val type from char: " << typechar << " from " << line <<
-				". Should be b (bool), i (int) or f (float)." << endl;
+				". Should be b (bool), i (int), f (float) or s (string)." << endl;
 			continue;
 		}
 
@@ -83,10 +85,10 @@ bool Config::LoadSettingsFromDisk(string filename)
 			cout << "Couldn't find equals (=) symbol in line: " << line << endl;
 			continue;
 		}
-		
+
 		//Get the value name. 
 		string valname = line.substr(1, equalsindex - 1); //Starts at 1 to exclude value character.
-		
+
 		//Get the value. 
 		string val = line.substr(equalsindex + 1, line.length() - equalsindex);
 		//cout << "Parsed value of " << valname << ": " << val << endl;
@@ -98,6 +100,8 @@ bool Config::LoadSettingsFromDisk(string filename)
 			val.erase(whitespaceindex);
 			whitespaceindex = val.find_first_of(' ');
 		}
+
+		//cout << "Value " << val << " typechar: " << typechar <<  " type: " << valtype << endl;
 
 		switch (valtype)
 		{
@@ -119,7 +123,7 @@ bool Config::LoadSettingsFromDisk(string filename)
 			{
 				intval = stoi(val);
 			}
-			catch(const invalid_argument e)
+			catch (const invalid_argument e)
 			{
 				cout << "Couldn't parse value " << val << " to a integer." << endl;
 				continue;
@@ -139,6 +143,11 @@ bool Config::LoadSettingsFromDisk(string filename)
 			}
 			floatSettings[valname] = floatval;
 			break;
+
+		case ConfigValueTypes::stringvalue:
+			//For strings, it's nice and easy since there's no parsing. 
+			stringSettings[valname] = val;
+			break;
 		}
 	}
 
@@ -146,7 +155,7 @@ bool Config::LoadSettingsFromDisk(string filename)
 	//Config::isLoaded = true;
 	isLoaded = true;
 
-	return true; 
+	return true;
 }
 
 bool Config::SaveSettingsToDisk(string filename)
@@ -155,7 +164,7 @@ bool Config::SaveSettingsToDisk(string filename)
 	myfile.open(fileName);
 	myfile << "Testing settings.\n";
 	myfile.close();*/
-	
+
 	ofstream settingsfile;
 	settingsfile.open(fileName, ofstream::out | ofstream::trunc);
 
@@ -185,6 +194,15 @@ bool Config::SaveSettingsToDisk(string filename)
 	{
 		settingsfile << "f" << floatiterator->first << "=" << floatiterator->second << endl;
 		floatiterator++;
+	}
+	settingsfile << endl;
+
+	settingsfile << "#Strings" << endl;
+
+	map<string, string>::iterator stringiterator = stringSettings.begin();
+	while (stringiterator != stringSettings.end())
+	{
+		settingsfile << "s" << stringiterator->first << "=" << stringiterator->second << endl;
 	}
 
 	//settingsfile << "Testing settings.\n";
@@ -264,7 +282,7 @@ float Config::GetFloatSetting(string settingname)
 	}
 	else
 	{
-		//Save bool setting
+		//Save float setting
 		return 0.0; //Default value. 
 	}
 }
@@ -277,5 +295,33 @@ void Config::SetFloatSetting(string settingname, float value)
 	}
 
 	floatSettings[settingname] = value;
+	Config::SaveSettingsToDisk(fileName);
+}
+
+string Config::GetStringSetting(string settingname)
+{
+	if (!isLoaded)
+	{
+		LoadSettingsFromDisk(fileName);
+	}
+
+	if (stringSettings.count(settingname) == 1)
+	{
+		return stringSettings[settingname];
+	}
+	else
+	{
+		return ""; //Default value. 
+	}
+}
+
+void Config::SetStringSetting(string settingname, string value)
+{
+	if (!isLoaded)
+	{
+		LoadSettingsFromDisk(fileName);
+	}
+
+	stringSettings[settingname] = value;
 	Config::SaveSettingsToDisk(fileName);
 }

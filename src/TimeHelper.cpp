@@ -53,7 +53,7 @@ void Time::LogNewFrame()
 	if (smoothedFPSTimer >= SECONDS_BETWEEN_SMOOTHED_FPS) 
 	{
 		lastSmoothedFPS = smoothedFPSTimer / framesToSmooth;
-		std::cout << "Timer: " << smoothedFPSTimer << " frames: " << framesToSmooth << " last: " << lastSmoothedFPS << endl;
+		//std::cout << "Timer: " << smoothedFPSTimer << " frames: " << framesToSmooth << " last: " << lastSmoothedFPS << endl;
 		smoothedFPSTimer = 0.0; //Doesn't handle overshooting the timer, resulting in missing the mark a bit, but no real consequence to that. 
 		framesToSmooth = 0;
 	}
