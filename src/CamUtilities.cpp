@@ -24,7 +24,6 @@ cv::Mat CamUtilities::GetViewMatrix()
 	return viewmat;
 }
 
-//cv::Mat CamUtilities::GetProjectionMatrix(Camera cam)
 cv::Mat CamUtilities::GetProjectionMatrix(sl::CameraInformation info)
 {
 	//sl::CameraInformation info = cam.getCameraInformation();
@@ -92,6 +91,7 @@ int2 CamUtilities::CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, i
 }
 
 //Provides a normal pointing in the direction of gravity, given the pose from the ZED2's IMU. 
+[[deprecated("Did weird things when you turned around because it's trying to track pose over time. Use imu.linear_acceleration instead.")]]
 sl::float3 CamUtilities::IMUPoseToGravityVector(sl::Pose imupose)
 {
 	//sl::float3 eulerrotrad = imupose.getEulerAngles(true);

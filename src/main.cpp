@@ -8,6 +8,7 @@
 #include <Drawables.h>
 #include <ImageHelper.h>
 #include <TimeHelper.h>
+#include <RecordingHelper.h>
 //#include <Menus.h>
 
 using namespace std;
@@ -62,15 +63,6 @@ int main(int argc, char **argv) {
 	cv::Mat image_ocv = cv::Mat(zedheight, zedwidth, cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
 
 	cv::Mat ui_mat; //Declared so we keep using the same memory each loop. 
-	/*
-	//Make the UI image. 
-	int screenrot = Config::screenRotation();
-	int uiwidth = (screenrot % 2 == 0) ? image_ocv.cols : image_ocv.rows;
-	int uiheight = (screenrot % 2 == 0) ? image_ocv.rows : image_ocv.cols;
-
-	cv::Mat ui_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
-	ui_mat.setTo(cv::Scalar(0, 0, 0, 0));
-	*/
 
 	Mat depth_measure(zedwidth, zedheight, MAT_TYPE::F32_C1);
 
@@ -80,6 +72,7 @@ int main(int argc, char **argv) {
 
 	SensorsData sensorData;
 
+	RecordingHelper recorder(&zed);
 
 	// Loop until 'q' is pressed
 	char key = ' ';
@@ -90,6 +83,13 @@ int main(int argc, char **argv) {
 			//Log a new frame in TimeHelper, so that we can accurately get deltaTime later. 
 			Time::LogNewFrame();
 
+			//TEMP: Start recording if the R key is pressed. 
+			if (key == 'r')
+			{
+				if (!recorder.IsRecordingSVO()) recorder.StartRecording();
+				else recorder.StopRecording();
+
+			}
 
 			//cout << Time::fps() << endl;
 
@@ -245,6 +245,7 @@ int main(int argc, char **argv) {
 			key = cv::waitKey(10);
 		}
 	}
+	recorder.StopRecording(); //If we're recording, close it out. 
 	zed.close();
 	return 0;
 }
