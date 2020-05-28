@@ -1,6 +1,7 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
+#include <RecordingHelper.h>
 
 
 using namespace std;
@@ -137,6 +138,17 @@ protected:
 	void(*settingSetter)(bool);
 };
 
+class ToggleButton_Record : public ToggleButton
+{
+public:
+	ToggleButton_Record(bool(*getter)(), void(*setter)(bool),
+		float anchorxmin, float anchorxmax, float anchorymin, float anchorymax);
+protected:
+	//void OnClicked() override;
+	void Draw(cv::Rect drawrect, cv::Mat drawto, string windowname) override;
+	//RecordingHelper* recordingHelper;
+
+};
 
 class ImageButton : public Drawable
 {

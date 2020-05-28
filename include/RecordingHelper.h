@@ -16,6 +16,8 @@ public:
 
 	void StopRecording();
 
+	void ToggleRecording(bool state);
+
 private:
 
 	Camera* zed;

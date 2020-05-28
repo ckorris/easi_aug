@@ -86,6 +86,8 @@ void Drawable::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 
 void Drawable::ProcessAllClicks(int x, int y, bool isdown)
 {
+	//cout << "Processing clicks. Screenbounds: " << screenBounds.x << ", " << screenBounds.y << ", " << screenBounds.width << ", " 
+	//	<< screenBounds.height << " Clicked: " << x << ", " << y << endl;
 	if (isEnabled == true && screenBounds.contains(cv::Point(x, y)))
 	{
 		if (isdown == true)
@@ -353,6 +355,7 @@ void ToggleButton::OnClicked()
 {
 	//Flip the assigned bool setting. 
 	settingSetter(!settingGetter());
+	//cout << "Clicked ToggleButton" << endl;
 }
 
 void ToggleButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
@@ -378,6 +381,31 @@ void ToggleButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 			cv::Point(screenBounds.x + screenBounds.width - marginwidth, screenBounds.y + marginwidth),
 			cv::Scalar(255, 255, 255, 1), 3);
 	}
+}
+
+//Will call the constructor from ToggleButton.
+ToggleButton_Record::ToggleButton_Record(bool(*getter)(), void(*setter)(bool),
+	float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
+	: ToggleButton(getter, setter, anchorxmin, anchorxmax, anchorymin, anchorymax) {}
+
+
+void ToggleButton_Record::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
+{
+	//If we're recording/toggled, draw a red circle. Otherwise make it gray.
+	cv::Scalar circlecolor;
+	if (settingGetter() == true)
+	{
+		circlecolor = cv::Scalar(0, 0, 255, 255);
+	}
+	else
+	{
+		circlecolor = cv::Scalar(100, 100, 100, 255);
+	}
+
+	//We divide by 4.0 for the radius because it should take up half the size of the button (the first 2.0) 
+	//and we're talking radius, not diameter (the second 2.0). 
+	cv::circle(drawto, cv::Point(screenBounds.x + screenBounds.width / 2.0, screenBounds.y + screenBounds.height / 2.0),
+		screenBounds.width / 4.0, circlecolor, -1);
 }
 
 ImageButton::ImageButton(void(*onclick)(), string imagepath, bool drawbackground, 

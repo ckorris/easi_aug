@@ -24,7 +24,7 @@ ERROR_CODE RecordingHelper::StartRecording()
 	//Use the current date and time as part of the filename. 
 	time_t now;
 	struct tm* timeinfo;
-	char buffer[100];
+	char buffer[60];
 	time(&now);
 	timeinfo = localtime(&now);
 
@@ -61,5 +61,17 @@ void RecordingHelper::StopRecording()
 	{
 		zed->disableRecording();
 		cout << "Stopped recording." << endl;
+	}
+}
+
+void RecordingHelper::ToggleRecording(bool state)
+{
+	if (state == true)
+	{
+		StartRecording();
+	}
+	else //state == false;
+	{
+		StopRecording();
 	}
 }

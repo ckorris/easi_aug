@@ -25,6 +25,12 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata); //Forwar
 cv::Rect tempmenurect(50, 0, 450, 180);
 Sidebar panel(tempmenurect, 0, 1, 0, 1);
 
+RecordingHelper* recordHelper; //Not actually used. 
+
+bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
+void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
+ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
+
 int main(int argc, char **argv) {
 
 	// Create a ZED camera object
@@ -72,7 +78,27 @@ int main(int argc, char **argv) {
 
 	SensorsData sensorData;
 
+	//Declare the recording helper (for recording SVO files) and button.
 	RecordingHelper recorder(&zed);
+	RecordingHelper record = static_cast<RecordingHelper>(recorder);
+	recordHelper = &recorder;
+
+	//TODO: I HATE having to pass an explicit reference to RecordingHelper to the Ui. 
+	//That means the UI has to know what a RecordingHelper is. But passing a reference to it is proving very hard. 
+	//Find a way around that that's not messy. 
+	//bool(*recordinggetter)();
+	bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
+	void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
+	//void(*setrecording)(bool) = [](bool v) {if (v) cout << "True" << endl; else cout << "False" << endl; };
+	//bool(*isrecording)() = static_cast<RecordingHelper*>(&recorder)->IsRecordingSVO(); ;
+	//isrecording = []() {return static_cast<RecordingHelper*>(&recorder)->IsRecordingSVO(); };
+
+	//float(*speedgetter)() = []() {return Config::forwardSpeedMPS(); };
+
+	//bool(*recordgetter)() = []() {return static_cast<RecordingHelper*>(record)->IsRecordingSVO(); };
+	//auto recordgetter = [&recorder]() {return recorder.IsRecordingSVO(); };
+
+	//ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
 
 	// Loop until 'q' is pressed
 	char key = ' ';
@@ -219,6 +245,11 @@ int main(int argc, char **argv) {
 			
 			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
 
+			//Draw the recording button. 
+			float buttondim = ui_mat.cols / 15.0;
+			cv::Rect recordbuttonrect = cv::Rect(ui_mat.cols - buttondim, ui_mat.rows - buttondim, buttondim, buttondim);
+			recordButton.ProcessUI(recordbuttonrect, ui_mat, "EasiAug");
+
 			//Rotate the image. 
 			cv::Mat finalimagemat;
 			finalimagemat = imageHelper.RotateImageToConfig(image_ocv);
@@ -250,6 +281,11 @@ int main(int argc, char **argv) {
 	return 0;
 }
 
+bool GetIsRecording()
+{
+	return recordHelper->IsRecordingSVO();
+}
+
 //void ClickCallback(int event, int x, int y, int flags, void* userdata)
 void ClickCallback(int event, int x, int y, int flags, void* userdata)
 {
@@ -269,6 +305,7 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 
 		//panel.ProcessAllClicks(rotateduipoints.x, rotateduipoints.y, isdown);
 		panel.ProcessAllClicks(x, y, isdown);
+		recordButton.ProcessAllClicks(x, y, isdown);
 		//panel.ProcessAllClicks(x, y);
 	}
 	
