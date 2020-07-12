@@ -2,14 +2,14 @@
 bToggleDistance=1
 bToggleGravityCrosshair=1
 bToggleGravityPath=1
-bToggleLaserCrosshair=1
-bToggleLaserPath=1
+bToggleLaserCrosshair=0
+bToggleLaserPath=0
 bToggleTravelTime=1
 
 #Integers
-iCamPerformanceMode=3
-iCamResolution=2
-iImageRotation=1
+iCamPerformanceMode=1
+iCamResolution=3
+iImageRotation=0
 iScreenRotation=0
 
 #Floats

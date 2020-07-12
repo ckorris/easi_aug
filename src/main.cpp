@@ -31,7 +31,15 @@ bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
 void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
 ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
 
-int main(int argc, char **argv) {
+int main(int argc, char **argv) 
+{
+	//Print OpenCV version info. 
+	cout << "OpenCV version : " << CV_VERSION << endl;
+  	cout << "Major version : " << CV_MAJOR_VERSION << endl;
+  	cout << "Minor version : " << CV_MINOR_VERSION << endl;
+  	cout << "Subminor version : " << CV_SUBMINOR_VERSION << endl;
+
+
 
 	// Create a ZED camera object
 	Camera zed;
@@ -229,11 +237,11 @@ int main(int argc, char **argv) {
 
 
 			//Below should be uncommented for non-full screen window. 
-			cv::namedWindow("EasiAug");
+			//cv::namedWindow("EasiAug");
 
 			//Below should be uncommented if you want to have it be fullscreen automatically. Better for Jetson but worse for development on desktop.
-			//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
-			//cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+			cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+			cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
 			cv::Rect panelrect;
 			//panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
@@ -289,7 +297,8 @@ bool GetIsRecording()
 //void ClickCallback(int event, int x, int y, int flags, void* userdata)
 void ClickCallback(int event, int x, int y, int flags, void* userdata)
 {
-	if (event == CV_EVENT_LBUTTONDOWN || event == CV_EVENT_LBUTTONUP)
+
+	if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_LBUTTONUP)
 	{
 		//cout << "Before: X: " << x << " Y: " << y << endl;
 
@@ -299,7 +308,7 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 		imageHelper->ScreenTouchToUIPoint(&x, &y);
 		//int2 rotateduipoints = int2(x, y);
 
-		bool isdown = event == CV_EVENT_LBUTTONDOWN; 
+		bool isdown = event == cv::EVENT_LBUTTONDOWN; 
 
 		//cout << "After: X: " << x << " Y: " << y << endl;
 
@@ -308,7 +317,6 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 		recordButton.ProcessAllClicks(x, y, isdown);
 		//panel.ProcessAllClicks(x, y);
 	}
-	
 }
 
 /**
