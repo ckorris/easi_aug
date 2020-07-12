@@ -167,20 +167,15 @@ void SPIScreen::LCD_ShowImage(vector<unsigned char> image, int rows, int cols, i
 	bool hasprinted = false; //For test. 
 
 
+//for(int v = 0; v < rows; ++v)
 for(int v = 0; v < rows; ++v)
 	{
-		for(int u = 0; u < cols; ++u)
+		//for(int u = 0; u < cols; ++u)
+		for(int u = cols; u > 0; --u)
 		{	
 			//int startindex = (v * rows * 3) + u * 3; //3 channels. 
 			int startindex = (u * rows * 3) + v * 3; //3 channels. 
 
-/*
-	for(int u = 0; u < cols; ++u)
-	{
-		for(int v = 0; v < rows; ++v)
-		{	
-			int startindex = (u * cols * 3) + v * 3; //3 channels. 
-*/
 			//Convert three bits into RGB565. 
 			int blue = image[startindex + 0]; //Need to cast?
 			int green = image[startindex + 1];
@@ -188,7 +183,7 @@ for(int v = 0; v < rows; ++v)
 
 			if(hasprinted == false)
 			{
-				cout << "B " << blue << "G " << green << "R " << red << endl;
+				//cout << "B " << blue << "G " << green << "R " << red << endl;
 			}
 
 			//Shrink the color values so their min/max is same when converted to 565.
@@ -203,8 +198,8 @@ for(int v = 0; v < rows; ++v)
 
 			if(hasprinted == false)
 			{
-				cout << "B " << blue << "G " << green << "R " << red << endl;
-				cout << "Color: " << color << endl;
+				//cout << "B " << blue << "G " << green << "R " << red << endl;
+				//cout << "Color: " << color << endl;
 				hasprinted = true;
 			}
 
@@ -310,34 +305,6 @@ void SPIScreen::InitLCD()
 	//If you want to use another screen, you'll likely need to refer to its data sheet
 	//and send different commands here (along with checking for clock pulse and phase). 
 	Reset();
-
-	/*
-	//MADCTRL
-	SendCommand(0x36);
-	SendData(0x00); 
-	
-	//CASET
-	SendCommand(0x2A);
-	SendData(0x00);
-	SendData(0x00);
-	SendData(0x01);
-	SendData(0x3F);
-
-	//RASET
-	SendCommand(0x2B);
-	SendData(0x00);
-	SendData(0x00);
-	SendData(0x00);
-	SendData(0xEF);
-
-	//PORCTRL
-	SendCommand(0xB2);
-	SendData(0x0C);
-	SendData(0x0C);
-	SendData(0x00);
-	SendData(0x33);
-	SendData(0x33);
-	*/
 
 	//COLMOD
 	SendCommand(0x3A); 

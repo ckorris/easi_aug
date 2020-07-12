@@ -9,6 +9,7 @@
 #include <ImageHelper.h>
 #include <TimeHelper.h>
 #include <RecordingHelper.h>
+#include <SPIOutputHelper.h>
 //#include <Menus.h>
 
 using namespace std;
@@ -33,16 +34,12 @@ ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
 
 int main(int argc, char **argv) 
 {
-	//Print OpenCV version info. 
-	cout << "OpenCV version : " << CV_VERSION << endl;
-  	cout << "Major version : " << CV_MAJOR_VERSION << endl;
-  	cout << "Minor version : " << CV_MINOR_VERSION << endl;
-  	cout << "Subminor version : " << CV_SUBMINOR_VERSION << endl;
-
-
-
 	// Create a ZED camera object
 	Camera zed;
+
+	//Create object for outputting to SPI monitor.
+	//TODO: Put this in a compiler directive so it's easy to switch off on devices without GPIO.
+	SPIOutputHelper spihelper;
 
 	// Set configuration parameters
 	InitParameters initparams;
@@ -274,7 +271,10 @@ int main(int argc, char **argv)
 		
 
 			cv::imshow("EasiAug", finalimagemat);
-
+			
+			//Output to SPI screen.
+			//TO DO: Wrap this in a compiler directive for devices without GPIO. 
+			spihelper.DisplayImageOnSPIScreen(finalimagemat);
 
 			//Input.
 			cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);
