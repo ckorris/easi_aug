@@ -60,6 +60,10 @@ int main(int argc, char **argv)
 	RuntimeParameters runtime_parameters;
 	runtime_parameters.sensing_mode = SENSING_MODE::FILL;
 
+	//Increase saturation and sharpness a bit
+	//TODO: mate these all config settings. 
+	zed.setCameraSettings(VIDEO_SETTINGS::SATURATION, 7);
+	zed.setCameraSettings(VIDEO_SETTINGS::SHARPNESS, 6);
 
 	// Prepare new image size to retrieve half-resolution images
 	Resolution image_size = zed.getCameraInformation().camera_configuration.resolution;
@@ -142,9 +146,10 @@ int main(int argc, char **argv)
 			//Draw the FPS in the top right. 
 			char fpsbuffer[5];
 			int n = sprintf(fpsbuffer, "%1.0f", Time::smoothedFPS());
-			cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL);
-			cv::putText(ui_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100));
-
+			//cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL); //Normal.
+			cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 2, 2, NULL); //Double.
+			//cv::putText(ui_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100)); //Normal.
+			cv::putText(ui_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 2, cv::Scalar(102, 204, 0, 100), 2);
 
 
 			//Laser crosshair - no gravity. 
@@ -204,12 +209,23 @@ int main(int argc, char **argv)
 							int d = sprintf(distbuffer, "%0.2f", collisiondepth_grav);
 							string distsuffix = "m";
 							string disttext = distbuffer + distsuffix; //Not sure why I can't just add the literal. 
-							cv::Size disttextsize = cv::getTextSize(disttext, 1, 1, 1, NULL);
 
+							//Draw text.
+							//TODO: Use a constant expression to make this easy to change. Same with TravelTime one. 
+							//Normal size.
+							/*
+							cv::Size disttextsize = cv::getTextSize(disttext, 1, 1, 1, NULL);
 							cv::Point disttextpoint(gravpoint_ui.x - 20 - dotradius - disttextsize.width,
 								gravpoint_ui.y - 20 - dotradius);
 
 							cv::putText(ui_mat, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
+							*/
+							//Double size.
+							cv::Size disttextsize = cv::getTextSize(disttext, 1, 2, 2, NULL);
+							cv::Point disttextpoint(gravpoint_ui.x - 20 - dotradius - disttextsize.width,
+								gravpoint_ui.y - 20 - dotradius);
+
+							cv::putText(ui_mat, disttext, disttextpoint, 1, 2, cv::Scalar(0, 0, 255, 1), 2);
 						}
 						if (Config::toggleTravelTime())
 						{
@@ -221,8 +237,10 @@ int main(int argc, char **argv)
 							cv::Point timetextpoint(gravpoint_ui.x + 20 + dotradius,
 								gravpoint_ui.y - 20 - dotradius);
 
-
-							cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
+							//Normal size.
+							//cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
+							//Double size.
+							cv::putText(ui_mat, timetext, timetextpoint, 1, 2, cv::Scalar(0, 0, 255, 1), 2);
 						}
 					}
 				}
@@ -269,7 +287,7 @@ int main(int argc, char **argv)
 			cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
 			cv::add(finalimagemat, finaluimat, finalimagemat, mask);
 		
-
+			//Output to desktop.
 			cv::imshow("EasiAug", finalimagemat);
 			
 			//Output to SPI screen.
