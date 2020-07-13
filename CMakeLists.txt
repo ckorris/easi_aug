@@ -15,6 +15,7 @@ endif(COMMAND cmake_policy)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread")
 
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
 SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
@@ -22,14 +23,20 @@ endif()
 
 SET(EXECUTABLE_OUTPUT_PATH ".")
 
+IF(NOT WIN32)
+    add_definitions(-Wno-format-extra-args)
+    SET(SPECIAL_OS_LIBS "pthread" "X11" "lpthread")
+    SET(PLATFORM_SPECIFIC_LIBS "-lpthread")
+
+    find_package(Threads)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+ENDIF()
+
 find_package(ZED 3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(CUDA ${ZED_CUDA_VERSION} EXACT REQUIRED)
 
-IF(NOT WIN32)
-    add_definitions(-Wno-format-extra-args)
-    SET(SPECIAL_OS_LIBS "pthread" "X11")
-ENDIF()
+
 
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${ZED_INCLUDE_DIRS})

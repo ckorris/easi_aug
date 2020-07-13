@@ -15,8 +15,12 @@ public:
 	void DisplayImageOnSPIScreen(cv::Mat image);
 
 private: 
-	cv::Mat LoadImage(string path);
-	vector<unsigned char> ImageToVector(cv::Mat image);
 	
+	vector<unsigned char> ImageToVector(cv::Mat image);
+	cv::Mat LoadImage(string path);
+	void ThreadedLoop();
+	void ProcessImage(cv::Mat inputmat);	
+
+	cv::Mat bufferMat;
 	//SPIScreen screen;
 };
