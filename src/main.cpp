@@ -20,7 +20,8 @@ int slMatType2cvMatType(sl::MAT_TYPE sltype);
 
 //ImageHelper imageHelper;
 
-void ClickCallback(int event, int x, int y, int flags, void* userdata); //Forward declaration. 
+//Forward declarations. 
+void ClickCallback(int event, int x, int y, int flags, void* userdata); 
 
 //cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
 cv::Rect tempmenurect(50, 0, 450, 180);
@@ -31,6 +32,8 @@ RecordingHelper* recordHelper; //Not actually used.
 bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
 void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
 ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
+
+cv::Point mousePos(0,0);
 
 int main(int argc, char **argv) 
 {
@@ -287,6 +290,12 @@ int main(int argc, char **argv)
 			cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
 			cv::add(finalimagemat, finaluimat, finalimagemat, mask);
 		
+			//Draw the mouse.
+			cv::circle(finalimagemat, mousePos, (finaluimat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);
+
+			//Draw mouse as dot.
+			//cv::setMouseCallback("EasiAug", MouseMoveCallback, (void*)&finalimagemat);
+
 			//Output to desktop.
 			cv::imshow("EasiAug", finalimagemat);
 			
@@ -296,7 +305,8 @@ int main(int argc, char **argv)
 
 			//Input.
 			cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);
-
+			
+			
 
 			// Handle key event
 			key = cv::waitKey(10);
@@ -335,6 +345,15 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 		recordButton.ProcessAllClicks(x, y, isdown);
 		//panel.ProcessAllClicks(x, y);
 	}
+	else if (event == cv::EVENT_MOUSEMOVE)
+	{
+		//cout << "Drawing circle at " << x << ", " << y << endl;
+		//cv::Mat* drawmat = static_cast<cv::Mat*>(userdata);
+		//cv::Mat* drawmat = (cv::Mat*)userdata;		
+		//cv::circle(drawmat, cv::Point(30, 30), 50, cv::Scalar(255, 0, 0, 255), -1);
+		mousePos = cv::Point(x, y);
+	}
+	
 }
 
 /**

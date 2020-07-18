@@ -113,15 +113,15 @@ CalibrationMenu::CalibrationMenu(float anchorxmin, float anchorxmax, float ancho
 	//X pos.
 	float(*camXPosGetter)() = []() {return Config::camXPos(); };
 	void(*camXPosSetter)(float) = [](float v) {Config::camXPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camXPosGetter, camXPosSetter, 0.01, "X-POS", "%1.3fm", cv::Scalar(0, 255, 0, 1), 0.01, 0.16, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camXPosGetter, camXPosSetter, 0.0025, "X-POS", "%1.3fm", cv::Scalar(0, 255, 0, 1), 0.01, 0.16, 0, 1));
 	//Y pos.
 	float(*camYPosGetter)() = []() {return Config::camYPos(); };
 	void(*camYPosSetter)(float) = [](float v) {Config::camYPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camYPosGetter, camYPosSetter, 0.01,  "Y-POS", "%1.3fm", cv::Scalar(0, 0, 255, 1), 0.17, 0.32, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camYPosGetter, camYPosSetter, 0.0025,  "Y-POS", "%1.3fm", cv::Scalar(0, 0, 255, 1), 0.17, 0.32, 0, 1));
 	//Z pos.
 	float(*camZPosGetter)() = []() {return Config::camZPos(); };
 	void(*camZPosSetter)(float) = [](float v) {Config::camZPos(v); };
-	Drawable::children.emplace_back(new SettingIncrementorPanel(camZPosGetter, camZPosSetter, 0.01, "Z-POS", "%1.3fm", cv::Scalar(255, 0, 0, 1), 0.33, 0.48, 0, 1));
+	Drawable::children.emplace_back(new SettingIncrementorPanel(camZPosGetter, camZPosSetter, 0.0025, "Z-POS", "%1.3fm", cv::Scalar(255, 0, 0, 1), 0.33, 0.48, 0, 1));
 
 	//Cam rot arrows.
 	//X rot. 

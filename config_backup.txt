@@ -1,28 +1,28 @@
 #Booleans
 bToggleDistance=1
-bToggleGravityCrosshair=1
+bToggleGravityCrosshair=0
 bToggleGravityPath=1
 bToggleLaserCrosshair=0
-bToggleLaserPath=0
+bToggleLaserPath=1
 bToggleTravelTime=1
 
 #Integers
 iCamPerformanceMode=1
 iCamResolution=3
-iImageRotation=0
+iImageRotation=1
 iScreenRotation=0
 
 #Floats
 fBBDiameterMM=6
 fBBMassGrams=0.25
 fBBToAirFrictionCoefficient=0
-fCamXPos=0.13
-fCamXRotDegrees=-2.1
-fCamYPos=-0.046
-fCamYRotDegrees=0.8
-fCamZPos=-0.0338
+fCamXPos=0.075
+fCamXRotDegrees=4.39999
+fCamYPos=-0.0735
+fCamYRotDegrees=4.5
+fCamZPos=0
 fCamZRotDegrees=90
-fForwardSpeedMPS=15
+fForwardSpeedMPS=106
 fHopUpRPM=0
 fRelativeHumidity01=0
 fTemperatureC=18
