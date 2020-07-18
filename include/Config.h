@@ -18,6 +18,8 @@ static const string SCREEN_ROTATION_NAME = "ScreenRotation";
 static const string IMAGE_ROTATION_NAME = "ImageRotation";
 static const string CAM_RESOLUTION_NAME = "CamResolution";
 static const string CAM_PERFORMANCE_MODE_NAME = "CamPerformanceMode";
+static const string LCD_WIDTH_NAME = "LCDWidth";
+static const string LCD_HEIGHT_NAME = "LCDHeight";
 
 //Floats. 
 static const string FORWARD_SPEED_NAME = "ForwardSpeedMPS";
@@ -136,6 +138,23 @@ public:
 		SetIntSetting(CAM_PERFORMANCE_MODE_NAME, (int)newvalue);
 	}
 
+	static inline int lcdWidth()
+	{
+		return GetIntSetting(LCD_WIDTH_NAME);
+	}
+	static inline const void lcdWidth(int newvalue)
+	{
+		SetIntSetting(LCD_WIDTH_NAME, newvalue);
+	}
+
+	static inline int lcdHeight()
+	{
+		return GetIntSetting(LCD_HEIGHT_NAME);
+	}
+	static inline const void lcdHeight(int newvalue)
+	{
+		SetIntSetting(LCD_HEIGHT_NAME, newvalue);
+	}
 
 	//FLOAT
 	static inline float forwardSpeedMPS()

@@ -1,4 +1,5 @@
 #include <SPIOutputHelper.h>
+#include <Config.h>
 //#include <SPIScreen.h>
 
 #include <opencv2/opencv.hpp>
@@ -73,7 +74,33 @@ void SPIOutputHelper::DisplayImageOnSPIScreen(cv::Mat image)
 	//Pass the image to the buffer and let the other thread know it's got mail. 
 	mx.lock();
 	//Scale the image and copy it to the threaded buffer at once. 
-	cv::resize(image, bufferMat, cv::Size(320, 240));
+
+	//But first, use an ROI to crop out parts of the source image to make it fit 
+	//the aspect ratio. 
+
+	int destwidth = Config::lcdWidth();
+	int destheight = Config::lcdHeight();
+	
+	float srcaspect = image.cols / (float)image.rows;
+	float destaspect = destwidth / (float)destheight;
+
+	//cout << "Converting aspects. Src: " << srcaspect << " Dst: " << destaspect << endl;
+	float widthmult = destaspect / srcaspect;
+	float heightmult = srcaspect / destaspect;
+
+	//Clamp the above between 0 and 1. (Apparently clamp isn't in this version of C++?)
+	if(widthmult > 1.0) widthmult = 1.0;
+	if(heightmult > 1.0) heightmult = 1.0;
+	
+	//Define a version of the matrix with that new region of interest.	
+	cv::Rect srcroi(0, 0, image.cols * widthmult, image.rows * heightmult);
+	cv::Mat imgroi = image(srcroi);
+
+
+
+
+	//cv::resize(image, bufferMat, cv::Size(320, 240));
+	cv::resize(imgroi, bufferMat, cv::Size(destwidth, destheight));
 	newImage = true;
 	mx.unlock();
 

@@ -11,6 +11,8 @@ iCamPerformanceMode=1
 iCamResolution=3
 iImageRotation=1
 iScreenRotation=0
+iLCDWidth=320
+iLCDHeight=240
 
 #Floats
 fBBDiameterMM=6
