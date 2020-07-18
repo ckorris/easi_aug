@@ -23,7 +23,7 @@ int slMatType2cvMatType(sl::MAT_TYPE sltype);
 //Forward declarations. 
 void ClickCallback(int event, int x, int y, int flags, void* userdata); 
 
-//cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
+//cv::Rect(2, 1, sim_mat.cols - 2, sim_mat.rows * 0.2 - 2);
 cv::Rect tempmenurect(50, 0, 450, 180);
 Sidebar panel(tempmenurect, 0, 1, 0, 1);
 
@@ -75,12 +75,14 @@ int main(int argc, char **argv)
 	int zedheight = image_size.height;
 
 	//Resolution new_image_size(zedwidth, zedheight);
+	//Declare mats here so we keep using the same memory each loop.
 	Mat zedimage(image_size, MAT_TYPE::U8_C4);
 
 	int cvmattype = slMatType2cvMatType(zedimage.getDataType());
 	cv::Mat image_ocv = cv::Mat(zedheight, zedwidth, cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
 
-	cv::Mat ui_mat; //Declared so we keep using the same memory each loop. 
+	cv::Mat sim_mat; //The projectile path lines, impact point dot, time-to-target text and distance text.  
+	cv::Mat menu_mat; //The sidebar menu.
 
 	Mat depth_measure(zedwidth, zedheight, MAT_TYPE::F32_C1);
 
@@ -89,6 +91,10 @@ int main(int argc, char **argv)
 	ImageHelper imageHelper(&zed);
 
 	SensorsData sensorData;
+
+	//Width and height of the final output screen. 
+	int destwidth = Config::lcdWidth();
+	int destheight = Config::lcdHeight();
 
 	//Declare the recording helper (for recording SVO files) and button.
 	RecordingHelper recorder(&zed);
@@ -143,17 +149,12 @@ int main(int argc, char **argv)
 			int screenrot = Config::screenRotation();
 			int uiwidth = (screenrot % 2 == 0) ? image_ocv.cols : image_ocv.rows;
 			int uiheight = (screenrot % 2 == 0) ? image_ocv.rows : image_ocv.cols;
-			ui_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
-			ui_mat.setTo(cv::Scalar(0, 0, 0, 0));
+			sim_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
+			sim_mat.setTo(cv::Scalar(0, 0, 0, 0)); //Maaaay not need, now that we're drawing the menu separately. 
 
-			//Draw the FPS in the top right. 
-			char fpsbuffer[5];
-			int n = sprintf(fpsbuffer, "%1.0f", Time::smoothedFPS());
-			//cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL); //Normal.
-			cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 2, 2, NULL); //Double.
-			//cv::putText(ui_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100)); //Normal.
-			cv::putText(ui_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 2, cv::Scalar(102, 204, 0, 100), 2);
-
+			//Make the menu image. Note this behaves very similarly to sim_mat, but is kept separate so we can add an offset at the end. 
+			menu_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
+			menu_mat.setTo(cv::Scalar(0, 0, 0, 0));
 
 			//Laser crosshair - no gravity. 
 			if (Config::toggleLaserCrosshair() || Config::toggleLaserPath())
@@ -221,14 +222,14 @@ int main(int argc, char **argv)
 							cv::Point disttextpoint(gravpoint_ui.x - 20 - dotradius - disttextsize.width,
 								gravpoint_ui.y - 20 - dotradius);
 
-							cv::putText(ui_mat, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
+							cv::putText(sim_mat, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 							*/
 							//Double size.
 							cv::Size disttextsize = cv::getTextSize(disttext, 1, 2, 2, NULL);
 							cv::Point disttextpoint(gravpoint_ui.x - 20 - dotradius - disttextsize.width,
 								gravpoint_ui.y - 20 - dotradius);
 
-							cv::putText(ui_mat, disttext, disttextpoint, 1, 2, cv::Scalar(0, 0, 255, 1), 2);
+							cv::putText(sim_mat, disttext, disttextpoint, 1, 2, cv::Scalar(0, 0, 255, 1), 2);
 						}
 						if (Config::toggleTravelTime())
 						{
@@ -241,9 +242,9 @@ int main(int argc, char **argv)
 								gravpoint_ui.y - 20 - dotradius);
 
 							//Normal size.
-							//cv::putText(ui_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
+							//cv::putText(sim_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 							//Double size.
-							cv::putText(ui_mat, timetext, timetextpoint, 1, 2, cv::Scalar(0, 0, 255, 1), 2);
+							cv::putText(sim_mat, timetext, timetextpoint, 1, 2, cv::Scalar(0, 0, 255, 1), 2);
 						}
 					}
 				}
@@ -261,31 +262,69 @@ int main(int argc, char **argv)
 			cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
 			cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
-			cv::Rect panelrect;
-			//panelrect = cv::Rect(2, 1, ui_mat.cols - 2, ui_mat.rows * 0.2 - 2);
-			panelrect = cv::Rect(0, 0, 50, 300);
+
 
 			//Calculate the menu size and assign it. 
-			cv::Rect menurect = cv::Rect(panelrect.width, 0, zedheight - panelrect.width, (zedheight - panelrect.width) / 3.0);
+			//This involves figuring out what the image will be scaled to, and what will be cropped for the output res. 	
+			float srcaspect = menu_mat.cols / (float)menu_mat.rows;
+			float destaspect = destwidth / (float)destheight;
+
+			//cout << "Converting aspects. Src: " << srcaspect << " Dst: " << destaspect << endl;
+			float widthmult = destaspect / srcaspect;
+			float heightmult = srcaspect / destaspect;
+
+			//Clamp the above between 0 and 1. (Apparently clamp isn't in this version of C++?)
+			if(widthmult > 1.0) widthmult = 1.0;
+			if(heightmult > 1.0) heightmult = 1.0;
+
+			float croppedwidth = menu_mat.cols * widthmult;
+			float croppedheight = menu_mat.rows * heightmult;
+
+			float widthdiff = menu_mat.cols - croppedwidth;
+			float heightdiff = menu_mat.rows - croppedheight;
+			
+
+			cv::Rect panelrect; //Rect of the sidebar. The rect for the rest of the menu will be set partially based on these values, too.
+			//panelrect = cv::Rect(2, 1, menu_mat.cols - 2, menu_mat.rows * 0.2 - 2);
+			panelrect = cv::Rect((widthdiff / 2), (heightdiff / 2), 50, 300);
+
+			cv::Rect menurect = cv::Rect(panelrect.x + panelrect.width, panelrect.y, zedheight - panelrect.width, (zedheight - panelrect.width) / 3.0);
 			panel.openPanelRect = menurect;
 			
-			panel.ProcessUI(panelrect, ui_mat, "EasiAug");
+			panel.ProcessUI(panelrect, menu_mat, "EasiAug");
 
 			//Draw the recording button. 
-			float buttondim = ui_mat.cols / 15.0;
-			cv::Rect recordbuttonrect = cv::Rect(ui_mat.cols - buttondim, ui_mat.rows - buttondim, buttondim, buttondim);
-			recordButton.ProcessUI(recordbuttonrect, ui_mat, "EasiAug");
+			float buttondim = menu_mat.cols / 15.0;
+			cv::Rect recordbuttonrect = cv::Rect(menu_mat.cols - (widthdiff / 2) - buttondim, sim_mat.rows - (heightdiff / 2) - buttondim, buttondim, buttondim);
+			recordButton.ProcessUI(recordbuttonrect, menu_mat, "EasiAug");
 
-			//Rotate the image. 
+			//Draw the FPS in the top right. 
+			char fpsbuffer[5];
+			int n = sprintf(fpsbuffer, "%1.0f", Time::smoothedFPS());
+			//cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL); //Normal.
+			cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 2, 2, NULL); //Double.
+			//cv::putText(sim_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100)); //Normal.
+			cv::putText(sim_mat, fpsbuffer, cv::Point(uiwidth - (widthdiff / 2) - fpssize.width - 2, fpssize.height + (heightdiff / 2) + 2), 1, 2, cv::Scalar(102, 204, 0, 100), 2);
+
+			//Declare a "fromto" array to be used in several additive functions. 
+			int fromto[] = { 3, 0 }; 
+
+			//Add the menu mat to the sim mat. 
+			cv::Mat menumask(cv::Size(sim_mat.cols, sim_mat.rows), CV_8UC1);
+			cv::mixChannels(menu_mat, menumask, fromto, 1);
+			cv::subtract(sim_mat, cv::Scalar(255, 255, 255, 255), sim_mat, menumask);
+			cv::add(sim_mat, menu_mat, sim_mat, menumask);
+
+			//Rotate the ZED image. 
 			cv::Mat finalimagemat;
 			finalimagemat = imageHelper.RotateImageToConfig(image_ocv);
 			
 			//Rotate the UI image. 
-			cv::Mat finaluimat = imageHelper.RotateUIToConfig(ui_mat);
+			cv::Mat finaluimat = imageHelper.RotateUIToConfig(sim_mat);
 
 			//Add the UI image to it. 
 			cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
-			int fromto[] = { 3, 0 };
+			//int fromto[] = { 3, 0 }; //Now declared further above as it's used several times. 
 			cv::mixChannels(finaluimat, mask, fromto, 1);
 			cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
 			cv::add(finalimagemat, finaluimat, finalimagemat, mask);

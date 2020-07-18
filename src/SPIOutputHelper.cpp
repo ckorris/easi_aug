@@ -91,9 +91,15 @@ void SPIOutputHelper::DisplayImageOnSPIScreen(cv::Mat image)
 	//Clamp the above between 0 and 1. (Apparently clamp isn't in this version of C++?)
 	if(widthmult > 1.0) widthmult = 1.0;
 	if(heightmult > 1.0) heightmult = 1.0;
+
+	float croppedwidth = image.cols * widthmult;
+	float croppedheight = image.rows * heightmult;
+
+	float widthdiff = image.cols - croppedwidth;
+	float heightdiff = image.rows - croppedheight;
 	
 	//Define a version of the matrix with that new region of interest.	
-	cv::Rect srcroi(0, 0, image.cols * widthmult, image.rows * heightmult);
+	cv::Rect srcroi(widthdiff / 2, heightdiff / 2, croppedwidth, croppedheight);
 	cv::Mat imgroi = image(srcroi);
 
 
