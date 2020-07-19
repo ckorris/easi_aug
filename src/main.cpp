@@ -33,7 +33,9 @@ bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
 void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
 ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
 
-cv::Point mousePos(0,0);
+cv::Point mousePos(0,0); //Current position of the mouse. Updated within ClickCallback (okay so I need to rename that). 
+
+bool zoom = false; //When true, the images will be magnified by 2x.
 
 int main(int argc, char **argv) 
 {
@@ -121,7 +123,7 @@ int main(int argc, char **argv)
 	// Loop until 'q' is pressed
 	char key = ' ';
 	while (key != 'q') {
-
+		
 		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) {
 
 			//Log a new frame in TimeHelper, so that we can accurately get deltaTime later. 
@@ -225,11 +227,11 @@ int main(int argc, char **argv)
 							cv::putText(sim_mat, disttext, disttextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 							*/
 							//Double size.
-							cv::Size disttextsize = cv::getTextSize(disttext, 1, 2, 2, NULL);
+							cv::Size disttextsize = cv::getTextSize(disttext, 1, zoom ? 1 : 2, zoom ? 1 : 2, NULL);
 							cv::Point disttextpoint(gravpoint_ui.x - 20 - dotradius - disttextsize.width,
 								gravpoint_ui.y - 20 - dotradius);
 
-							cv::putText(sim_mat, disttext, disttextpoint, 1, 2, cv::Scalar(0, 0, 255, 1), 2);
+							cv::putText(sim_mat, disttext, disttextpoint, 1, zoom ? 1 : 2, cv::Scalar(0, 0, 255, 1), zoom ? 1 : 2);
 						}
 						if (Config::toggleTravelTime())
 						{
@@ -244,7 +246,7 @@ int main(int argc, char **argv)
 							//Normal size.
 							//cv::putText(sim_mat, timetext, timetextpoint, 1, 1, cv::Scalar(0, 0, 255, 1));
 							//Double size.
-							cv::putText(sim_mat, timetext, timetextpoint, 1, 2, cv::Scalar(0, 0, 255, 1), 2);
+							cv::putText(sim_mat, timetext, timetextpoint, 1, zoom ? 1 : 2, cv::Scalar(0, 0, 255, 1), zoom ? 1 : 2);
 						}
 					}
 				}
@@ -304,25 +306,46 @@ int main(int argc, char **argv)
 			//cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL); //Normal.
 			cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 2, 2, NULL); //Double.
 			//cv::putText(sim_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100)); //Normal.
-			cv::putText(sim_mat, fpsbuffer, cv::Point(uiwidth - (widthdiff / 2) - fpssize.width - 2, fpssize.height + (heightdiff / 2) + 2), 1, 2, cv::Scalar(102, 204, 0, 100), 2);
+			cv::putText(menu_mat, fpsbuffer, cv::Point(menu_mat.cols - (widthdiff / 2) - fpssize.width - 2, 
+				fpssize.height + (heightdiff / 2) + 2), 1, 2, cv::Scalar(102, 204, 0, 100), 2);
 
-			//Declare a "fromto" array to be used in several additive functions. 
+			//Declare a "fromto" array to be used in several additive functions (cv::mixChannels). 
 			int fromto[] = { 3, 0 }; 
 
-			//Add the menu mat to the sim mat. 
-			cv::Mat menumask(cv::Size(sim_mat.cols, sim_mat.rows), CV_8UC1);
-			cv::mixChannels(menu_mat, menumask, fromto, 1);
-			cv::subtract(sim_mat, cv::Scalar(255, 255, 255, 255), sim_mat, menumask);
-			cv::add(sim_mat, menu_mat, sim_mat, menumask);
-
-			//Rotate the ZED image. 
-			cv::Mat finalimagemat;
-			finalimagemat = imageHelper.RotateImageToConfig(image_ocv);
+			//Rotate the ZED image, and possibly zoom in.  
+			cv::Mat finalimagemat(image_ocv.cols, image_ocv.rows, CV_8UC4);
+			cv::Mat finaluimat(sim_mat.cols, sim_mat.rows, CV_8UC4);
+			if(zoom == false)
+			{
+				finalimagemat = imageHelper.RotateImageToConfig(image_ocv);
+				finaluimat = imageHelper.RotateUIToConfig(sim_mat);
+			}
+			else //zoom == true
+			{
+				cv::Mat rotatedzedimage = imageHelper.RotateImageToConfig(image_ocv);
+				cv::Mat rotateduiimage = imageHelper.RotateUIToConfig(sim_mat);
 			
-			//Rotate the UI image. 
-			cv::Mat finaluimat = imageHelper.RotateUIToConfig(sim_mat);
+				cv::Rect zoomrect(image_ocv.cols / 4.0, image_ocv.rows / 4.0, image_ocv.cols / 2.0, image_ocv.rows / 2.0);
 
-			//Add the UI image to it. 
+				//finalimagemat = rotatedzedimage(zoomrect);
+				//finaluimat = rotateduiimage(zoomrect);
+				
+				cv::resize(rotatedzedimage(zoomrect), finalimagemat, cv::Size(uiwidth, uiheight)); 
+				cv::resize(rotateduiimage(zoomrect), finaluimat, cv::Size(uiwidth, uiheight));
+			}	
+			
+			//cout << "finaluimat type: " << finaluimat.type() << endl;
+			//Rotate the UI mat and add the menu mat to the sim mat. 
+			//cv::Mat rotatedmenumat = imageHelper.RotateUIToConfig(menu_mat);
+			cv::Mat menumask(cv::Size(menu_mat.cols, menu_mat.rows), CV_8UC1);
+			//cout << "menumask type: " << menumask.type() << endl;
+			cv::mixChannels(menu_mat, menumask, fromto, 1);
+			//cout << "menumask type: " << menumask.type() << endl;
+			//cv::subtract(finaluimat, cv::Scalar(255, 255, 255, 255), finaluimat, menumask);
+			cv::add(finaluimat, menu_mat, finaluimat, menumask);		
+			
+
+			//Add the UI image (now with the menu) to the ZED image. 
 			cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
 			//int fromto[] = { 3, 0 }; //Now declared further above as it's used several times. 
 			cv::mixChannels(finaluimat, mask, fromto, 1);
