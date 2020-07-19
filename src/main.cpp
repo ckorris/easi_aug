@@ -407,6 +407,10 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 		recordButton.ProcessAllClicks(x, y, isdown);
 		//panel.ProcessAllClicks(x, y);
 	}
+	else if (event == cv::EVENT_RBUTTONDOWN)
+	{
+		zoom = !zoom;
+	}
 	else if (event == cv::EVENT_MOUSEMOVE)
 	{
 		//cout << "Drawing circle at " << x << ", " << y << endl;
