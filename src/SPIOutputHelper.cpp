@@ -1,3 +1,5 @@
+#if SPI_OUTPUT
+
 #include <SPIOutputHelper.h>
 #include <Config.h>
 //#include <SPIScreen.h>
@@ -172,5 +174,5 @@ cv::Mat SPIOutputHelper::LoadImage(string path) //For testing, really.
 }
 
 
-
+#endif
 

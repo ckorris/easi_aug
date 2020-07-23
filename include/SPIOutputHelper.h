@@ -1,3 +1,5 @@
+#if SPI_OUTPUT
+
 #include <SPIScreen.h>
 
 #include <opencv2/opencv.hpp>
@@ -24,3 +26,5 @@ private:
 	cv::Mat bufferMat;
 	//SPIScreen screen;
 };
+
+#endif

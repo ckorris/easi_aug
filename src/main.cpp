@@ -9,8 +9,10 @@
 #include <ImageHelper.h>
 #include <TimeHelper.h>
 #include <RecordingHelper.h>
+
+#if SPI_OUTPUT
 #include <SPIOutputHelper.h>
-//#include <Menus.h>
+#endif
 
 using namespace std;
 using namespace sl;
@@ -42,10 +44,11 @@ int main(int argc, char **argv)
 	// Create a ZED camera object
 	Camera zed;
 
+#if SPI_OUTPUT
 	//Create object for outputting to SPI monitor.
-	//TODO: Put this in a compiler directive so it's easy to switch off on devices without GPIO.
 	SPIOutputHelper spihelper;
 
+#endif
 	// Set configuration parameters
 	InitParameters initparams;
 	initparams.camera_resolution = Config::camResolution();
@@ -98,6 +101,14 @@ int main(int argc, char **argv)
 	int destwidth = Config::lcdWidth();
 	int destheight = Config::lcdHeight();
 
+	//Make sure those values aren't zero.
+	if (destwidth == 0 || destheight == 0)
+	{
+		cout << "lcdWidth and/or lcdHeight were set to zero. Defaulting to ZED resolution. Do you have iLCDWidth and iLCDHeight set in your config file?" << endl;
+		destwidth = zedwidth;
+		destheight = zedheight;
+	}
+
 	//Declare the recording helper (for recording SVO files) and button.
 	RecordingHelper recorder(&zed);
 	RecordingHelper record = static_cast<RecordingHelper>(recorder);
@@ -124,7 +135,9 @@ int main(int argc, char **argv)
 	char key = ' ';
 	while (key != 'q') {
 		
-		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) {
+		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) 
+		{
+			//cout << "Successfully initialized ZED." << endl;
 
 			//Log a new frame in TimeHelper, so that we can accurately get deltaTime later. 
 			Time::LogNewFrame();
@@ -157,6 +170,8 @@ int main(int argc, char **argv)
 			//Make the menu image. Note this behaves very similarly to sim_mat, but is kept separate so we can add an offset at the end. 
 			menu_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
 			menu_mat.setTo(cv::Scalar(0, 0, 0, 0));
+
+			
 
 			//Laser crosshair - no gravity. 
 			if (Config::toggleLaserCrosshair() || Config::toggleLaserPath())
@@ -257,6 +272,7 @@ int main(int argc, char **argv)
 			}
 
 
+
 			//Below should be uncommented for non-full screen window. 
 			//cv::namedWindow("EasiAug");
 
@@ -264,7 +280,7 @@ int main(int argc, char **argv)
 			cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
 			cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
-
+			
 
 			//Calculate the menu size and assign it. 
 			//This involves figuring out what the image will be scaled to, and what will be cropped for the output res. 	
@@ -285,6 +301,7 @@ int main(int argc, char **argv)
 			float widthdiff = menu_mat.cols - croppedwidth;
 			float heightdiff = menu_mat.rows - croppedheight;
 			
+			
 
 			cv::Rect panelrect; //Rect of the sidebar. The rect for the rest of the menu will be set partially based on these values, too.
 			//panelrect = cv::Rect(2, 1, menu_mat.cols - 2, menu_mat.rows * 0.2 - 2);
@@ -293,7 +310,8 @@ int main(int argc, char **argv)
 			cv::Rect menurect = cv::Rect(panelrect.x + panelrect.width, panelrect.y, zedheight - panelrect.width, (zedheight - panelrect.width) / 3.0);
 			panel.openPanelRect = menurect;
 			
-			panel.ProcessUI(panelrect, menu_mat, "EasiAug");
+			panel.ProcessUI(panelrect, menu_mat, "EasiAug"); 
+
 
 			//Draw the recording button. 
 			float buttondim = menu_mat.cols / 15.0;
@@ -311,6 +329,7 @@ int main(int argc, char **argv)
 
 			//Declare a "fromto" array to be used in several additive functions (cv::mixChannels). 
 			int fromto[] = { 3, 0 }; 
+
 
 			//Rotate the ZED image, and possibly zoom in.  
 			cv::Mat finalimagemat(image_ocv.cols, image_ocv.rows, CV_8UC4);
@@ -361,9 +380,10 @@ int main(int argc, char **argv)
 			//Output to desktop.
 			cv::imshow("EasiAug", finalimagemat);
 			
+#if SPI_OUTPUT
 			//Output to SPI screen.
-			//TO DO: Wrap this in a compiler directive for devices without GPIO. 
 			spihelper.DisplayImageOnSPIScreen(finalimagemat);
+#endif
 
 			//Input.
 			cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);
@@ -387,7 +407,7 @@ bool GetIsRecording()
 //void ClickCallback(int event, int x, int y, int flags, void* userdata)
 void ClickCallback(int event, int x, int y, int flags, void* userdata)
 {
-
+	
 	if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_LBUTTONUP)
 	{
 		//cout << "Before: X: " << x << " Y: " << y << endl;

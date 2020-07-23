@@ -1,4 +1,4 @@
-//To compile: g++ -o SPIScreen SPIScreen.cpp -lJetsonGPIO
+#if SPI_OUTPUT
 
 #include <SPIScreen.h>
 
@@ -535,7 +535,7 @@ void SPIScreen::SetValue_Mem(volatile gpio_t *pinLed, int bit, bool state)
 
 }
 
-
+#endif
 
 
 

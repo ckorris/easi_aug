@@ -1,3 +1,5 @@
+#if SPI_OUTPUT
+
 // Color definitions
 #define BLACK    0x0000
 #define BLUE     0x001F
@@ -128,10 +130,4 @@ private:
 };
 
 
-
-
-
-
-
-
-
+#endif

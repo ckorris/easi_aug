@@ -44,6 +44,7 @@ void Drawable::Disable()
 
 void Drawable::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
 {
+	
 	//Only do stuff if we're enabled. 
 	if (!isEnabled)
 	{
@@ -59,13 +60,11 @@ void Drawable::ProcessUI(cv::Rect parentrect, cv::Mat drawto, string windowname)
 	cv::Rect drawrect = cv::Rect(x, y, width, height);
 
 	UpdateRectBounds(drawrect); //For now, just for clicking. Not in Draw() to make method easier to override. 
-
-	//cout << "ScreenBounds: " << screenBounds.x << ", " << screenBounds.y << ", " << screenBounds.width << ", " << screenBounds.height << endl;
-
+	
 	Draw(drawrect, drawto, windowname);
-
+	
 	//Pass to children to draw. 
-
+	
 	//cout << "Children count: " << children.size() << endl;
 	for (int i = 0; i < Drawable::children.size(); i++)
 	{
@@ -458,8 +457,11 @@ void ImageButton::Draw(cv::Rect drawrect, cv::Mat drawto, string windowname)
 		cv::resize(icon, icon, newsize);
 		cv::resize(alphamask, alphamask, newsize);
 	}
+	
+
 	//cv::Rect iconrect = cv::Rect(screenBounds.x + 4, screenBounds.y + 4, screenBounds.width - 8, screenBounds.height - 8);
 	cv::Mat imageroi = drawto(iconrect);
+	
 	cv::bitwise_and(icon, icon, imageroi, alphamask);
 }
 
