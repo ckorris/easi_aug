@@ -31,7 +31,7 @@ Required to run on airsoft rifle:
 - Two DC/DC converters - I use [these](https://www.amazon.com/gp/product/B07F3S5ZDX/)
 - Adapters/splitters for splitting battery output and connecting to the DC/DCs, then plugging into the Nano's GPIO pins
 - Some kind of hardware to attach the Nano, camera, screen, battery, and DC/DC to the airsoft rifle, such as picatinny rail adapters
-- Small monitor - HDMI is fine, but this can also output via SPI to [this specific LCD module](https://www.waveshare.com/wiki/2inch_LCD_Module) via SPI if you want something smaller and less power-intensive - see 'LCD Screen via SPI' section
+- Small monitor - HDMI is fine, but this can also output to [this specific LCD module](https://www.waveshare.com/wiki/2inch_LCD_Module) via SPI if you want something smaller and less power-intensive - see 'LCD Screen via SPI' section
 
 ### Software
 
