@@ -17,6 +17,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread")
 
+#Optional output to SPI LCD screen. 
+#This was only set up for the Jetson Nano/TX1 GPIO pin header, and with a specific
+#2 inch LCD screen by WaveShare based on the ST7789VW chip.
+#Note this will be totally ignored if in Windows. 
+option(SPI_LCD "Output to SPI LCD screen (Jetson Nano/TX1 Only)" OFF)
+
+
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
 SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
@@ -28,8 +35,15 @@ IF(NOT WIN32)
     SET(SPECIAL_OS_LIBS "pthread" "X11" "lpthread")
     SET(PLATFORM_SPECIFIC_LIBS "-lpthread")
 
+    #Threading support.
     find_package(Threads)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
+
+    #Check option to use SPI for an LCD screen. 
+    if(SPI_LCD)
+        add_definitions(-DSPI_OUTPUT)
+    endif()
+
 ENDIF()
 
 find_package(ZED 3 REQUIRED)
