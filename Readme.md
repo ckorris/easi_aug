@@ -8,14 +8,14 @@ Video: https://www.youtube.com/watch?v=5hyBadQNh6I&feature=youtu.be
 
 ![](https://thumbs.gfycat.com/AgedQuestionableCornsnake-size_restricted.gif)
 
-
-
 A gun-mounted [ZED 2 depth camera](https://www.stereolabs.com/zed-2/), combined with the ZED SDK, effectively build a 3D map of the area in front of the gun up to 40 meters away (20 meters at recommended settings). Then, the on-board computer (ideally an [NVIDIA Jetson Nano](https://developer.nvidia.com/embedded/jetson-nano-developer-kit)) runs a real-time physics simulation, using parameters specified about the airsoft gun and environment, in addition to data collected from the ZED 2's sensors. 
 
 By mounting the camera, Jetson Nano, and a small screen to the gun, you can use this to accurately place shots, taking into account gravity, spin, drag, and other forces that are not easy for a human to calcutate on the spot. 
 
 
 ## Requirements
+
+![](https://thumbs.gfycat.com/BestDimwittedAtlanticridleyturtle-size_restricted.gif)
 
 ### Hardware
 
@@ -63,6 +63,8 @@ system and installation. Refer to [this StackOverflow issue](https://docs.opencv
 
 
 ## Building/Running EasiOS
+
+![](https://thumbs.gfycat.com/ImpracticalAccurateBaldeagle-size_restricted.gif)
 
 After cloning this repository, use CMake to build it. 
 
@@ -209,3 +211,117 @@ Abbreviations:
 - **cL: ** Lift coefficient as calculated at the specified point. Derived from the spin rate, the linear speed, and BB diameter
 - **fL: ** Force, in Newtons, applied by the Magnus effect (from spin/hop-up) at the specified point
 
+
+## LCD Screen via SPI (Optional)
+
+![](https://thumbs.gfycat.com/DentalSecretHart-size_restricted.gif)
+
+While HDMI displays will work on the software side, they're usually too large to practically mount to an airsoft gun. 
+
+Instead, if using the Jetson Nano, you can hoop up a mini LCD screen via SPI instead. That makes it lighter, draw less power, and easier to shield from other airsoft BBs. 
+
+However, at time of writing, SPI support on the Jetson Nano has several issues when used in C/C++ via the native calls to the spidev library you're supposed to use for this sort of thing. So I instead developed a custom SPI implementation that's fast enough to run a screen at a respectable frame rate. 
+
+However, as my goal was to make an augmented reality system, not a full SPI library, my implementation is extremely specific for outputting images to a specific screen that I bought. Also, realistically, I have doubts anyone else will actually clone this repo *and* use it on an airsoft gun. As such, it will *only* work on a Jetson Nano, and only with a very specific LCD monitor: [WaveShare's 2 Inch SPI screen](https://www.waveshare.com/wiki/2inch_LCD_Module). 
+
+While WaveShare's support is abysmal, their physical hardware has consistently been good, so I recommend just buying this specific screen unless you're very comfortable working with SPI and adapting my code to your needs. (If you *are* the latter, feel free to email me at ckorris@gmail.com if you need help. This was by far the most challenging part of the entire project and I'd like to help others land at the bottom of the rabbithole a little softer than I did)
+
+With all that said, here's how you get that specific screen to work: 
+
+1. When building EasiOS as described in the 'Building/Running EasiOS' section, replace the line `cmake ..` with `cmake -DSPI_LCD=ON ..`. You can do this if you've already built the application; simply run that command again, followed by `make -j7` again. 
+
+2. Connect the terminals on the screen to the Jetson Nano's GPIO pins accordingly: 
+
+- **VCC** to a **3v3** pin (Pin 1 or Pin 17)
+- **GND** to any **GND** pin 
+- **BL** (Backlight) to **Pin 12**
+- **RST** (Reset) to **Pin 13**
+- **DIN** (Digital In) to **Pin 19**
+- **DC** (Data/Command) to **Pin 22**
+- **CLK** (Clock) to **Pin 23**
+- **CS** (Chip Select) to **Pin 24**
+
+3. Run the app from an elevated terminal, e.g. `sudo ./EasiOS`
+
+*Note: As of Jetpack 4.3, there is an option to enable and disable SPI, as outlined and described in detail in [this wonderful JetsonHacks tutorial](https://www.jetsonhacks.com/2020/05/04/spi-on-jetson-using-jetson-io/). However, as my implementation bypasses all this and writes directly to the memory that controls the pins, this is not required and should make no difference.*
+
+## Battery Power (Optional)
+
+*Note: Big thanks to [Myzhar](https://github.com/Myzhar) for helping me with this. I had no idea where to start and he walked me through the whole process. The man is a legend.* 
+
+![](https://thumbs.gfycat.com/UnselfishChubbyArachnid-size_restricted.gif)
+
+To use the Jetson Nano on an airsoft gun, you'll need to power it via battery. We can supply 5 volts, 3 amps via the two 5V GPIO pins on the Nano (pins 2 and 4) for a total of 6 amps. 
+
+### Requirements: 
+
+- LiPo battery - preferably 7.4 volts, at least 20C, with a large mAh rating. I use [this one]((https://www.amazon.com/gp/product/B07VQTZ6G7) which runs the system for roughly 1.25 hours
+- Two DC/DC converters whose range encompasses 7.4 volts in (or the voltage of your battery) and 4 volts out. I used [these](https://www.amazon.com/gp/product/B07F3S5ZDX/).
+- Wire, at least some 16 AUG for the pre-split voltage, and regular hobbyist 22 AUG is fine for the rest
+- Soldering kit (iron, solder, etc.)
+- Female adapter for the battery (Deans, Tamiya, etc.) to straight wires - you can disassemble most any kind of appropriate adapter
+- Voltmeter
+- GPIO jumper wire/bridge
+- (Optional) T-splitter wires
+
+
+However, it's hard to find a 5V LiPo battery unless you make one. Usually they come in 7.4 or greater. So we have to step that voltage down to 5 volts first using DC/DC converters. 
+
+Now, since it's hard to find DC/DC converters that can take the full amperage of the battery, we'll want to split the current *before* converting it, using two separate DC/DC converters. You can make a splitter with wire and a soldering iron, or buy one. 
+
+Below I describe a barebones setup that will power the Nano successfully. You can take liberties to play with the lengths or connections. For example, I run a section of wire through the inside of my airsoft gun, but connect the leads from the converters, and to the Nano's GPIOs, via detachable Tamiya adapters for convenience. 
+
+![](https://i.imgur.com/Y8A4mcz.jpg)
+
+Also, it goes without saying that working with electricity is dangerous, and this assumes you will take the necessary safety precautions, including insulating the wires as you go. If you don't know what I'm talking about, don't try anything in this section. 
+
+- Solder the voltage and ground wires from the female battery adapter/plug to two T-splitters. You should use at least 16 AUG wire for this. You now have two voltage lines and two ground.
+- Solder the two voltage lines to the postive input terminals on the DC/DC converters, and do the same with the ground lines and the negative input terminals.
+
+Before connecting to the Nano, we need to make sure we're stepping down the voltage to exactly 5 volts. Do *not* skip this step unless you love the smell of burning silicon and hate the smell of money. 
+
+- Plug in the battery. If the DC/DC converters have LEDs, they should light up. 
+- Set your voltmeter to test for DC voltage.
+- Touch the positive voltmeter terminal to the positive output terminal of one of the DC/DCs, and the negative to the negative output of the same one. 
+- Use a screwdriver to turn the little screw on top of that converter. As you wind it, the voltage reading should change. Continue turning until you get to 5 volts or slightly below it. Repeat this process with the other converter.
+
+To be safe, I recommend supergluing the base of the screw once it's at 5 volts. That screw can move over time and could end up frying your Nano later. 
+
+- Take four wires with female ends (e.g. they can be attached to a GPIO pin) and solder the other ends to the output terminals of the converters. Ideally, use red ones for the positive outputs and black for the negatives. 
+
+- Plug the two positive leads into the two 5V pins on the Nano, and the two negatives into any of the GND pins. 
+
+The last thing before plugging the battery is to bridge the two J48 pins on the Nano. These are two pins sitting by themselves between the power jack and the camera connector. 
+
+Now double check that there are no potential shorts, and plug in the battery. The Jetson should start up. 
+
+
+
+## TODO
+
+
+While I've accomplished most of what I want, there's a few things left: 
+
+**1. Test:** I haven't actually tested *any* of the physics on this at a range greater than six meters, thanks to the pandemic. However, I have a place I can go to sometime this month. Other than the spin decay issue, the math *should* all be solid, but I'm not about to make promises before testing. 
+
+**2. Remove OpenCV:** The OpenCV dependency is, frankly, weird. I chose it when I got started because, being new to C++, I wanted a library that had easy-to-use matrix functions, a built-in UI, and samples for integrating it with the ZED SDK. However, I don't use any of the computer vision features, which makes the project rather bloated on disk (not to mention a very long build time for OpenCV on my poor Jetson Nano). So eventually I want to replace it with a library (or libraries) that are more lightweight and suited for the application. 
+
+**3. Spin Decay:** The physics simulation does not currently use an accurate calculation for spin decay - that is, how quickly a spinning BB stops spinning. This is because it's a very complex situation, and formulas you can find are nebulous at best. In addition, existing knowledge on the topic is largely about situations other than a smooth, unfixed sphere. As such, it will take a lot more work to put together an accurate model for this, especially as I am not a physicist or anything close.
+
+That said, I'm about halfway through building an experiment to test this, by measuring the spin across a distance. It involves using glow in the dark BBs that are painted half black, and light sensors placed throughout the tube. The idea is that the spin will cause the BBs to strobe, so sampling the emitted light from a known location can allow us to see the spin rate. 
+
+I've built the chamber and collected data, but currently my sample rate is too slow, and I need a way to ensure that the BBs are oriented with their 'horizons' perpendicular to the direction they spin.
+
+## Acknowledgements
+
+- Stereolabs, my former employers, for making the incredible ZED 2 and SDK. They were also kind enough to send me a free ZED 2 after I had left the company, since I had worked on its launch beforehand. They make seriously incredible products and you all should give them money. 
+
+- Walter, a.k.a. [Myzhar](https://github.com/Myzhar), also at Stereolabs, who helped me a ton with getting the Nano running off of battery power. 
+
+- The [Airsoft Trajectory Project](http://mackila.com/airsoft/atp/), authored by some guy in 2007, from which I used several physics calculations, and what pointed me in the right direction for many others. 
+
+- Dr. Gary Drykacz, author of [The Physics of Paintball](https://web.archive.org/web/20040617080904/http://home.comcast.net/~dyrgcmn/pball/pballIntro.html), which the author of the Airsoft Trajectory Project cited many times, and whose Java paintball app source code helped me understand how to apply academic-style physics formulas to an incremental computer simulation. 
+
+- [Valentis](https://github.com/valentis), whose [Jetson Nano GPIO Example](https://github.com/valentis/jetson-nano-gpio-example) got me started understanding how to control GPIO output via direct memory access, which ended up being the cornerstone of my custom SPI output scripts.
+
+- Alex, Allen, and Ben of EASI Company, the best airsoft squad ever, for making me love the sport. 
