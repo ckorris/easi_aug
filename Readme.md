@@ -218,11 +218,11 @@ Abbreviations:
 
 While HDMI displays will work on the software side, they're usually too large to practically mount to an airsoft gun. 
 
-Instead, if using the Jetson Nano, you can hoop up a mini LCD screen via SPI instead. That makes it lighter, draw less power, and easier to shield from other airsoft BBs. 
+Instead, if using the Jetson Nano, you can hook up a mini LCD screen via SPI instead. That makes it lighter, draw less power, and easier to shield from other airsoft BBs. 
 
 However, at time of writing, SPI support on the Jetson Nano has several issues when used in C/C++ via the native calls to the spidev library you're supposed to use for this sort of thing. So I instead developed a custom SPI implementation that's fast enough to run a screen at a respectable frame rate. 
 
-However, as my goal was to make an augmented reality system, not a full SPI library, my implementation is extremely specific for outputting images to a specific screen that I bought. Also, realistically, I have doubts anyone else will actually clone this repo *and* use it on an airsoft gun. As such, it will *only* work on a Jetson Nano, and only with a very specific LCD monitor: [WaveShare's 2 Inch SPI screen](https://www.waveshare.com/wiki/2inch_LCD_Module). 
+That said, as my goal was to make an augmented reality system, not a full SPI library, my implementation is extremely specific for outputting images to a specific screen that I bought. Also, realistically, I have doubts anyone else will actually clone this repo *and* use it on an airsoft gun. As such, it will *only* work on a Jetson Nano, and only with a very specific LCD monitor: [WaveShare's 2 Inch SPI screen](https://www.waveshare.com/wiki/2inch_LCD_Module). 
 
 While WaveShare's support is abysmal, their physical hardware has consistently been good, so I recommend just buying this specific screen unless you're very comfortable working with SPI and adapting my code to your needs. (If you *are* the latter, feel free to email me at ckorris@gmail.com if you need help. This was by far the most challenging part of the entire project and I'd like to help others land at the bottom of the rabbithole a little softer than I did)
 
