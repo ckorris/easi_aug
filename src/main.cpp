@@ -274,11 +274,11 @@ int main(int argc, char **argv)
 
 
 			//Below should be uncommented for non-full screen window. 
-			//cv::namedWindow("EasiAug");
+			cv::namedWindow("EasiAug");
 
 			//Below should be uncommented if you want to have it be fullscreen automatically. Better for Jetson but worse for development on desktop.
-			cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
-			cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+			//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+			//cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 
 			
 
