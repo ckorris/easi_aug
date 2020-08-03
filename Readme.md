@@ -10,7 +10,7 @@ Video: https://www.youtube.com/watch?v=5hyBadQNh6I&feature=youtu.be
 
 A gun-mounted [ZED 2 depth camera](https://www.stereolabs.com/zed-2/), combined with the ZED SDK, effectively build a 3D map of the area in front of the gun up to 40 meters away (20 meters at recommended settings). Then, the on-board computer (ideally an [NVIDIA Jetson Nano](https://developer.nvidia.com/embedded/jetson-nano-developer-kit)) runs a real-time physics simulation, using parameters specified about the airsoft gun and environment, in addition to data collected from the ZED 2's sensors. 
 
-By mounting the camera, Jetson Nano, and a small screen to the gun, you can use this to accurately place shots, taking into account gravity, spin, drag, and other forces that are not easy for a human to calcutate on the spot. 
+By mounting the camera, Jetson Nano, and a small screen to the gun, you can use this to accurately place shots, taking into account gravity, spin, drag, and other forces that are not easy for a human to calculate on the spot. 
 
 
 ## Requirements
