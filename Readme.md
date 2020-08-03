@@ -35,7 +35,7 @@ Required to run on airsoft rifle:
 
 ### Software
 
-- ZEDK SDK 3 -tested with 3.2.1 [(Download)](https://www.stereolabs.com/developers/release/)
+- ZEDK SDK 3 - tested with 3.2.1 [(Download)](https://www.stereolabs.com/developers/release/)
 - Operating system compatible with the ZED SDK - Windows, Ubuntu, L4T, etc. (Tested on Windows 10 and L4T w. Jetpack 4.3) 
 - OpenCV 4.0 or greater (tested with 4.0.0 on Windows, 4.4.0 on L4T)
 
@@ -74,8 +74,8 @@ On Windows, this is easiest with the [Cmake GUI](https://cmake.org/download/).
 
 After opening CMake:
 
-- Under **Where is the source code:**, put in the root folder where you cloned easi_aug. Ex: "C:/Projects/easi_aug"
-- Under **Where to build the binaries:**, put in the same path with '/build/ appended. Ex: "C:/Projects/easi_aug/build"
+- Under **Where is the source code:** put in the root folder where you cloned easi_aug. Ex: "C:/Projects/easi_aug"
+- Under **Where to build the binaries:** put in the same path with '/build/ appended. Ex: "C:/Projects/easi_aug/build"
 - Click **Configure**
 - Under **Specify the generator for this project**, select "Visual Studio 15 2017 Win64". If that option is missing, you may need to install Visual Studio 2017. 
 - Click **Finish** on that Window, followed by **Generate**
@@ -103,8 +103,6 @@ You must have a config file in the build folder to run the app. There's one in t
 To run: 
 
     ./EasiOS
-
-If using 
 
 *Note: If outputting to an LCD monitor via SPI, you'll need to use an elevated terminal, so type `sudo ./EasiOS` instead.*
 
