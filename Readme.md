@@ -21,7 +21,7 @@ By mounting the camera, Jetson Nano, and a small screen to the gun, you can use 
 
 Required to build and run: 
 
-- Stereolabs ZED 2 depth camera ([link]((https://www.stereolabs.com/zed-2/)))
+- Stereolabs [ZED 2](https://www.stereolabs.com/zed-2/) depth camera
 - Computer compatible with ZED SDK 3.0
 
 Required to run on airsoft rifle: 
