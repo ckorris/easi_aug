@@ -253,7 +253,7 @@ To use the Jetson Nano on an airsoft gun, you'll need to power it via battery. W
 
 ### Requirements: 
 
-- LiPo battery - preferably 7.4 volts, at least 20C, with a large mAh rating. I use [this one]((https://www.amazon.com/gp/product/B07VQTZ6G7) which runs the system for roughly 1.25 hours
+- LiPo battery - preferably 7.4 volts, at least 20C, with a large mAh rating. I use [this one](https://www.amazon.com/gp/product/B07VQTZ6G7) which runs the system for roughly 1.25 hours
 - Two DC/DC converters whose range encompasses 7.4 volts in (or the voltage of your battery) and 4 volts out. I used [these](https://www.amazon.com/gp/product/B07F3S5ZDX/).
 - Wire, at least some 16 AUG for the pre-split voltage, and regular hobbyist 22 AUG is fine for the rest
 - Soldering kit (iron, solder, etc.)
@@ -263,11 +263,11 @@ To use the Jetson Nano on an airsoft gun, you'll need to power it via battery. W
 - (Optional) T-splitter wires
 
 
-However, it's hard to find a 5V LiPo battery unless you make one. Usually they come in 7.4 or greater. So we have to step that voltage down to 5 volts first using DC/DC converters. 
+It's hard to find a 5V LiPo battery unless you make one. Usually they come in 7.4 or greater. So we have to step that voltage down to 5 volts first using DC/DC converters. 
 
 Now, since it's hard to find DC/DC converters that can take the full amperage of the battery, we'll want to split the current *before* converting it, using two separate DC/DC converters. You can make a splitter with wire and a soldering iron, or buy one. 
 
-Below I describe a barebones setup that will power the Nano successfully. You can take liberties to play with the lengths or connections. For example, I run a section of wire through the inside of my airsoft gun, but connect the leads from the converters, and to the Nano's GPIOs, via detachable Tamiya adapters for convenience. 
+Below I describe a barebones setup that will power the Nano successfully. You can take liberties to play with the lengths or connections. For example, I run a section of wire through the inside of my airsoft gun, but connect the leads from the converters, and to the Nano's GPIOs, via detachable Tamiya plugs for convenience. 
 
 ![](https://i.imgur.com/Y8A4mcz.jpg)
 
@@ -285,11 +285,13 @@ Before connecting to the Nano, we need to make sure we're stepping down the volt
 
 To be safe, I recommend supergluing the base of the screw once it's at 5 volts. That screw can move over time and could end up frying your Nano later. 
 
+-Unplug your battery.
+
 - Take four wires with female ends (e.g. they can be attached to a GPIO pin) and solder the other ends to the output terminals of the converters. Ideally, use red ones for the positive outputs and black for the negatives. 
 
 - Plug the two positive leads into the two 5V pins on the Nano, and the two negatives into any of the GND pins. 
 
-The last thing before plugging the battery is to bridge the two J48 pins on the Nano. These are two pins sitting by themselves between the power jack and the camera connector. 
+The last thing before plugging in the battery is to bridge the two J48 pins on the Nano. This tells the Nano to bypass USB power. These are two pins sitting by themselves between the power jack and the camera connector. 
 
 Now double check that there are no potential shorts, and plug in the battery. The Jetson should start up. 
 
@@ -311,6 +313,8 @@ That said, I'm about halfway through building an experiment to test this, by mea
 I've built the chamber and collected data, but currently my sample rate is too slow, and I need a way to ensure that the BBs are oriented with their 'horizons' perpendicular to the direction they spin.
 
 ## Acknowledgements
+
+Thanks goes out to: 
 
 - Stereolabs, my former employers, for making the incredible ZED 2 and SDK. They were also kind enough to send me a free ZED 2 after I had left the company, since I had worked on its launch beforehand. They make seriously incredible products and you all should give them money. 
 
