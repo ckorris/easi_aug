@@ -113,7 +113,7 @@ While the above steps should get the app running and you should see a path overl
 
 You can input all the necessary info via the config file you copied over, but it's *much* easier to use the in-app GUI. 
 
-To expand the GUI, click on the white 'three lines' icon in the top right to see this: 
+To expand the GUI, click on the white 'three lines' icon in the top left to see this: 
 
 ![](https://i.imgur.com/l7vOOm5.png)
 
