@@ -121,17 +121,17 @@ You're now in the Calibration menu. The five menus, accessible by the buttons on
 
 - **Calibration:** Used to indicate the position and rotation of the ZED camera relative to the barrel. Measured from the center of the ZED's left sensor. 
 - **Projectile:** Indicate the forward speed, spin speed, and mass of the BB.  
-- **Display:** Allows you to toggle various overlays, and rotate the ZED image and UI
+- **Display:** Allows you to toggle various overlays, and rotate the ZED image and Und
 - **Environment:** Set the outside temperature and relative humidity. Also indicates the pressure as measured from the ZED's barometer, and a calculation of the air density adn viscosity as calculated from the supplied values. 
-- **Statistics:** Not actually a menu, but gives physics data on the simulation, such as the projectile speed, and the coefficientsa dn force of drag and life at both the barrel and the point of impact. 
+- **Statistics:** Not actually a menu, but gives physics data on the simulation, such as the projectile speed, and the coefficients and force of drag and lift at both the barrel and the point of impact. 
 
-*Note: The Calibration and Projectile sections are essential to get an accurate simulation. Setting the Environment values impact accuracy slightly, but should not be enough to ruin the simulation if you leave them at default values.*
+*Note: The Calibration and Projectile sections are essential to get an accurate simulation. Setting the Environment values impacts accuracy slightly, but should not be enough to ruin the simulation if you leave them at default values.*
 
 ### Calibration
 
-In order to sync the simuated BB with the actual world it's running in, both for detecting collisions and overlaying it on the display, you need to tell EasiOS exactly how the camera is offset from the barrel. 
+In order to sync the simulated BB with the actual world it's running in, both for detecting collisions and overlaying it on the display, you need to tell EasiOS exactly how the camera is offset from the barrel. 
 
-Start by taking an actual measurement of the positional offset, and entering that in (in meters). Do the same for rotation, but it's okay if you put in an estimation. 
+Start by taking an actual measurement of the positional offset, and entering that in meters. Do the same for rotation (in degrees) but it's okay if you put in a rough estimate. 
 
 Next, we'll switch to 'laser' mode, which draws the BB path *without* physics simulation. This will make it much easier to line up the path with the barrel, especially as we haven't configured the rest of the physics simulation yet. 
 
@@ -163,8 +163,8 @@ Once you're done, restore the Display settings you changed to see the red physic
 
 The Speed and Mass settings are much simpler: 
 
-- **Speed: ** Use a chronometer, available to use for free at most airsoft fields, to measure the speed of your BB. You must input it in meters per second. To convert a speed in feet per second (FPS), multiply that value by 0.3048. 
-- **Mass: ** This is simply the mass of the BBs in grams, almost certainly listed on the bottle they came in. 
+- **Speed:** Use a chronometer, available to use for free at most airsoft fields, to measure the speed of your BB. You must input it in meters per second. To convert a speed in feet per second (FPS), multiply that value by 0.3048. 
+- **Mass:** This is simply the mass of the BBs in grams, almost certainly listed on the bottle they came in. 
 
 Hop-Up is more difficult. There is currently no standard tool for measuring this. However, note that a speed of 120,000 RPM is considered to be around the upwards rate of spin for an airsoft rifle, so you can estimate accordingly. Then you can tweak it so that it lines up with your projectile when you fire it. 
 
@@ -174,13 +174,13 @@ Hop-Up is more difficult. There is currently no standard tool for measuring this
 
 We were here during the Calibration section to switch off the gravity simulation temporarily. Here's what all the options do: 
 
-- **L-XHR:** Toggle the physics-less 'laser' crosshair dot on the impact site
-- **L-PTH:** Toggle the physics-less 'laser' path
-- **G-XHR:** Toggle the crosshair dot on the BB's impact site, factoring in physics ('G' stands for 'gravity')
-- **G-PTH:** Toggle displaying the path of the BB, factoring in physics
-- **DIST:** Distance, in meters, to the impact site, according to the physics simulation 
-- **TIME:** Time, in seconds, that it will take the BB to travel from the barrel to the impact site
-- **UI Rotation:** Rotates the UI, in case your screen is rotated (This may be broken - see 'TODO' section)
+- **L-XHR:** The physics-less 'laser' crosshair dot on the impact site
+- **L-PTH:** The physics-less 'laser' path
+- **G-XHR:** The crosshair dot on the BB's impact site, factoring in physics ('G' stands for 'gravity')
+- **G-PTH:** The path of the BB, factoring in physics
+- **DIST:** Floating text that displays the distance in meters to the impact site, according to the physics simulation 
+- **TIME:** Floating text that indicates the time, in seconds, that it will take the BB to travel from the barrel to the impact site
+- **UI Rotation:** Rotates the UI, in case your screen is physically rotated relative to your gun
 - **Camera Rotation:** Rotates the image from the ZED, in case your camera is rotated relative to your screen
 
 ### Environment
@@ -189,7 +189,7 @@ We were here during the Calibration section to switch off the gravity simulation
 
 This is the easiest configuration step of all. Simply Google the temperature (in Celcius) and relative humidity (percentage) for your area at the time you're using your gun. 
 
-Ideally, you should update this every time your use your gun, and update it throughout the day. However, note that the effect of the temperature and humidity on the BB is not too big; it changes the drag slightly. So if you forget to update this setting since the last time you used your gun, the simulation will likely be pretty close. 
+Ideally, you should update this every time you use your gun, and update it throughout the day. However, the effect of the temperature and humidity on the BB is not too big. So if you forget to update this setting since the last time you used your gun, the simulation will likely be 'close enough.' 
 
 *Note: While the ZED 2 has an internal temperature sensor, we do not use it to calculate the temperature because it's strongly affected by the heat output of the camera itself. However, we do use the ZED 2's barometer for a constant air pressure reading.*
 
@@ -203,7 +203,7 @@ Abbreviations:
 
 - **@Brl: ** The state of the BB right as it left the barrel
 - **@Imp: ** The state of the BB right before hitting the impact point
-- **Speed: ** Not an abbreviation but my OCD won't let me not list it here. 
+- **Speed: ** Not an abbreviation but my OCD won't let me not list it here
 - **cD: ** Drag coefficient as calculated at the specified point. Derived from the speed, spin, BB diameter, air density, and air viscosity
 - **fD: ** Force, in Newtons, applied by drag at the specified point
 - **cL: ** Lift coefficient as calculated at the specified point. Derived from the spin rate, the linear speed, and BB diameter
@@ -214,15 +214,15 @@ Abbreviations:
 
 ![](https://thumbs.gfycat.com/DentalSecretHart-size_restricted.gif)
 
-While HDMI displays will work on the software side, they're usually too large to practically mount to an airsoft gun. 
+While HDMI displays will work out-of-the-box, they're usually too large to practically mount to an airsoft gun. 
 
-Instead, if using the Jetson Nano, you can hook up a mini LCD screen via SPI instead. That makes it lighter, draw less power, and easier to shield from other airsoft BBs. 
+If using the Jetson Nano, you can hook up a mini LCD screen via SPI instead. That makes it lighter, less power-hungry, and easier to shield from other airsoft BBs. 
 
-However, at time of writing, SPI support on the Jetson Nano has several issues when used in C/C++ via the native calls to the spidev library you're supposed to use for this sort of thing. So I instead developed a custom SPI implementation that's fast enough to run a screen at a respectable frame rate. 
+However, at time of writing, SPI support on the Jetson Nano has several issues when used in C/C++ via the calls to the spidev library you're supposed to use for this sort of thing. So I developed a custom SPI implementation that's fast enough to run a screen at a respectable frame rate. 
 
-That said, as my goal was to make an augmented reality system, not a full SPI library, my implementation is extremely specific for outputting images to a specific screen that I bought. Also, realistically, I have doubts anyone else will actually clone this repo *and* use it on an airsoft gun. As such, it will *only* work on a Jetson Nano, and only with a very specific LCD monitor: [WaveShare's 2 Inch SPI screen](https://www.waveshare.com/wiki/2inch_LCD_Module). 
+That said, as my goal was to make an augmented reality system and not a SPI library, my implementation is extremely specific for outputting images. Also, realistically, I have doubts anyone else will actually clone this repo *and* use it on an airsoft gun. As such, it will *only* work on a Jetson Nano, and only with a very specific LCD monitor: [WaveShare's 2 Inch SPI screen](https://www.waveshare.com/wiki/2inch_LCD_Module). 
 
-While WaveShare's support is abysmal, their physical hardware has consistently been good, so I recommend just buying this specific screen unless you're very comfortable working with SPI and adapting my code to your needs. (If you *are* the latter, feel free to email me at ckorris@gmail.com if you need help. This was by far the most challenging part of the entire project and I'd like to help others land at the bottom of the rabbithole a little softer than I did)
+While WaveShare's support is abysmal, their physical hardware has consistently been good, so I recommend buying this screen unless you're very comfortable working with SPI and adapting my code to your needs. (If you *are* the latter, feel free to email me at ckorris@gmail.com if you need help. This was by far the most challenging part of the entire project and I'd like to help others land at the bottom of the rabbithole a little softer than I did)
 
 With all that said, here's how you get that specific screen to work: 
 
@@ -254,7 +254,7 @@ To use the Jetson Nano on an airsoft gun, you'll need to power it via battery. W
 ### Requirements: 
 
 - LiPo battery - preferably 7.4 volts, at least 20C, with a large mAh rating. I use [this one](https://www.amazon.com/gp/product/B07VQTZ6G7) which runs the system for roughly 1.25 hours
-- Two DC/DC converters whose range encompasses 7.4 volts in (or the voltage of your battery) and 4 volts out. I used [these](https://www.amazon.com/gp/product/B07F3S5ZDX/).
+- Two DC/DC converters whose range encompasses 7.4 volts in (or the voltage of your battery) and 4 volts out. I used [these](https://www.amazon.com/gp/product/B07F3S5ZDX/)
 - Wire, at least some 16 AUG for the pre-split voltage, and regular hobbyist 22 AUG is fine for the rest
 - Soldering kit (iron, solder, etc.)
 - Female adapter for the battery (Deans, Tamiya, etc.) to straight wires - you can disassemble most any kind of appropriate adapter
@@ -285,7 +285,7 @@ Before connecting to the Nano, we need to make sure we're stepping down the volt
 
 To be safe, I recommend supergluing the base of the screw once it's at 5 volts. That screw can move over time and could end up frying your Nano later. 
 
--Unplug your battery.
+- Unplug your battery.
 
 - Take four wires with female ends (e.g. they can be attached to a GPIO pin) and solder the other ends to the output terminals of the converters. Ideally, use red ones for the positive outputs and black for the negatives. 
 
