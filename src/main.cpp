@@ -17,63 +17,48 @@
 using namespace std;
 using namespace sl;
 
-const bool SET_TO_FULL_SCREEN = false;
+const bool SET_TO_FULL_SCREEN = false; //If true, will make window full-screen. Best for small HDMI screens.
 
-cv::Mat slMat2cvMat(Mat& input);
-int slMatType2cvMatType(sl::MAT_TYPE sltype);
-
-//ImageHelper imageHelper;
-
-//Forward declarations. 
-void ClickCallback(int event, int x, int y, int flags, void* userdata); 
-
-//cv::Rect(2, 1, sim_mat.cols - 2, sim_mat.rows * 0.2 - 2);
-cv::Rect tempmenurect(50, 0, 450, 180);
-Sidebar panel(tempmenurect, 0, 1, 0, 1);
-
-RecordingHelper* recordHelper; //Not actually used. 
-
-bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
-void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
-ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
-
+//Variables.
 cv::Point mousePos(0,0); //Current position of the mouse. Updated within ClickCallback (okay so I need to rename that). 
-
 bool zoom = false; //When true, the images will be magnified by 2x.
 
-Resolution image_size;
+//Non-ZED helpers/managers.
+Simulation *sim;
+ImageHelper *imageHelper;
+RecordingHelper *recorder;
 
+RecordingHelper* recordHelper; //Not actually used. //Update: TODO: Figure out why there are two of this now. There was a reason that I failed to document.
+bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
+void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
+
+//UI.
+cv::Rect tempmenurect(50, 0, 450, 180);
+Sidebar panel(tempmenurect, 0, 1, 0, 1);
+ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
+
+//ZED-specific fields/properties.
+Mat *depth_measure;
+SensorsData sensorData;
+RuntimeParameters runtime_parameters;
+Resolution image_size;
 int zedWidth()
 {
 	return image_size.width;
 }
-
 int zedHeight()
 {
 	return image_size.height;
 }
 
-Simulation *sim;
-
-ImageHelper *imageHelper;
-
-RecordingHelper *recorder;
-
-Mat *depth_measure;
-
-SensorsData sensorData;
-
-RuntimeParameters runtime_parameters;
-
 //Forward declarations.
+cv::Mat slMat2cvMat(Mat& input);
+int slMatType2cvMatType(sl::MAT_TYPE sltype);
+void ClickCallback(int event, int x, int y, int flags, void* userdata);
 void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat);
-
 void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSimMat);
-
 void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat);
-
 int InitZed(int argc, char **argv, Camera *zed);
-
 void HandleOutputAndMouse(cv::Mat finalImageMat);
 
 

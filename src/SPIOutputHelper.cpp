@@ -104,30 +104,10 @@ void SPIOutputHelper::DisplayImageOnSPIScreen(cv::Mat image)
 	cv::Rect srcroi(widthdiff / 2, heightdiff / 2, croppedwidth, croppedheight);
 	cv::Mat imgroi = image(srcroi);
 
-
-
-
 	//cv::resize(image, bufferMat, cv::Size(320, 240));
 	cv::resize(imgroi, bufferMat, cv::Size(destwidth, destheight));
 	newImage = true;
 	mx.unlock();
-
-	/*
-	//TO DO: Consider multi-threading, and if this gets too complex, 
-	//move to a different class. 
-	//Make a new Mat, both to resize it and act as a buffer. 
-	//cv::Mat scaledimg = cv::Mat(240, 320, CV_8UC3);
-	cv::Mat scaledimg;	
-	cv::resize(image, scaledimg, cv::Size(320, 240));
-
-	cv::Mat scaledimg_noalpha = (cv::Mat(320, 240, CV_8UC3));
-	cv::cvtColor(scaledimg, scaledimg_noalpha, cv::COLOR_BGRA2BGR);
-
-	//vector<unsigned char> scaledimgvec = ImageToVector(scaledimg);
-	vector<unsigned char> scaledimgvec = ImageToVector(scaledimg_noalpha);
-
-	screen.LCD_ShowImage(scaledimgvec, scaledimg_noalpha.cols, scaledimg_noalpha.rows, scaledimg_noalpha.channels());
-	*/
 }
 
 void ProcessImage(cv::Mat inputmat) //Kinda redundant, should probably delete.
@@ -138,9 +118,6 @@ void ProcessImage(cv::Mat inputmat) //Kinda redundant, should probably delete.
 	newImage = true;
 	mx.unlock();
 }
-
-
-
 
 
 vector<unsigned char> SPIOutputHelper::ImageToVector(cv::Mat image)

@@ -347,12 +347,8 @@ void SPIScreen::LogDuration(std::chrono::time_point<std::chrono::high_resolution
 
 void SPIScreen::SendCommand(uint8_t byte)
 {
-	//Make sure CS is low. 
-	//SetValue_Mem(csPin, CS_BIT, false); //CS low indicates message of some kind. High is spacing.
-	//SetValue_Mem(dcPin, DC_BIT, false);  //DC low indicates command, not data. 
 	SetCommandMode(true);
 
-	//for(int bit = 0; bit < 8; bit++) //LSB.
 	for(int bit = 7; bit >= 0; bit--) //MSB.	
 	{
 		//bool value = (byte>>bit)&1;
@@ -367,7 +363,6 @@ void SPIScreen::SendCommand(uint8_t byte)
 			dinPin->OUT = DINOFF_CLKOFF_CSOFF;
 			dinPin->OUT = DINOFF_CLKON_CSOFF;	
 		}
-		
 	}
 
 	//We don't set CS back to high for commands. 
@@ -383,7 +378,6 @@ void SPIScreen::SendData(uint8_t byte)
 	{
 		bool value = (byte>>bit)&1;
 		
-		//if(value == true) 
 		if((byte>>bit)&1 == true)		
 		{
 			dinPin->OUT = DINON_CLKOFF_CSOFF;
