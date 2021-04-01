@@ -253,7 +253,7 @@ bool Simulation::Simulate(sl::Mat depthmat, float startspeedmps, float distbetwe
 		int swidth = (int)depthmat.getWidth();
 		int sheight = (int)depthmat.getHeight();
 
-		int2 screenpos = CamUtilities::CameraToScreenPos(currentpoint, projectionMatrix, depthmat.getWidth(), depthmat.getHeight());
+		int2 screenpos = CamUtilities::CameraToScreenPos(currentpoint, projectionMatrix, swidth, sheight);
 
 		//If it's outside view of the screen, we won't be able to calculate depth. 
 		if (screenpos.x < 0.0 || screenpos.y < 0.0 || screenpos.x > swidth || screenpos.y > sheight)
