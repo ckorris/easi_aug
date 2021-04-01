@@ -20,6 +20,7 @@ static const string CAM_RESOLUTION_NAME = "CamResolution";
 static const string CAM_PERFORMANCE_MODE_NAME = "CamPerformanceMode";
 static const string LCD_WIDTH_NAME = "LCDWidth";
 static const string LCD_HEIGHT_NAME = "LCDHeight";
+static const string ZOOM_LEVEL_NAME = "ZoomLevel";
 
 //Floats. 
 static const string FORWARD_SPEED_NAME = "ForwardSpeedMPS";
@@ -154,6 +155,15 @@ public:
 	static inline const void lcdHeight(int newvalue)
 	{
 		SetIntSetting(LCD_HEIGHT_NAME, newvalue);
+	}
+
+	static inline int zoomLevel()
+	{
+		return GetIntSetting(ZOOM_LEVEL_NAME);
+	}
+	static inline const void zoomLevel(int newvalue)
+	{
+		SetIntSetting(ZOOM_LEVEL_NAME, newvalue);
 	}
 
 	//FLOAT

@@ -13,6 +13,7 @@ iImageRotation=1
 iScreenRotation=0
 iLCDHeight=240
 iLCDWidth=320
+iZoomLevel=1
 
 #Floats
 fBBDiameterMM=6

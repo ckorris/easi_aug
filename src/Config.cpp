@@ -17,34 +17,6 @@ static map<string, int> intSettings; //Also holds bools
 static map<string, float> floatSettings;
 static map<string, string> stringSettings;
 
-/*
-//Bool properties.
-static bool toggleLaserCrosshair;
-static bool toggleLaserPath;
-
-static bool toggleGravityCrosshair;
-static bool toggleGravityPath;
-
-//Int properties.
-static int screenRotation; //Increments of 90° clockwise.
-static int camResolution; //sl::RESOLUTION. 0 = 2k, 1 = 1080, 2 = 720, 3 = VGA.
-static int camPerformanceMode; //sl::DEPTH_MODE. 0 - None, 1 = Performance, 2 = Quality, 3 = Ultra.
-
-//Float properties.
-static float forwardSpeedMPS; //Forward velocity of the round in meters per second. (1 meter = 3.28 feet)
-static float hopUpSpeedMPS; //Upward velocity of the round from the hop up/spin/Magnus effect in meters per second.
-static float camXPos;
-static float camYPos;
-static float camZPos;
-static float camXRotDegrees;
-static float camYRotDegrees;
-static float camZRotDegrees;
-*/
-
-
-
-
-
 enum ConfigValueTypes { boolvalue = 0, intvalue = 1, floatvalue = 2, stringvalue = 3 };
 
 bool Config::LoadSettingsFromDisk(string filename)

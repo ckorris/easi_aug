@@ -19,9 +19,11 @@ using namespace sl;
 
 const bool SET_TO_FULL_SCREEN = false; //If true, will make window full-screen. Best for small HDMI screens.
 
+const int MAX_ZOOM = 4;
+
 //Variables.
 cv::Point mousePos(0,0); //Current position of the mouse. Updated within ClickCallback (okay so I need to rename that). 
-bool zoom = false; //When true, the images will be magnified by 2x.
+//bool zoom = false; //When true, the images will be magnified by 2x.
 
 //Non-ZED helpers/managers.
 Simulation *sim;
@@ -269,12 +271,8 @@ void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSi
 				cout << "Dotradius was less than zero: " << dotradius << " Depth: " << collisiondepth_nograv << endl;
 				dotradius = 2.0;
 			}
-			//cout << "Collided at " << collisionpoint_nograv.x << ", " << collisionpoint_nograv.y << endl;
+
 			cv::circle(image_ocv, cv::Point(collisionpoint_nograv.x, collisionpoint_nograv.y), dotradius, cv::Scalar(0, 255.0, 0), -1);
-		}
-		else
-		{
-			//cout << "Did not collide. Last was " << collisionpoint_nograv.x << ", " << collisionpoint_nograv.y << endl;
 		}
 	}
 
@@ -295,7 +293,6 @@ void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSi
 				dotradius = 2.0;
 			}
 
-			//cout << "Collided at " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
 			cv::circle(image_ocv, cv::Point(collisionpoint_grav.x, collisionpoint_grav.y), dotradius, cv::Scalar(0, 0, 255.0, 1), -1);
 
 			//Draw the distance and travel time. 
@@ -303,6 +300,8 @@ void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSi
 			if (Config::toggleDistance() || Config::toggleTravelTime())
 			{
 				cv::Point gravpoint_ui = imageHelper->RawImagePointToRotated(cv::Point(collisionpoint_grav.x, collisionpoint_grav.y));
+
+				int zoom = Config::zoomLevel();
 
 				if (Config::toggleDistance())
 				{
@@ -312,11 +311,11 @@ void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSi
 					string disttext = distbuffer + distsuffix; //Not sure why I can't just add the literal. 
 
 					//Draw text with double size.
-					cv::Size disttextsize = cv::getTextSize(disttext, 1, zoom ? 1 : 2, zoom ? 1 : 2, NULL);
+					cv::Size disttextsize = cv::getTextSize(disttext, 1, zoom, zoom, NULL);
 					cv::Point disttextpoint(gravpoint_ui.x - 20 - dotradius - disttextsize.width,
 						gravpoint_ui.y - 20 - dotradius);
 
-					cv::putText(sim_mat, disttext, disttextpoint, 1, zoom ? 1 : 2, cv::Scalar(0, 0, 255, 1), zoom ? 1 : 2);
+					cv::putText(sim_mat, disttext, disttextpoint, 1, zoom, cv::Scalar(0, 0, 255, 1), zoom);
 				}
 				if (Config::toggleTravelTime())
 				{
@@ -328,7 +327,7 @@ void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSi
 					cv::Point timetextpoint(gravpoint_ui.x + 20 + dotradius,
 						gravpoint_ui.y - 20 - dotradius);
 
-					cv::putText(sim_mat, timetext, timetextpoint, 1, zoom ? 1 : 2, cv::Scalar(0, 0, 255, 1), zoom ? 1 : 2);
+					cv::putText(sim_mat, timetext, timetextpoint, 1, zoom, cv::Scalar(0, 0, 255, 1), zoom);
 				}
 			}
 		}
@@ -346,17 +345,20 @@ void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat
 	//Rotate the ZED image, and possibly zoom in.  
 	cv::Mat finalimagemat(image_ocv.cols, image_ocv.rows, CV_8UC4);
 	cv::Mat finaluimat(sim_mat.cols, sim_mat.rows, CV_8UC4);
-	if (zoom == false)
+	int zoom = Config::zoomLevel();
+	if (zoom == 1) //Save some maths and some cycles. 
 	{
 		finalimagemat = imageHelper->RotateImageToConfig(image_ocv);
 		finaluimat = imageHelper->RotateUIToConfig(sim_mat);
 	}
-	else //zoom == true
+	else //zoom != 1
 	{
 		cv::Mat rotatedzedimage = imageHelper->RotateImageToConfig(image_ocv);
 		cv::Mat rotateduiimage = imageHelper->RotateUIToConfig(sim_mat);
 
-		cv::Rect zoomrect(image_ocv.cols / 4.0, image_ocv.rows / 4.0, image_ocv.cols / 2.0, image_ocv.rows / 2.0);
+		float sidelength = (1.0 - (1.0 / zoom)) / 2.0;
+		//cv::Rect zoomrect(image_ocv.cols / 4.0, image_ocv.rows / 4.0, image_ocv.cols / 2.0, image_ocv.rows / 2.0);
+		cv::Rect zoomrect(image_ocv.cols * sidelength, image_ocv.rows * sidelength, image_ocv.cols / zoom, image_ocv.rows / zoom);
 
 		cv::resize(rotatedzedimage(zoomrect), finalimagemat, cv::Size(uiwidth, uiheight));
 		cv::resize(rotateduiimage(zoomrect), finaluimat, cv::Size(uiwidth, uiheight));
@@ -373,7 +375,6 @@ void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat
 
 	//Add the UI image (now with the menu) to the ZED image. 
 	cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
-	//int fromto[] = { 3, 0 }; //Now declared further above as it's used several times. 
 	cv::mixChannels(finaluimat, mask, fromto, 1);
 	cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
 	cv::add(finalimagemat, finaluimat, finalimagemat, mask);
@@ -413,39 +414,32 @@ bool GetIsRecording()
 	return recordHelper->IsRecordingSVO();
 }
 
-//void ClickCallback(int event, int x, int y, int flags, void* userdata)
 void ClickCallback(int event, int x, int y, int flags, void* userdata)
 {
 	
 	if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_LBUTTONUP)
 	{
-		//cout << "Before: X: " << x << " Y: " << y << endl;
-
-		//Clickable::ProcessAllClicks(x, y);
 		ImageHelper *imageHelper = static_cast<ImageHelper*>(userdata);
-		//int2 rotateduipoints = imageHelper->ScreenTouchToUIPoint(x, y);
 		imageHelper->ScreenTouchToUIPoint(&x, &y);
-		//int2 rotateduipoints = int2(x, y);
 
 		bool isdown = event == cv::EVENT_LBUTTONDOWN; 
 
-		//cout << "After: X: " << x << " Y: " << y << endl;
-
-		//panel.ProcessAllClicks(rotateduipoints.x, rotateduipoints.y, isdown);
 		panel.ProcessAllClicks(x, y, isdown);
 		recordButton.ProcessAllClicks(x, y, isdown);
-		//panel.ProcessAllClicks(x, y);
 	}
 	else if (event == cv::EVENT_RBUTTONDOWN)
 	{
-		zoom = !zoom;
+		int zoom = Config::zoomLevel();
+		zoom++;
+		if (zoom > MAX_ZOOM)
+		{
+			zoom = 1;
+		}
+
+		Config::zoomLevel(zoom);
 	}
 	else if (event == cv::EVENT_MOUSEMOVE)
 	{
-		//cout << "Drawing circle at " << x << ", " << y << endl;
-		//cv::Mat* drawmat = static_cast<cv::Mat*>(userdata);
-		//cv::Mat* drawmat = (cv::Mat*)userdata;		
-		//cv::circle(drawmat, cv::Point(30, 30), 50, cv::Scalar(255, 0, 0, 255), -1);
 		mousePos = cv::Point(x, y);
 	}
 	
