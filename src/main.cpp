@@ -17,6 +17,8 @@
 using namespace std;
 using namespace sl;
 
+const bool SET_TO_FULL_SCREEN = false;
+
 cv::Mat slMat2cvMat(Mat& input);
 int slMatType2cvMatType(sl::MAT_TYPE sltype);
 
@@ -61,9 +63,205 @@ Mat *depth_measure;
 
 SensorsData sensorData;
 
+RuntimeParameters runtime_parameters;
+
 //Forward declarations.
 void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat);
 
+void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSimMat);
+
+void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat);
+
+int InitZed(int argc, char **argv, Camera *zed);
+
+void HandleOutputAndMouse(cv::Mat finalImageMat);
+
+
+int main(int argc, char **argv) 
+{
+#if SPI_OUTPUT
+	//Create object for outputting to SPI monitor.
+	SPIOutputHelper spihelper;
+
+#endif
+
+
+	// Create a ZED camera object
+	Camera zed;
+
+	int result = 0;
+	
+	result = InitZed(argc, argv, &zed);
+
+	if (result == -1)
+	{
+		return -1;
+	}
+
+	// Prepare new images to be used as the background, or video of the real world in both formats.
+	Mat zedimage(image_size, MAT_TYPE::U8_C4);
+	int cvmattype = slMatType2cvMatType(zedimage.getDataType());
+	cv::Mat image_ocv = cv::Mat(zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
+
+	Mat depth(zedWidth(), zedHeight(), MAT_TYPE::F32_C1);
+	depth_measure = &depth;
+
+	Simulation simReal = Simulation(&zed);
+	sim = &simReal;
+
+	imageHelper = &ImageHelper(&zed);
+
+	//Declare the recording helper (for recording SVO files) and button.
+	recorder = &RecordingHelper(&zed);
+	RecordingHelper record = static_cast<RecordingHelper>(*recorder);
+	recordHelper = recorder;
+
+	//TODO: I HATE having to pass an explicit reference to RecordingHelper to the Ui. 
+	//That means the UI has to know what a RecordingHelper is. But passing a reference to it is proving very hard. 
+	//Find a way around that that's not messy. 
+	bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
+	void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
+
+
+	// Loop until 'q' is pressed
+	char key = ' ';
+	while (key != 'q') {
+		
+		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) 
+		{
+			//Log a new frame in TimeHelper, so that we can accurately get deltaTime later. 
+			Time::LogNewFrame();
+
+			//Retrieve data from the ZED.
+			zed.retrieveImage(zedimage, VIEW::LEFT, MEM::CPU, image_size);
+			zed.retrieveMeasure(*depth_measure);
+			zed.getSensorsData(sensorData, TIME_REFERENCE::IMAGE);
+
+			//Calculate the ui dimensions based on the screen rotation.
+			int screenrot = Config::screenRotation();
+			int uiwidth = (screenrot % 2 == 0) ? image_ocv.cols : image_ocv.rows;
+			int uiheight = (screenrot % 2 == 0) ? image_ocv.rows : image_ocv.cols;
+
+			//Run the simulation and draw the relevant images onto the relevant mats.
+			cv::Mat sim_mat;
+			DrawSimulation(uiwidth, uiheight, image_ocv, &sim_mat);
+
+			//Draw the UI into a mat.
+			cv::Mat menu_mat;
+			DrawUI(uiwidth, uiheight, &menu_mat);
+
+			cv::Mat finalImageMat;
+			CombineIntoFinalImage(uiwidth, uiheight, image_ocv, sim_mat, menu_mat, &finalImageMat);
+
+			//Display on the window and/or LCD screen, and handle mouse drawing and input.
+			HandleOutputAndMouse(finalImageMat);
+		
+			// Handle key event
+			key = cv::waitKey(10);
+		}
+	}
+	recorder->StopRecording(); //If we're recording, close it out. 
+	zed.close();
+	return 0;
+}
+
+int InitZed(int argc, char **argv, Camera *zed)
+{
+	// Set configuration parameters
+	InitParameters initparams;
+	initparams.camera_resolution = Config::camResolution();
+	initparams.depth_mode = Config::camPerformanceMode();
+	initparams.coordinate_units = UNIT::METER;
+	if (argc > 1) initparams.input.setFromSVOFile(argv[1]);
+
+	// Open the camera
+	ERROR_CODE zed_open_state = zed->open(initparams);
+	if (zed_open_state != ERROR_CODE::SUCCESS) {
+		cout << "Can't open ZED camera.: " << zed_open_state << "\nExiting program." << endl;
+		return -1;
+	}
+
+	//Increase saturation and sharpness a bit
+	//TODO: Make these all config settings. 
+	zed->setCameraSettings(VIDEO_SETTINGS::SATURATION, 7);
+	zed->setCameraSettings(VIDEO_SETTINGS::SHARPNESS, 6);
+
+	// Set runtime parameters after opening the camera
+
+	runtime_parameters.sensing_mode = SENSING_MODE::FILL;
+
+	CameraInformation cameraInfo = zed->getCameraInformation();
+	Resolution size = cameraInfo.camera_configuration.resolution;
+	image_size = size;
+
+	return 1;
+}
+
+void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
+{
+	//Make the menu image. Note this behaves very similarly to sim_mat, but is kept separate so we can add an offset at the end. 
+	cv::Mat menu_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
+	menu_mat.setTo(cv::Scalar(0, 0, 0, 0));
+
+	//Width and height of the final output screen. 
+	int destwidth = Config::lcdWidth();
+	int destheight = Config::lcdHeight();
+
+	//Make sure those values aren't zero.
+	if (destwidth == 0 || destheight == 0)
+	{
+		cout << "lcdWidth and/or lcdHeight were set to zero. Defaulting to ZED resolution. Do you have iLCDWidth and iLCDHeight set in your config file?" << endl;
+		destwidth = zedWidth();
+		destheight = zedHeight();
+	}
+
+	//Calculate the menu size and assign it. 
+	//This involves figuring out what the image will be scaled to, and what will be cropped for the output res. 	
+	float srcaspect = menu_mat.cols / (float)menu_mat.rows;
+	float destaspect = destwidth / (float)destheight;
+
+	//cout << "Converting aspects. Src: " << srcaspect << " Dst: " << destaspect << endl;
+	float widthmult = destaspect / srcaspect;
+	float heightmult = srcaspect / destaspect;
+
+	//Clamp the above between 0 and 1. (Apparently clamp isn't in this version of C++?)
+	if (widthmult > 1.0) widthmult = 1.0;
+	if (heightmult > 1.0) heightmult = 1.0;
+
+	float croppedwidth = menu_mat.cols * widthmult;
+	float croppedheight = menu_mat.rows * heightmult;
+
+	float widthdiff = menu_mat.cols - croppedwidth;
+	float heightdiff = menu_mat.rows - croppedheight;
+
+	cv::Rect panelrect; //Rect of the sidebar. The rect for the rest of the menu will be set partially based on these values, too.
+	//panelrect = cv::Rect(2, 1, menu_mat.cols - 2, menu_mat.rows * 0.2 - 2);
+	panelrect = cv::Rect((widthdiff / 2), (heightdiff / 2), 50, 300);
+
+	cv::Rect menurect = cv::Rect(panelrect.x + panelrect.width, panelrect.y, zedHeight() - panelrect.width, (zedHeight() - panelrect.width) / 3.0);
+	panel.openPanelRect = menurect;
+
+	panel.ProcessUI(panelrect, menu_mat, "EasiAug");
+
+
+	//Draw the recording button. 
+	float buttondim = menu_mat.cols / 15.0;
+	cv::Rect recordbuttonrect = cv::Rect(menu_mat.cols - (widthdiff / 2) - buttondim, menu_mat.rows - (heightdiff / 2) - buttondim, buttondim, buttondim);
+	recordButton.ProcessUI(recordbuttonrect, menu_mat, "EasiAug");
+
+	//Draw the FPS in the top right. 
+	char fpsbuffer[5];
+	int n = sprintf(fpsbuffer, "%1.0f", Time::smoothedFPS());
+	//cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL); //Normal.
+	cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 2, 2, NULL); //Double.
+	//cv::putText(sim_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100)); //Normal.
+	cv::putText(menu_mat, fpsbuffer, cv::Point(menu_mat.cols - (widthdiff / 2) - fpssize.width - 2,
+		fpssize.height + (heightdiff / 2) + 2), 1, 2, cv::Scalar(102, 204, 0, 100), 2);
+
+
+
+	*outMat = menu_mat;
+}
 
 void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSimMat)
 {//Make the image used for some displays, like the distance text.
@@ -158,251 +356,72 @@ void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSi
 	*outSimMat = sim_mat;
 }
 
-
-
-
-int main(int argc, char **argv) 
+void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat)
 {
-	// Create a ZED camera object
-	Camera zed;
-
-#if SPI_OUTPUT
-	//Create object for outputting to SPI monitor.
-	SPIOutputHelper spihelper;
-
-#endif
-	// Set configuration parameters
-	InitParameters initparams;
-	initparams.camera_resolution = Config::camResolution();
-	initparams.depth_mode = Config::camPerformanceMode();
-	initparams.coordinate_units = UNIT::METER;
-	if (argc > 1) initparams.input.setFromSVOFile(argv[1]);
-
-	// Open the camera
-	ERROR_CODE zed_open_state = zed.open(initparams);
-	if (zed_open_state != ERROR_CODE::SUCCESS) {
-		cout << "Can't open ZED camera.: " << zed_open_state << "\nExiting program." << endl;
-		return -1;
-	}
-
-
-	// Set runtime parameters after opening the camera
-	RuntimeParameters runtime_parameters;
-	runtime_parameters.sensing_mode = SENSING_MODE::FILL;
-
-	//Increase saturation and sharpness a bit
-	//TODO: mate these all config settings. 
-	zed.setCameraSettings(VIDEO_SETTINGS::SATURATION, 7);
-	zed.setCameraSettings(VIDEO_SETTINGS::SHARPNESS, 6);
-
-	// Prepare new image size to retrieve half-resolution images
-	image_size = zed.getCameraInformation().camera_configuration.resolution;
-
-	//Resolution new_image_size(zedwidth, zedheight);
-	//Declare mats here so we keep using the same memory each loop.
-	Mat zedimage(image_size, MAT_TYPE::U8_C4);
-
-	int cvmattype = slMatType2cvMatType(zedimage.getDataType());
-	cv::Mat image_ocv = cv::Mat(zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
-
-	cv::Mat sim_mat; //The projectile path lines, impact point dot, time-to-target text and distance text.  
-	cv::Mat menu_mat; //The sidebar menu.
-
-	depth_measure = &Mat(zedWidth(), zedHeight(), MAT_TYPE::F32_C1);
-
-	Simulation simReal = Simulation(&zed);
-	sim = &simReal;
-
-
-	imageHelper = &ImageHelper(&zed);
-
-	//Declare the recording helper (for recording SVO files) and button.
-	recorder = &RecordingHelper(&zed);
-	RecordingHelper record = static_cast<RecordingHelper>(*recorder);
-	recordHelper = recorder;
-
-	//TODO: I HATE having to pass an explicit reference to RecordingHelper to the Ui. 
-	//That means the UI has to know what a RecordingHelper is. But passing a reference to it is proving very hard. 
-	//Find a way around that that's not messy. 
-	bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
-	void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
-
-
-	// Loop until 'q' is pressed
-	char key = ' ';
-	while (key != 'q') {
-		
-		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) 
-		{
-			//Log a new frame in TimeHelper, so that we can accurately get deltaTime later. 
-			Time::LogNewFrame();
-
-			//TEMP: Start recording if the R key is pressed. 
-			if (key == 'r')
-			{
-				if (!recorder->IsRecordingSVO()) recorder->StartRecording();
-				else recorder->StopRecording();
-
-			}
-
-			// Retrieve the left image, depth image in half-resolution
-			zed.retrieveImage(zedimage, VIEW::LEFT, MEM::CPU, image_size);
-
-			zed.retrieveMeasure(*depth_measure);
-
-			zed.getSensorsData(sensorData, TIME_REFERENCE::IMAGE);
-
-
-			//Cache settings.
-			int screenrot = Config::screenRotation();
-			int uiwidth = (screenrot % 2 == 0) ? image_ocv.cols : image_ocv.rows;
-			int uiheight = (screenrot % 2 == 0) ? image_ocv.rows : image_ocv.cols;
-
-			
-			cv::Mat sim_mat;
-			DrawSimulation(uiwidth, uiheight, image_ocv, &sim_mat);
-
-
-
-
-			
-			//Draw the UI into a mat.
-			cv::Mat menu_mat;
-			DrawUI(uiwidth, uiheight, &menu_mat);
-
-			//Rotate the ZED image, and possibly zoom in.  
-			cv::Mat finalimagemat(image_ocv.cols, image_ocv.rows, CV_8UC4);
-			cv::Mat finaluimat(sim_mat.cols, sim_mat.rows, CV_8UC4);
-			if(zoom == false)
-			{
-				finalimagemat = imageHelper->RotateImageToConfig(image_ocv);
-				finaluimat = imageHelper->RotateUIToConfig(sim_mat);
-			}
-			else //zoom == true
-			{
-				cv::Mat rotatedzedimage = imageHelper->RotateImageToConfig(image_ocv);
-				cv::Mat rotateduiimage = imageHelper->RotateUIToConfig(sim_mat);
-			
-				cv::Rect zoomrect(image_ocv.cols / 4.0, image_ocv.rows / 4.0, image_ocv.cols / 2.0, image_ocv.rows / 2.0);
-				
-				cv::resize(rotatedzedimage(zoomrect), finalimagemat, cv::Size(uiwidth, uiheight)); 
-				cv::resize(rotateduiimage(zoomrect), finaluimat, cv::Size(uiwidth, uiheight));
-			}	
-			
-			//Declare a "fromto" array to be used in several additive functions (cv::mixChannels). 
-			int fromto[] = { 3, 0 };
-
-			//Rotate the UI mat and add the menu mat to the sim mat. 
-			cv::Mat menumask(cv::Size(menu_mat.cols, menu_mat.rows), CV_8UC1);
-			cv::mixChannels(menu_mat, menumask, fromto, 1);
-			cv::add(finaluimat, menu_mat, finaluimat, menumask);		
-			
-
-			//Add the UI image (now with the menu) to the ZED image. 
-			cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
-			//int fromto[] = { 3, 0 }; //Now declared further above as it's used several times. 
-			cv::mixChannels(finaluimat, mask, fromto, 1);
-			cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
-			cv::add(finalimagemat, finaluimat, finalimagemat, mask);
-		
-			//Draw the mouse.
-			cv::circle(finalimagemat, mousePos, (finaluimat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);
-
-			//Output to desktop.
-
-			//Below should be uncommented for non-full screen window. 
-			cv::namedWindow("EasiAug");
-
-			//Below should be uncommented if you want to have it be fullscreen automatically. Better for Jetson but worse for development on desktop.
-			//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
-			//cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
-			cv::imshow("EasiAug", finalimagemat);
-			
-#if SPI_OUTPUT
-			//Output to SPI screen.
-			spihelper.DisplayImageOnSPIScreen(finalimagemat);
-#endif
-
-			//Input.
-			cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);
-			
-			
-
-			// Handle key event
-			key = cv::waitKey(10);
-		}
-	}
-	recorder->StopRecording(); //If we're recording, close it out. 
-	zed.close();
-	return 0;
-}
-
-void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
-{
-	//Make the menu image. Note this behaves very similarly to sim_mat, but is kept separate so we can add an offset at the end. 
-	cv::Mat menu_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
-	menu_mat.setTo(cv::Scalar(0, 0, 0, 0));
-
-	//Width and height of the final output screen. 
-	int destwidth = Config::lcdWidth();
-	int destheight = Config::lcdHeight();
-
-	//Make sure those values aren't zero.
-	if (destwidth == 0 || destheight == 0)
+	//Rotate the ZED image, and possibly zoom in.  
+	cv::Mat finalimagemat(image_ocv.cols, image_ocv.rows, CV_8UC4);
+	cv::Mat finaluimat(sim_mat.cols, sim_mat.rows, CV_8UC4);
+	if (zoom == false)
 	{
-		cout << "lcdWidth and/or lcdHeight were set to zero. Defaulting to ZED resolution. Do you have iLCDWidth and iLCDHeight set in your config file?" << endl;
-		destwidth = zedWidth();
-		destheight = zedHeight();
+		finalimagemat = imageHelper->RotateImageToConfig(image_ocv);
+		finaluimat = imageHelper->RotateUIToConfig(sim_mat);
+	}
+	else //zoom == true
+	{
+		cv::Mat rotatedzedimage = imageHelper->RotateImageToConfig(image_ocv);
+		cv::Mat rotateduiimage = imageHelper->RotateUIToConfig(sim_mat);
+
+		cv::Rect zoomrect(image_ocv.cols / 4.0, image_ocv.rows / 4.0, image_ocv.cols / 2.0, image_ocv.rows / 2.0);
+
+		cv::resize(rotatedzedimage(zoomrect), finalimagemat, cv::Size(uiwidth, uiheight));
+		cv::resize(rotateduiimage(zoomrect), finaluimat, cv::Size(uiwidth, uiheight));
 	}
 
-	//Calculate the menu size and assign it. 
-	//This involves figuring out what the image will be scaled to, and what will be cropped for the output res. 	
-	float srcaspect = menu_mat.cols / (float)menu_mat.rows;
-	float destaspect = destwidth / (float)destheight;
+	//Declare a "fromto" array to be used in several additive functions (cv::mixChannels). 
+	int fromto[] = { 3, 0 };
 
-	//cout << "Converting aspects. Src: " << srcaspect << " Dst: " << destaspect << endl;
-	float widthmult = destaspect / srcaspect;
-	float heightmult = srcaspect / destaspect;
-
-	//Clamp the above between 0 and 1. (Apparently clamp isn't in this version of C++?)
-	if (widthmult > 1.0) widthmult = 1.0;
-	if (heightmult > 1.0) heightmult = 1.0;
-
-	float croppedwidth = menu_mat.cols * widthmult;
-	float croppedheight = menu_mat.rows * heightmult;
-
-	float widthdiff = menu_mat.cols - croppedwidth;
-	float heightdiff = menu_mat.rows - croppedheight;
-
-	cv::Rect panelrect; //Rect of the sidebar. The rect for the rest of the menu will be set partially based on these values, too.
-	//panelrect = cv::Rect(2, 1, menu_mat.cols - 2, menu_mat.rows * 0.2 - 2);
-	panelrect = cv::Rect((widthdiff / 2), (heightdiff / 2), 50, 300);
-
-	cv::Rect menurect = cv::Rect(panelrect.x + panelrect.width, panelrect.y, zedHeight() - panelrect.width, (zedHeight() - panelrect.width) / 3.0);
-	panel.openPanelRect = menurect;
-
-	panel.ProcessUI(panelrect, menu_mat, "EasiAug");
+	//Rotate the UI mat and add the menu mat to the sim mat. 
+	cv::Mat menumask(cv::Size(menu_mat.cols, menu_mat.rows), CV_8UC1);
+	cv::mixChannels(menu_mat, menumask, fromto, 1);
+	cv::add(finaluimat, menu_mat, finaluimat, menumask);
 
 
-	//Draw the recording button. 
-	float buttondim = menu_mat.cols / 15.0;
-	cv::Rect recordbuttonrect = cv::Rect(menu_mat.cols - (widthdiff / 2) - buttondim, menu_mat.rows - (heightdiff / 2) - buttondim, buttondim, buttondim);
-	recordButton.ProcessUI(recordbuttonrect, menu_mat, "EasiAug");
+	//Add the UI image (now with the menu) to the ZED image. 
+	cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
+	//int fromto[] = { 3, 0 }; //Now declared further above as it's used several times. 
+	cv::mixChannels(finaluimat, mask, fromto, 1);
+	cv::subtract(finalimagemat, cv::Scalar(255, 255, 255, 255), finalimagemat, mask);
+	cv::add(finalimagemat, finaluimat, finalimagemat, mask);
 
-	//Draw the FPS in the top right. 
-	char fpsbuffer[5];
-	int n = sprintf(fpsbuffer, "%1.0f", Time::smoothedFPS());
-	//cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 1, 1, NULL); //Normal.
-	cv::Size fpssize = cv::getTextSize(fpsbuffer, 1, 2, 2, NULL); //Double.
-	//cv::putText(sim_mat, fpsbuffer, cv::Point(uiwidth - fpssize.width - 2, fpssize.height + 2), 1, 1, cv::Scalar(102, 204, 0, 100)); //Normal.
-	cv::putText(menu_mat, fpsbuffer, cv::Point(menu_mat.cols - (widthdiff / 2) - fpssize.width - 2,
-		fpssize.height + (heightdiff / 2) + 2), 1, 2, cv::Scalar(102, 204, 0, 100), 2);
-
-
-
-	*outMat = menu_mat;
+	*finalMat = finalimagemat;
 }
 
+void HandleOutputAndMouse(cv::Mat finalImageMat)
+{
+	//Draw the mouse.
+	cv::circle(finalImageMat, mousePos, (finalImageMat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);
+
+	//Output to desktop.
+	if (SET_TO_FULL_SCREEN == true)
+	{
+		cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+		cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+	}
+	else
+	{
+		cv::namedWindow("EasiAug");
+	}
+
+	cv::imshow("EasiAug", finalImageMat);
+
+#if SPI_OUTPUT
+	//Output to SPI screen.
+	spihelper.DisplayImageOnSPIScreen(finalimagemat);
+#endif
+
+	//Mouse input.
+	cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);
+}
 
 bool GetIsRecording()
 {
