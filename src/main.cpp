@@ -9,6 +9,7 @@
 #include <ImageHelper.h>
 #include <TimeHelper.h>
 #include <RecordingHelper.h>
+#include <IOShortcuts.h>
 
 #if SPI_OUTPUT
 #include <SPIOutputHelper.h>
@@ -18,8 +19,6 @@ using namespace std;
 using namespace sl;
 
 const bool SET_TO_FULL_SCREEN = false; //If true, will make window full-screen. Best for small HDMI screens.
-
-const int MAX_ZOOM = 4;
 
 //Variables.
 cv::Point mousePos(0,0); //Current position of the mouse. Updated within ClickCallback (okay so I need to rename that). 
@@ -429,14 +428,7 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 	}
 	else if (event == cv::EVENT_RBUTTONDOWN)
 	{
-		int zoom = Config::zoomLevel();
-		zoom++;
-		if (zoom > MAX_ZOOM)
-		{
-			zoom = 1;
-		}
-
-		Config::zoomLevel(zoom);
+		IOShortcuts::ToggleSimulationOverlay();
 	}
 	else if (event == cv::EVENT_MOUSEMOVE)
 	{

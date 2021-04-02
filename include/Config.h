@@ -21,6 +21,7 @@ static const string CAM_PERFORMANCE_MODE_NAME = "CamPerformanceMode";
 static const string LCD_WIDTH_NAME = "LCDWidth";
 static const string LCD_HEIGHT_NAME = "LCDHeight";
 static const string ZOOM_LEVEL_NAME = "ZoomLevel";
+static const string ZOOM_MAX_LEVEL_NAME = "ZoomMaxLevel";
 
 //Floats. 
 static const string FORWARD_SPEED_NAME = "ForwardSpeedMPS";
@@ -43,8 +44,6 @@ static const string SVO_RECORD_DIRECTORY = "SVORecordDirectory";
 class Config
 {
 public: 
-	//static string ListAllSettings();
-
 #pragma region SettingsProperties
 	//BOOL
 	static inline bool toggleLaserCrosshair() 
@@ -164,6 +163,15 @@ public:
 	static inline const void zoomLevel(int newvalue)
 	{
 		SetIntSetting(ZOOM_LEVEL_NAME, newvalue);
+	}
+
+	static inline int zoomMaxLevel()
+	{
+		return GetIntSetting(ZOOM_MAX_LEVEL_NAME);
+	}
+	static inline const void zoomMaxLevel(int newvalue)
+	{
+		SetIntSetting(ZOOM_MAX_LEVEL_NAME, newvalue);
 	}
 
 	//FLOAT
