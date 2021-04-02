@@ -2,6 +2,7 @@
 #include <CamUtilities.h>
 #include <sl/Camera.hpp>
 #include <opencv2/opencv.hpp>
+#include <Config.h>
 
 using namespace sl;
 using namespace std;
@@ -103,5 +104,44 @@ sl::float3 CamUtilities::IMUPoseToGravityVector(sl::Pose imupose)
 
 	sl::float3 returnnormal(gravvec.x, gravvec.y, gravvec.z);
 	return returnnormal;
+}
+
+int CamUtilities::InitZed(int argc, char **argv, Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size)
+{
+	// Set configuration parameters
+	InitParameters initparams;
+	initparams.camera_resolution = Config::camResolution();
+	initparams.depth_mode = Config::camPerformanceMode();
+	initparams.coordinate_units = UNIT::METER;
+	if (argc > 1) initparams.input.setFromSVOFile(argv[1]);
+
+	// Open the camera
+	ERROR_CODE zed_open_state = zed->open(initparams);
+	if (zed_open_state != ERROR_CODE::SUCCESS) {
+		cout << "Can't open ZED camera.: " << zed_open_state << "\nExiting program." << endl;
+		return -1;
+	}
+
+	//Increase saturation and sharpness a bit
+	//TODO: Make these all config settings. 
+	zed->setCameraSettings(VIDEO_SETTINGS::SATURATION, 7);
+	zed->setCameraSettings(VIDEO_SETTINGS::SHARPNESS, 6);
+
+	// Set runtime parameters after opening the camera
+
+	runtime_parameters->sensing_mode = SENSING_MODE::FILL;
+
+	CameraInformation cameraInfo = zed->getCameraInformation();
+	Resolution size = cameraInfo.camera_configuration.resolution;
+	*image_size = size;
+
+	return 1;
+}
+
+int CamUtilities::InitZed(Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size)
+{
+	int argc = 0;
+	char **argv; //Empty but whatever.
+	return InitZed(argc, argv, zed, runtime_parameters, image_size);
 }
 

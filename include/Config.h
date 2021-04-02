@@ -124,7 +124,7 @@ public:
 	{
 		return (sl::RESOLUTION)GetIntSetting(CAM_RESOLUTION_NAME);
 	}
-	static inline const void camResolution(sl::RESOLUTION& newvalue)
+	static inline const void camResolution(sl::RESOLUTION newvalue)
 	{
 		SetIntSetting(CAM_RESOLUTION_NAME, (int)newvalue);
 	}
@@ -133,7 +133,7 @@ public:
 	{
 		return (sl::DEPTH_MODE)GetIntSetting(CAM_PERFORMANCE_MODE_NAME);
 	}
-	static inline const void camPerformanceMode(sl::DEPTH_MODE& newvalue)
+	static inline const void camPerformanceMode(sl::DEPTH_MODE newvalue)
 	{
 		SetIntSetting(CAM_PERFORMANCE_MODE_NAME, (int)newvalue);
 	}

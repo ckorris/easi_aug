@@ -59,9 +59,9 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata);
 void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat);
 void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSimMat);
 void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat);
-int InitZed(int argc, char **argv, Camera *zed);
 void HandleOutputAndMouse(cv::Mat finalImageMat);
 
+Camera zed;
 
 int main(int argc, char **argv) 
 {
@@ -73,11 +73,11 @@ int main(int argc, char **argv)
 
 
 	// Create a ZED camera object
-	Camera zed;
+	
 
 	int result = 0;
 	
-	result = InitZed(argc, argv, &zed);
+	result = CamUtilities::InitZed(argc, argv, &zed, &runtime_parameters, &image_size);
 
 	if (result == -1)
 	{
@@ -149,38 +149,6 @@ int main(int argc, char **argv)
 	recorder->StopRecording(); //If we're recording, close it out. 
 	zed.close();
 	return 0;
-}
-
-int InitZed(int argc, char **argv, Camera *zed)
-{
-	// Set configuration parameters
-	InitParameters initparams;
-	initparams.camera_resolution = Config::camResolution();
-	initparams.depth_mode = Config::camPerformanceMode();
-	initparams.coordinate_units = UNIT::METER;
-	if (argc > 1) initparams.input.setFromSVOFile(argv[1]);
-
-	// Open the camera
-	ERROR_CODE zed_open_state = zed->open(initparams);
-	if (zed_open_state != ERROR_CODE::SUCCESS) {
-		cout << "Can't open ZED camera.: " << zed_open_state << "\nExiting program." << endl;
-		return -1;
-	}
-
-	//Increase saturation and sharpness a bit
-	//TODO: Make these all config settings. 
-	zed->setCameraSettings(VIDEO_SETTINGS::SATURATION, 7);
-	zed->setCameraSettings(VIDEO_SETTINGS::SHARPNESS, 6);
-
-	// Set runtime parameters after opening the camera
-
-	runtime_parameters.sensing_mode = SENSING_MODE::FILL;
-
-	CameraInformation cameraInfo = zed->getCameraInformation();
-	Resolution size = cameraInfo.camera_configuration.resolution;
-	image_size = size;
-
-	return 1;
 }
 
 void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
@@ -428,7 +396,7 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 	}
 	else if (event == cv::EVENT_RBUTTONDOWN)
 	{
-		IOShortcuts::ToggleSimulationOverlay();
+		IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size);
 	}
 	else if (event == cv::EVENT_MOUSEMOVE)
 	{

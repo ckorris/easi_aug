@@ -42,3 +42,34 @@ void IOShortcuts::ToggleSimulationOverlay()
 	Config::toggleGravityCrosshair(gravityFlag);
 }
 
+void IOShortcuts::IncrementResolution(sl::Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size)
+{
+	/*
+	sl::RESOLUTION resolution = Config::camResolution();
+
+	//We use a switch statement here instead of something fancier so that we can avoid 2K, last and invalid indexes.
+	switch (resolution)
+	{
+	case sl::RESOLUTION::VGA:
+		Config::camResolution(sl::RESOLUTION::HD720);
+		break;
+	case sl::RESOLUTION::HD720:
+		Config::camResolution(sl::RESOLUTION::HD1080);
+		break;
+	case sl::RESOLUTION::HD1080:
+	default:
+		Config::camResolution(sl::RESOLUTION::VGA);
+		break;
+	}
+	*/
+	//TODO: This might break if we're recording an SVO.
+	zed->close();
+
+	CamUtilities::InitZed(zed, runtime_parameters, image_size);
+}
+
+
+void IOShortcuts::SleepMode(sl::Camera &zed)
+{
+	//TODO:
+}

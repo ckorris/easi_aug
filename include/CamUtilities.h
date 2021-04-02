@@ -16,4 +16,8 @@ public:
 	static int2 CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, int screenwidth, int screenheight);
 
 	static sl::float3 IMUPoseToGravityVector(sl::Pose imupose);
+
+	static int InitZed(int argc, char **argv, Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size);
+
+	static int InitZed(Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size);
 };
