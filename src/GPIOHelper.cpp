@@ -4,8 +4,14 @@
 
 #include <vector>
 #include <iostream>
+#include <unistd.h>
+#include <thread>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
+
+constexpr auto ROOT = "/sys/class/gpio"; //To do: Move this and remove auto. 
 
 void GPIOHelper::GPIOSetup_Mem(const int gpio)
 {

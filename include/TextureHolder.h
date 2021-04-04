@@ -7,7 +7,7 @@
 class TextureHolder
 {
 public:
-	TextureHolder::TextureHolder(sl::Mat *zedImage, sl::Mat *depthMeasure, cv::Mat *ocvImage);
+	TextureHolder(sl::Mat *zedImage, sl::Mat *depthMeasure, cv::Mat *ocvImage);
 	
 	void CreateMatrixesFromZed(sl::Camera *zed);
 

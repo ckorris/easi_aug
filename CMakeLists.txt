@@ -22,7 +22,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread")
 #2 inch LCD screen by WaveShare based on the ST7789VW chip.
 #Note this will be totally ignored if in Windows. 
 option(SPI_LCD "Output to SPI LCD screen (Jetson Nano/TX1 Only)" OFF)
-
+option(GPIO_HOTKEYS "Input for GPIO hotkey buttons (Jetson Nano/TX1 Only)" OFF)
 
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
 SET(CMAKE_BUILD_TYPE "RelWithDebInfo")

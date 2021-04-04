@@ -74,13 +74,15 @@ void RequestClose();
 
 Camera zed;
 
-int main(int argc, char **argv) 
-{
 #if SPI_OUTPUT
 	//Create object for outputting to SPI monitor.
 	SPIOutputHelper spihelper;
 
 #endif
+
+int main(int argc, char **argv) 
+{
+
 
 	//Initialize the ZED.
 	int result = 0;
@@ -104,10 +106,12 @@ int main(int argc, char **argv)
 	Simulation simReal = Simulation(&zed);
 	sim = &simReal;
 
-	imageHelper = &ImageHelper(&zed);
+	ImageHelper imghelper(&zed);
+	imageHelper = &imghelper;
 
 	//Declare the recording helper (for recording SVO files) and button.
-	recorder = &RecordingHelper(&zed);
+	RecordingHelper rec(&zed);	
+	recorder = &rec;
 	RecordingHelper record = static_cast<RecordingHelper>(*recorder);
 	recordHelper = recorder;
 
@@ -388,11 +392,11 @@ void HandleOutputAndMouse(cv::Mat finalImageMat)
 
 #if SPI_OUTPUT
 	//Output to SPI screen.
-	spihelper.DisplayImageOnSPIScreen(finalimagemat);
+	spihelper.DisplayImageOnSPIScreen(finalImageMat);
 #endif
 
 	//Mouse input.
-	cv::setMouseCallback("EasiAug", ClickCallback, &imageHelper);
+	cv::setMouseCallback("EasiAug", ClickCallback, imageHelper);
 }
 
 bool GetIsRecording()

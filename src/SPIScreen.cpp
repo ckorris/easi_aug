@@ -59,8 +59,6 @@ int LCD_HEIGHT = 320;
 
 using namespace std;
 
-constexpr auto ROOT = "/sys/class/gpio"; //To do: Move this and remove auto. 
-
 bool isSetToCommand = false; //Note: Be careful if the first packet sent is data. 
 
 SPIScreen::SPIScreen()

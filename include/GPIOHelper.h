@@ -4,8 +4,8 @@
 class GPIOHelper
 {
 public:
-	static void GPIOHelper::GPIOSetup_Mem(const int gpio);
-	static void GPIOHelper::UnexportGPIO_Mem(const int gpio);
+	static void GPIOSetup_Mem(const int gpio);
+	static void UnexportGPIO_Mem(const int gpio);
 };
 
 
