@@ -65,7 +65,7 @@ void IOShortcuts::IncrementResolution(sl::Camera *zed, RuntimeParameters *runtim
 	//TODO: This might break if we're recording an SVO.
 	zed->close();
 
-	CamUtilities::InitZed(zed, runtime_parameters, image_size);
+	//CamUtilities::InitZed(zed, runtime_parameters, image_size);
 }
 
 

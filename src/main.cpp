@@ -10,6 +10,7 @@
 #include <TimeHelper.h>
 #include <RecordingHelper.h>
 #include <IOShortcuts.h>
+#include <TextureHolder.h>
 
 #if SPI_OUTPUT
 #include <SPIOutputHelper.h>
@@ -39,10 +40,14 @@ Sidebar panel(tempmenurect, 0, 1, 0, 1);
 ToggleButton_Record recordButton(recordinggetter, recordingsetter, 0, 1, 0, 1);
 
 //ZED-specific fields/properties.
-Mat *depth_measure;
+//Mat zedimage;
+//Mat *depth_measure;
 SensorsData sensorData;
 RuntimeParameters runtime_parameters;
 Resolution image_size;
+
+//cv::Mat image_ocv;
+
 int zedWidth()
 {
 	return image_size.width;
@@ -57,7 +62,7 @@ cv::Mat slMat2cvMat(Mat& input);
 int slMatType2cvMatType(sl::MAT_TYPE sltype);
 void ClickCallback(int event, int x, int y, int flags, void* userdata);
 void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat);
-void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSimMat);
+void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_ocv, cv::Mat *outSimMat);
 void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat);
 void HandleOutputAndMouse(cv::Mat finalImageMat);
 
@@ -71,13 +76,13 @@ int main(int argc, char **argv)
 
 #endif
 
-
-	// Create a ZED camera object
 	
 
+	//Initialize the ZED.
 	int result = 0;
-	
 	result = CamUtilities::InitZed(argc, argv, &zed, &runtime_parameters, &image_size);
+
+
 
 	if (result == -1)
 	{
@@ -85,12 +90,22 @@ int main(int argc, char **argv)
 	}
 
 	// Prepare new images to be used as the background, or video of the real world in both formats.
-	Mat zedimage(image_size, MAT_TYPE::U8_C4);
-	int cvmattype = slMatType2cvMatType(zedimage.getDataType());
-	cv::Mat image_ocv = cv::Mat(zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
 
-	Mat depth(zedWidth(), zedHeight(), MAT_TYPE::F32_C1);
-	depth_measure = &depth;
+	//Mat zedimage(image_size, MAT_TYPE::U8_C4);
+	//int cvmattype = slMatType2cvMatType(zedimage.getDataType());
+	//cv::Mat image_ocv(zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
+	//Mat depth_measure(zedWidth(), zedHeight(), MAT_TYPE::F32_C1);
+
+	Mat zedimage(4, 4, MAT_TYPE::U8_C4);
+	int cvmattype = slMatType2cvMatType(zedimage.getDataType());
+	cv::Mat image_ocv;// (zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
+	Mat depth_measure(4, 4, MAT_TYPE::F32_C1);
+
+	//Make the textures we'll use everywhere.
+	TextureHolder textureHolder(&zedimage, &depth_measure, &image_ocv);
+	textureHolder.CreateMatrixesFromZed(&zed);
+
+	image_ocv = cv::Mat(zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
 
 	Simulation simReal = Simulation(&zed);
 	sim = &simReal;
@@ -120,7 +135,7 @@ int main(int argc, char **argv)
 
 			//Retrieve data from the ZED.
 			zed.retrieveImage(zedimage, VIEW::LEFT, MEM::CPU, image_size);
-			zed.retrieveMeasure(*depth_measure);
+			zed.retrieveMeasure(depth_measure);
 			zed.getSensorsData(sensorData, TIME_REFERENCE::IMAGE);
 
 			//Calculate the ui dimensions based on the screen rotation.
@@ -130,7 +145,7 @@ int main(int argc, char **argv)
 
 			//Run the simulation and draw the relevant images onto the relevant mats.
 			cv::Mat sim_mat;
-			DrawSimulation(uiwidth, uiheight, image_ocv, &sim_mat);
+			DrawSimulation(uiwidth, uiheight, depth_measure, image_ocv, &sim_mat);
 
 			//Draw the UI into a mat.
 			cv::Mat menu_mat;
@@ -217,7 +232,7 @@ void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
 	*outMat = menu_mat;
 }
 
-void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSimMat)
+void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_ocv, cv::Mat *outSimMat)
 {//Make the image used for some displays, like the distance text.
 	cv::Mat sim_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
 	sim_mat.setTo(cv::Scalar(0, 0, 0, 0)); //Maaaay not need, now that we're drawing the menu separately. 
@@ -228,7 +243,7 @@ void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSi
 		int2 collisionpoint_nograv;
 		float collisiondepth_nograv;
 		float traveltime_nograv;
-		bool collided = sim->Simulate(*depth_measure, Config::forwardSpeedMPS(), 0.04, false, sensorData, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv,
+		bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, sensorData, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv,
 			Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0, 1));
 		if (collided && Config::toggleLaserCrosshair())
 		{
@@ -249,7 +264,7 @@ void DrawSimulation(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat *outSi
 		int2 collisionpoint_grav;
 		float collisiondepth_grav;
 		float traveltime_grav;
-		bool collided = sim->Simulate(*depth_measure, Config::forwardSpeedMPS(), 0.04, true, sensorData, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
+		bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, sensorData, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
 			Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0, 1));
 		if (collided && Config::toggleGravityCrosshair())
 		{

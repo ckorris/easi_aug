@@ -20,4 +20,6 @@ public:
 	static int InitZed(int argc, char **argv, Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size);
 
 	static int InitZed(Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size);
+
+	static int slMatType2cvMatType(sl::MAT_TYPE sltype);
 };

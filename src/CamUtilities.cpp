@@ -135,6 +135,7 @@ int CamUtilities::InitZed(int argc, char **argv, Camera *zed, RuntimeParameters 
 	Resolution size = cameraInfo.camera_configuration.resolution;
 	*image_size = size;
 
+
 	return 1;
 }
 
@@ -145,3 +146,19 @@ int CamUtilities::InitZed(Camera *zed, RuntimeParameters *runtime_parameters, Re
 	return InitZed(argc, argv, zed, runtime_parameters, image_size);
 }
 
+int CamUtilities::slMatType2cvMatType(sl::MAT_TYPE sltype)
+{
+	int cv_type = -1;
+	switch (sltype) {
+	case sl::MAT_TYPE::F32_C1: cv_type = CV_32FC1; break;
+	case sl::MAT_TYPE::F32_C2: cv_type = CV_32FC2; break;
+	case sl::MAT_TYPE::F32_C3: cv_type = CV_32FC3; break;
+	case sl::MAT_TYPE::F32_C4: cv_type = CV_32FC4; break;
+	case sl::MAT_TYPE::U8_C1: cv_type = CV_8UC1; break;
+	case sl::MAT_TYPE::U8_C2: cv_type = CV_8UC2; break;
+	case sl::MAT_TYPE::U8_C3: cv_type = CV_8UC3; break;
+	case sl::MAT_TYPE::U8_C4: cv_type = CV_8UC4; break;
+	default: break;
+	}
+	return cv_type;
+}
