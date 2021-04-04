@@ -46,6 +46,8 @@ SensorsData sensorData;
 RuntimeParameters runtime_parameters;
 Resolution image_size;
 
+TextureHolder *textureHolder;
+
 //cv::Mat image_ocv;
 
 int zedWidth()
@@ -94,8 +96,9 @@ int main(int argc, char **argv)
 	cv::Mat image_ocv;
 	Mat depth_measure;
 
-	TextureHolder textureHolder(&zedimage, &depth_measure, &image_ocv);
-	textureHolder.CreateMatrixesFromZed(&zed);
+	TextureHolder texholder(&zedimage, &depth_measure, &image_ocv);
+	textureHolder = &texholder;
+	textureHolder->CreateMatrixesFromZed(&zed);
 
 	Simulation simReal = Simulation(&zed);
 	sim = &simReal;
@@ -401,7 +404,7 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 	}
 	else if (event == cv::EVENT_RBUTTONDOWN)
 	{
-		IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size);
+		IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder);
 	}
 	else if (event == cv::EVENT_MOUSEMOVE)
 	{

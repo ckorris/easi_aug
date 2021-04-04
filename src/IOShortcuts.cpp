@@ -1,6 +1,7 @@
 #include <IOShortcuts.h>
 #include <Config.h>
 
+
 void IOShortcuts::IncrementZoom()
 {
 	int zoom = Config::zoomLevel();
@@ -42,9 +43,9 @@ void IOShortcuts::ToggleSimulationOverlay()
 	Config::toggleGravityCrosshair(gravityFlag);
 }
 
-void IOShortcuts::IncrementResolution(sl::Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size)
+void IOShortcuts::IncrementResolution(sl::Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size, TextureHolder *textureHolder)
 {
-	/*
+	
 	sl::RESOLUTION resolution = Config::camResolution();
 
 	//We use a switch statement here instead of something fancier so that we can avoid 2K, last and invalid indexes.
@@ -61,11 +62,13 @@ void IOShortcuts::IncrementResolution(sl::Camera *zed, RuntimeParameters *runtim
 		Config::camResolution(sl::RESOLUTION::VGA);
 		break;
 	}
-	*/
+	
 	//TODO: This might break if we're recording an SVO.
 	zed->close();
 
-	//CamUtilities::InitZed(zed, runtime_parameters, image_size);
+	CamUtilities::InitZed(zed, runtime_parameters, image_size);
+
+	textureHolder->CreateMatrixesFromZed(zed);
 }
 
 
