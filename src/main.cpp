@@ -70,7 +70,7 @@ void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat);
 void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_ocv, cv::Mat *outSimMat);
 void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat);
 void HandleOutputAndMouse(cv::Mat finalImageMat);
-void Close();
+void RequestClose();
 
 Camera zed;
 
@@ -117,10 +117,13 @@ int main(int argc, char **argv)
 	bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
 	void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
 
-	//Make the hotkey manager.
+	//Make the hotkey manager and assign hotkeys.
 	HotkeyManager hotkeyManager;
-	hotkeyManager.RegisterKeyBinding('m', IOShortcuts::IncrementZoom);
-	hotkeyManager.RegisterKeyBinding('q', Close);
+	hotkeyManager.RegisterKeyBinding('z', IOShortcuts::IncrementZoom);
+	hotkeyManager.RegisterKeyBinding('x', IOShortcuts::ToggleSimulationOverlay);
+	hotkeyManager.RegisterKeyBinding('c', []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
+	hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed); });
+	hotkeyManager.RegisterKeyBinding('q', RequestClose);
 
 	// Loop until 'q' is pressed
 	char key = ' ';
@@ -421,9 +424,8 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 	
 }
 
-void Close()
+void RequestClose()
 {
-	zed.close();
 	wantsToQuit = true;
 }
 

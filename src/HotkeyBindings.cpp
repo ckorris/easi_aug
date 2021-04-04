@@ -15,7 +15,6 @@ void HotkeyBinding::Process()
 	{
 		if (newState == true)
 		{
-			std::cout << "Detected key down." << std::endl;
 			_onTrue();
 		}
 

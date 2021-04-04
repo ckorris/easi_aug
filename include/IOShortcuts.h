@@ -10,5 +10,5 @@ public:
 	static void IncrementZoom();
 	static void ToggleSimulationOverlay();
 	static void IncrementResolution(sl::Camera *zed, RuntimeParameters *runtime_parameters, Resolution *image_size, TextureHolder *textureHolder);
-	static void SleepMode(sl::Camera &zed);
+	static void SleepMode(sl::Camera *zed);
 };

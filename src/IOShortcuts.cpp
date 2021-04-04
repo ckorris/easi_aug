@@ -72,7 +72,7 @@ void IOShortcuts::IncrementResolution(sl::Camera *zed, RuntimeParameters *runtim
 }
 
 
-void IOShortcuts::SleepMode(sl::Camera &zed)
+void IOShortcuts::SleepMode(sl::Camera *zed)
 {
 	//TODO:
 }
