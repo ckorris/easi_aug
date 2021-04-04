@@ -75,6 +75,7 @@ int BL = GPIO24; //Pin 12
 #include <stdio.h>
 #include <stdint.h>
 #include <chrono>
+#include <GPIOHelper.h>
 
 typedef struct {
     uint32_t CNF;

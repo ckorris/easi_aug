@@ -215,12 +215,12 @@ for(int v = rows; v > 0; --v)
 
 void SPIScreen::InitGPIO()
 {
-	GPIOSetup_Mem(DIN_BCM);
-	GPIOSetup_Mem(CLK_BCM);
-	GPIOSetup_Mem(CS_BCM);
-	GPIOSetup_Mem(DC_BCM);
-	GPIOSetup_Mem(RST_BCM);
-	GPIOSetup_Mem(BL_BCM);
+	GPIOHelper::GPIOSetup_Mem(DIN_BCM);
+	GPIOHelper::GPIOSetup_Mem(CLK_BCM);
+	GPIOHelper::GPIOSetup_Mem(CS_BCM);
+	GPIOHelper::GPIOSetup_Mem(DC_BCM);
+	GPIOHelper::GPIOSetup_Mem(RST_BCM);
+	GPIOHelper::GPIOSetup_Mem(BL_BCM);
 	
 	
 	printf("GPIO pins initialized.\r\n");
@@ -228,75 +228,17 @@ void SPIScreen::InitGPIO()
 
 void SPIScreen::CleanupGPIO()
 {
-	UnexportGPIO_Mem(DIN_BCM);
-	UnexportGPIO_Mem(CLK_BCM);
-	UnexportGPIO_Mem(CS_BCM);
-	UnexportGPIO_Mem(DC_BCM);
-	UnexportGPIO_Mem(RST_BCM);
-	UnexportGPIO_Mem(BL_BCM);
+	GPIOHelper::UnexportGPIO_Mem(DIN_BCM);
+	GPIOHelper::UnexportGPIO_Mem(CLK_BCM);
+	GPIOHelper::UnexportGPIO_Mem(CS_BCM);
+	GPIOHelper::UnexportGPIO_Mem(DC_BCM);
+	GPIOHelper::UnexportGPIO_Mem(RST_BCM);
+	GPIOHelper::UnexportGPIO_Mem(BL_BCM);
 }
 
 
 
 
-void SPIScreen::GPIOSetup_Mem(const int gpio)
-{
-
-	//Export the GPIO so we can start using it. 
-	std::string path = std::string(ROOT) + "/gpio" + std::to_string(gpio);
-	int pathexists = access(path.c_str(), F_OK);
-	
-	//if(pathexists == 0)
-	if(pathexists != 0)
-	{
-		//return;
-		//Scope of f_export.
-		{
-			std::ofstream f_export(std::string(ROOT) + "/export");
-			f_export << gpio;
-		}
-
-		std::string value_path = std::string(ROOT) + "/gpio" + std::to_string(gpio) + "/value";
-    
-		int time_count = 0;
-
-		//while (access(value_path.c_str(), R_OK | W_OK) == 0)
-		while (access(value_path.c_str(), R_OK | W_OK) != 0)
-		{        
-			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			if(time_count++ > 100) 
-			{
-				throw std::runtime_error("Permission denied to " + value_path + "\n Change permissions or run as root.");
-			}
-		}
-	}
-	
-	//Set the direction of the pin to OUT. 
-
-	std::string gpio_dir_path = std::string(ROOT) + "/gpio" + std::to_string(gpio) + "/direction";
-
-	//Scope for direction_file.
-	{ 
-		//std::cout << "Set direction of pin " << gpio << " to out." << std::endl;
-		std::ofstream direction_file(gpio_dir_path);
-		direction_file << "out";
-	} 
-	
-
-}
-
-void SPIScreen::UnexportGPIO_Mem(const int gpio)
-{
-	std::string path = std::string(ROOT) + "/gpio" + std::to_string(gpio);
-	int pathexists = access(path.c_str(), F_OK);
-	if (pathexists == 0)
-	{
-        	return;
-	}
-
-	std::ofstream f_unexport(std::string(ROOT) + "/unexport");
-	f_unexport << gpio;
-}
 
 
 
