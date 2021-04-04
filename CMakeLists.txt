@@ -43,7 +43,8 @@ IF(NOT WIN32)
     if(SPI_LCD)
         add_definitions(-DSPI_OUTPUT)
     endif()
-
+ELSE()
+    add_definitions(-DWINDOWS)
 ENDIF()
 
 find_package(ZED 3 REQUIRED)

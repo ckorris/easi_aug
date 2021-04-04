@@ -11,6 +11,7 @@
 #include <RecordingHelper.h>
 #include <IOShortcuts.h>
 #include <TextureHolder.h>
+#include <HotkeyManager.h>
 
 #if SPI_OUTPUT
 #include <SPIOutputHelper.h>
@@ -48,6 +49,8 @@ Resolution image_size;
 
 TextureHolder *textureHolder;
 
+bool wantsToQuit = false;
+
 //cv::Mat image_ocv;
 
 int zedWidth()
@@ -67,6 +70,7 @@ void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat);
 void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_ocv, cv::Mat *outSimMat);
 void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat);
 void HandleOutputAndMouse(cv::Mat finalImageMat);
+void Close();
 
 Camera zed;
 
@@ -78,12 +82,9 @@ int main(int argc, char **argv)
 
 #endif
 
-	
-
 	//Initialize the ZED.
 	int result = 0;
 	result = CamUtilities::InitZed(argc, argv, &zed, &runtime_parameters, &image_size);
-
 
 
 	if (result == -1)
@@ -116,10 +117,14 @@ int main(int argc, char **argv)
 	bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
 	void(*recordingsetter)(bool) = [](bool v) { recordHelper->ToggleRecording(v); };
 
+	//Make the hotkey manager.
+	HotkeyManager hotkeyManager;
+	hotkeyManager.RegisterKeyBinding('m', IOShortcuts::IncrementZoom);
+	hotkeyManager.RegisterKeyBinding('q', Close);
 
 	// Loop until 'q' is pressed
 	char key = ' ';
-	while (key != 'q') {
+	while (wantsToQuit == false) {
 		
 		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) 
 		{
@@ -150,8 +155,11 @@ int main(int argc, char **argv)
 			//Display on the window and/or LCD screen, and handle mouse drawing and input.
 			HandleOutputAndMouse(finalImageMat);
 		
+			//Process hotkeys.
+			hotkeyManager.Process();
+
 			// Handle key event
-			key = cv::waitKey(10);
+			//key = cv::waitKey(10);
 		}
 	}
 	recorder->StopRecording(); //If we're recording, close it out. 
@@ -411,6 +419,12 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 		mousePos = cv::Point(x, y);
 	}
 	
+}
+
+void Close()
+{
+	zed.close();
+	wantsToQuit = true;
 }
 
 /**
