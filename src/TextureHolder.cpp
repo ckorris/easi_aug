@@ -36,9 +36,11 @@ void TextureHolder::CreateMatrixesFromZed(sl::Camera *zed)
 	depthmeasure.move(*_depthMeasure);
 
 	int cvmattype = CamUtilities::slMatType2cvMatType(_zedImage->getDataType());
-	cv::Mat image_ocv(size.height, size.width, cvmattype, _zedImage->getPtr<sl::uchar1>(sl:: MEM::CPU));
 
-	image_ocv.copyTo(*_ocvImage);
+	_ocvImage->release();
+	_ocvImage->create(size.height, size.width, cvmattype);
+	_ocvImage->data = _zedImage->getPtr<sl::uchar1>(sl::MEM::CPU);
+
 	
 	_isSetUp = true;
 }

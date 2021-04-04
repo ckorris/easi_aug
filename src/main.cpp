@@ -90,22 +90,12 @@ int main(int argc, char **argv)
 	}
 
 	// Prepare new images to be used as the background, or video of the real world in both formats.
+	Mat zedimage;
+	cv::Mat image_ocv;
+	Mat depth_measure;
 
-	//Mat zedimage(image_size, MAT_TYPE::U8_C4);
-	//int cvmattype = slMatType2cvMatType(zedimage.getDataType());
-	//cv::Mat image_ocv(zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
-	//Mat depth_measure(zedWidth(), zedHeight(), MAT_TYPE::F32_C1);
-
-	Mat zedimage(4, 4, MAT_TYPE::U8_C4);
-	int cvmattype = slMatType2cvMatType(zedimage.getDataType());
-	cv::Mat image_ocv;// (zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
-	Mat depth_measure(4, 4, MAT_TYPE::F32_C1);
-
-	//Make the textures we'll use everywhere.
 	TextureHolder textureHolder(&zedimage, &depth_measure, &image_ocv);
 	textureHolder.CreateMatrixesFromZed(&zed);
-
-	image_ocv = cv::Mat(zedHeight(), zedWidth(), cvmattype, zedimage.getPtr<sl::uchar1>(MEM::CPU));
 
 	Simulation simReal = Simulation(&zed);
 	sim = &simReal;
