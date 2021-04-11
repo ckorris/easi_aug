@@ -41,7 +41,7 @@ private:
 	int _memoryAddress;
 	int _bit;
 	int _bcmNumber;
-	bool _lastValue;
+	bool _lastState;
 	volatile gpio_t* _pinDef;
 };
 

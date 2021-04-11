@@ -53,7 +53,7 @@ GPIOBinding::GPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue
 	_memoryAddress = memoryAddress;
 	_bit = bit;
 	_bcmNumber = bcmNumber;
-	_lastValue = false;
+	_lastState = false;
 	
 	//Set up the pin.
 	GPIOHelper::GPIOSetup_Mem(memoryAddress, GPIOHelper::GPIODirection::IN);
@@ -62,7 +62,10 @@ GPIOBinding::GPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue
 
 bool GPIOBinding::Evaluate()
 {
-
+	bool newState = GPIOHelper::GetValue_Mem(_pinDef, _bit);
+	bool returnValue = newState == true && _lastState == false;
+	_lastState = newState;
+	return returnValue;
 }
 
 #endif

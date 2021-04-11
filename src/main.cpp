@@ -129,6 +129,11 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed); });
 	hotkeyManager.RegisterKeyBinding('q', RequestClose);
 
+#if SPI_OUTPUT
+	hotkeyManager.RegisterGPIOBinding(0x6000d704, 0x01, 232, IOShortcuts::IncrementZoom); //TODO: Declare those vals somewhere.
+
+#endif
+
 	// Loop until 'q' is pressed
 	char key = ' ';
 	while (wantsToQuit == false) {

@@ -18,3 +18,12 @@ void HotkeyManager::Process()
 		_bindings[i]->Process();
 	}
 }
+
+#if SPI_OUTPUT
+
+void HotkeyManager::RegisterGPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue)())
+{
+	_bindings.emplace_back(new GPIOBinding(memoryAddress, bit, bcmNumber, onTrue));
+}
+
+#endif
