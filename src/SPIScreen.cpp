@@ -57,6 +57,10 @@ int LCD_WIDTH = 240;
 int LCD_HEIGHT = 320;
 
 
+//TEST
+int INPUT_TEST_BCM = 232; 
+gpio_t volatile *inputTestPin;
+
 using namespace std;
 
 bool isSetToCommand = false; //Note: Be careful if the first packet sent is data. 
@@ -86,12 +90,12 @@ SPIScreen::SPIScreen()
 	}
 
 	//Initialize pins.
-	dinPin = GPIOHelper::InitPin_Mem(base, pagemask, DIN_MEM, DIN_BIT);
-	clkPin = GPIOHelper::InitPin_Mem(base, pagemask, CLK_MEM, CLK_BIT);
-	csPin = GPIOHelper::InitPin_Mem(base, pagemask, CS_MEM, CS_BIT);
-	dcPin = GPIOHelper::InitPin_Mem(base, pagemask, DC_MEM, DC_BIT);
-	rstPin = GPIOHelper::InitPin_Mem(base, pagemask, RST_MEM, RST_BIT);
-	blPin = GPIOHelper::InitPin_Mem(base, pagemask, BL_MEM, BL_BIT);
+	dinPin = GPIOHelper::InitPin_Out(base, pagemask, DIN_MEM, DIN_BIT);
+	clkPin = GPIOHelper::InitPin_Out(base, pagemask, CLK_MEM, CLK_BIT);
+	csPin = GPIOHelper::InitPin_Out(base, pagemask, CS_MEM, CS_BIT);
+	dcPin = GPIOHelper::InitPin_Out(base, pagemask, DC_MEM, DC_BIT);
+	rstPin = GPIOHelper::InitPin_Out(base, pagemask, RST_MEM, RST_BIT);
+	blPin = GPIOHelper::InitPin_Out(base, pagemask, BL_MEM, BL_BIT);
 
 	//Just to be sure, we make sure isSetToCommand matches the DC pin status. 
 	//This is in case it's set to high somehow before our first command, as otherwise it 
@@ -102,8 +106,17 @@ SPIScreen::SPIScreen()
 	Reset();
 	InitLCD(); 
 
+	//TEST
+	GPIOHelper::GPIOSetup_Mem(INPUT_TEST_BCM, GPIOHelper::GPIODirection::IN);
+
 	//Turn on back light. 
 	SetValue_Mem(blPin, BL_BIT, true); 
+
+	//TEST
+	inputTestPin = GPIOHelper::InitPin_IN(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
+
+	bool inputInInitValue = GPIOHelper::GetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT);
+	std::cout << "Input state: " << inputInInitValue << std::endl;
 	
 }
 
@@ -163,6 +176,10 @@ void SPIScreen::LCD_ShowImage(vector<unsigned char> image, int rows, int cols, i
 
 
 	bool hasprinted = false; //For test. 
+
+	//TEST
+	bool inputInValue = GPIOHelper::GetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT);
+	std::cout << "Input state: " << inputInValue << std::endl;
 
 
 //for(int v = 0; v < rows; ++v)

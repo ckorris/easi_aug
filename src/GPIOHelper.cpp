@@ -82,16 +82,31 @@ void GPIOHelper::UnexportGPIO_Mem(const int gpio)
 }
 
 
-volatile gpio_t* GPIOHelper::InitPin_Mem(void *base, int pagemask, int memaddress, int bit)
+volatile gpio_t* GPIOHelper::InitPin_Out(void *base, int pagemask, int memaddress, int bit)
 {
 	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)base + (memaddress & pagemask));
 
-	pinLed->CNF = pinLed->CNF | bit;
-	pinLed->OE = pinLed->OE | bit;
-	pinLed->OUT = pinLed->OUT & (~bit);
-	pinLed->INT_ENB = pinLed->INT_ENB & (~bit);
+	pinLed->CNF = pinLed->CNF | bit; //Set to GPIO, not SPIO.
+	pinLed->OE = pinLed->OE | bit; //Enable output.
+	pinLed->OUT = pinLed->OUT & (~bit); //Set output to low to start.
+	pinLed->INT_ENB = pinLed->INT_ENB & (~bit); //Disable interrupts.
 
 	return pinLed;
+}
+
+volatile gpio_t* GPIOHelper::InitPin_In(void *base, int pagemask, int memaddress, int bit)
+{
+	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)base + (memaddress & pagemask));
+
+	pinLed->CNF = pinLed->CNF | bit; //Set to GPIO, not SPIO.
+	pinLed->OE = pinLed->OE & (~bit); //Disable output.
+	pinLed->INT_ENB = pinLed->INT_ENB & (~bit); //Disable interrupts.
+}
+
+bool GPIOHelper::GetValue_Mem(volatile gpio_t *pinLed, int bit)
+{
+	uint32_t readval = pinLed->IN &= bit;
+	return readval == bit;
 }
 
 #endif
