@@ -122,10 +122,6 @@ volatile gpio_t* GPIOHelper::InitPin_In(int memaddress, int bit)
 bool GPIOHelper::GetValue_Mem(volatile gpio_t *pinLed, int bit)
 {
 	uint32_t readval = pinLed->IN &= bit;
-	std::cout << "Bit: " << bit << std::endl;
-	std::cout << "CNF: " << pinLed->CNF << std::endl;
-	std::cout << "OE: " << pinLed->OE << std::endl;
-	std::cout << "In: " << pinLed->IN << std::endl;
 	return readval == bit;
 }
 

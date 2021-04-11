@@ -56,7 +56,7 @@ GPIOBinding::GPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue
 	_lastState = false;
 	
 	//Set up the pin.
-	GPIOHelper::GPIOSetup_Mem(memoryAddress, GPIOHelper::GPIODirection::IN);
+	GPIOHelper::GPIOSetup_Mem(bcmNumber, GPIOHelper::GPIODirection::IN);
 	_pinDef = GPIOHelper::InitPin_In(memoryAddress, bit);
 }
 
