@@ -8,8 +8,12 @@
 #include <thread>
 #include <fstream>
 #include <sstream>
+#include <sys/mman.h>
 
 using namespace std;
+
+void* GetBase(); //Forward.
+void* _base;
 
 constexpr auto ROOT = "/sys/class/gpio"; //To do: Move this and remove auto. 
 

@@ -42,7 +42,7 @@ private:
 	int _bit;
 	int _bcmNumber;
 	bool _lastValue;
-	gpio_t _pinDef;
+	volatile gpio_t* _pinDef;
 };
 
 
