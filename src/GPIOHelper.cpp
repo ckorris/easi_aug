@@ -60,7 +60,7 @@ void GPIOHelper::GPIOSetup_Mem(const int gpio, GPIODirection direction)
 			direction_file << "in";
 			break;
 		case GPIODirection::OUT:
-			direction_file >> "out";
+			direction_file << "out";
 			break;
 		}
 	}
