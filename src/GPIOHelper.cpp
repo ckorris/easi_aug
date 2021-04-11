@@ -12,7 +12,9 @@
 
 using namespace std;
 
-void* GetBase(); //Forward.
+//Forward declarations.
+void* GetBase();
+int GetFD()
 void* _base;
 
 constexpr auto ROOT = "/sys/class/gpio"; //To do: Move this and remove auto. 
@@ -133,9 +135,25 @@ void* GetBase()
 	{
 		int pagesize = getpagesize();
 		int pagemask = pagesize - 1;
-		_base = mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (0x6000d004 & ~pagemask));
+		_base = mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, GetFD(), (0x6000d004 & ~pagemask));
 	}
 	return _base;
+}
+
+int GetFD()
+{
+	if (_fd == default)
+	{
+
+		//Open direct access to memory. 
+		int fd = open("/dev/mem", O_RDWR | O_SYNC);
+		if (fd < 0) {
+			//fprintf(stderr, "usage : $ sudo %s (with root privilege)\n", argv[0]);
+			cout << "Can't open memory. Try running with root (sudo ./[appname])." << endl;
+			exit(1);
+		}
+	}
+	return _fd;
 }
 
 #endif
