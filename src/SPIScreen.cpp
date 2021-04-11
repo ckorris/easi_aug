@@ -70,25 +70,6 @@ SPIScreen::SPIScreen()
 	cout << "Initializing SPI screen." << endl;
 	InitGPIO();
 
-	//Open direct access to memory. 
-	int fd = open("/dev/mem", O_RDWR | O_SYNC);
-	if (fd < 0) {
-		//fprintf(stderr, "usage : $ sudo %s (with root privilege)\n", argv[0]);
-		cout << "Can't open memory. Try running with root (sudo ./[appname])." << endl;
-		exit(1);
-	}
-
-	//  map a particular physical address into our address space
-	int pagesize = getpagesize();
-	int pagemask = pagesize-1;
-
-	//  This page will actually contain all the GPIO controllers, because they are co-located
-	void *base = mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (0x6000d004 & ~pagemask));
-	if (base == NULL) {
-	    perror("mmap()");
-	    exit(1);
-	}
-
 	//Initialize pins.
 	dinPin = GPIOHelper::InitPin_Out(DIN_MEM, DIN_BIT);
 	clkPin = GPIOHelper::InitPin_Out(CLK_MEM, CLK_BIT);
@@ -106,23 +87,12 @@ SPIScreen::SPIScreen()
 	Reset();
 	InitLCD(); 
 
-	
-	//TEST
-	//GPIOHelper::GPIOSetup_Mem(INPUT_TEST_BCM, GPIOHelper::GPIODirection::IN);
-	//GPIOHelper::GPIOSetup_Mem(INPUT_TEST_BCM, GPIOHelper::GPIODirection::OUT);
-
 	//Turn on back light. 
 	SetValue_Mem(blPin, BL_BIT, true); 
 
 	//TEST
 	//inputTestPin = GPIOHelper::InitPin_In(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
-	//inputTestPin = GPIOHelper::InitPin_Out(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
-
 	//SetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT, false);
-
-	//bool inputInInitValue = GPIOHelper::GetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT);
-	//std::cout << "Input state: " << inputInInitValue << std::endl;
-	
 }
 
 SPIScreen::~SPIScreen()
@@ -134,11 +104,6 @@ SPIScreen::~SPIScreen()
 
 void SPIScreen::LCD_Clear(uint16_t color)
 {
-	//TEST
-
-	//std::chrono::time_point<std::chrono::high_resolution_clock> start = 		//		std::chrono::high_resolution_clock::now();
-
-
 	//Set the window for the whole thing. 	
 	SetWindow(0, 0, LCD_WIDTH, LCD_HEIGHT);
 
@@ -158,9 +123,6 @@ void SPIScreen::LCD_Clear(uint16_t color)
 	dinPin->OUT = DINOFF_CLKOFF_CSON; //TEST
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> finish = 				std::chrono::high_resolution_clock::now();
-	
-	//LogDuration(start, finish);
-	
 }
 
 void SPIScreen::LCD_ShowImage(vector<unsigned char> image, int rows, int cols, int channels)
@@ -182,13 +144,7 @@ void SPIScreen::LCD_ShowImage(vector<unsigned char> image, int rows, int cols, i
 
 	bool hasprinted = false; //For test. 
 
-	//TEST
-	bool inputInValue = GPIOHelper::GetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT);
-	std::cout << "Input state: " << inputInValue << std::endl;
 
-
-//for(int v = 0; v < rows; ++v)
-//for(int v = 0; v < rows; ++v) //Makes it inverted on Y (upside down).
 for(int v = rows; v > 0; --v)
 	{
 		for(int u = 0; u < cols; ++u)

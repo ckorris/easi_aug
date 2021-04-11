@@ -9,13 +9,14 @@
 #include <fstream>
 #include <sstream>
 #include <sys/mman.h>
+#include <sys/fcntl.h>
 
 using namespace std;
 
 //Forward declarations.
 void* GetBase();
-int GetFD()
-void* _base;
+int GetFD();
+
 
 constexpr auto ROOT = "/sys/class/gpio"; //To do: Move this and remove auto. 
 
@@ -128,7 +129,7 @@ bool GPIOHelper::GetValue_Mem(volatile gpio_t *pinLed, int bit)
 	return readval == bit;
 }
 
-
+void* _base;
 void* GetBase()
 {
 	if (_base == nullptr)
@@ -140,14 +141,16 @@ void* GetBase()
 	return _base;
 }
 
+int _fd;
 int GetFD()
 {
-	if (_fd == default)
+	if (_fd == 0) //TODO: Verify that this is initialized to zero.'
+	//if (true) //TODO: Verify that this is initialized to zero.
 	{
 
 		//Open direct access to memory. 
-		int fd = open("/dev/mem", O_RDWR | O_SYNC);
-		if (fd < 0) {
+		_fd = open("/dev/mem", O_RDWR | O_SYNC);
+		if (_fd < 0) {
 			//fprintf(stderr, "usage : $ sudo %s (with root privilege)\n", argv[0]);
 			cout << "Can't open memory. Try running with root (sudo ./[appname])." << endl;
 			exit(1);
