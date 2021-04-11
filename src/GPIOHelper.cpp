@@ -82,9 +82,9 @@ void GPIOHelper::UnexportGPIO_Mem(const int gpio)
 }
 
 
-volatile gpio_t* GPIOHelper::InitPin_Out(void *base, int pagemask, int memaddress, int bit)
+volatile gpio_t* GPIOHelper::InitPin_Out(int memaddress, int bit)
 {
-	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)base + (memaddress & pagemask));
+	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)GetBase() + (memaddress & (getpagesize() - 1)));
 
 	pinLed->CNF = pinLed->CNF | bit; //Set to GPIO, not SPIO.
 	pinLed->OE = pinLed->OE | bit; //Enable output.
@@ -94,9 +94,9 @@ volatile gpio_t* GPIOHelper::InitPin_Out(void *base, int pagemask, int memaddres
 	return pinLed;
 }
 
-volatile gpio_t* GPIOHelper::InitPin_In(void *base, int pagemask, int memaddress, int bit)
+volatile gpio_t* GPIOHelper::InitPin_In(int memaddress, int bit)
 {
-	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)base + (memaddress & pagemask));
+	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)GetBase() + (memaddress & (getpagesize() - 1)));
 
 	pinLed->CNF = pinLed->CNF | bit; //Set to GPIO, not SPIO.
 	pinLed->OE = pinLed->OE & (~bit); //Disable output.
@@ -120,6 +120,18 @@ bool GPIOHelper::GetValue_Mem(volatile gpio_t *pinLed, int bit)
 	std::cout << "OE: " << pinLed->OE << std::endl;
 	std::cout << "In: " << pinLed->IN << std::endl;
 	return readval == bit;
+}
+
+
+void* GetBase()
+{
+	if (_base == nullptr)
+	{
+		int pagesize = getpagesize();
+		int pagemask = pagesize - 1;
+		_base = mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, (0x6000d004 & ~pagemask));
+	}
+	return _base;
 }
 
 #endif

@@ -81,27 +81,6 @@ int BL = GPIO24; //Pin 12
 #include <chrono>
 #include <GPIOHelper.h>
 
-/* //Moved to GPIOHelper.
-typedef struct {
-    uint32_t CNF;
-    uint32_t _padding1[3];
-    uint32_t OE;
-    uint32_t _padding2[3];
-    uint32_t OUT;
-    uint32_t _padding3[3];
-    uint32_t IN;
-    uint32_t _padding4[3];
-    uint32_t INT_STA;
-    uint32_t _padding5[3];
-    uint32_t INT_ENB;
-    uint32_t _padding6[3];
-    uint32_t INT_LVL;
-    uint32_t _padding7[3];
-    uint32_t INT_CLR;
-    uint32_t _padding8[3];
-} gpio_t;
-*/
-
 class SPIScreen
 {
 public: 

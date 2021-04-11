@@ -1,5 +1,9 @@
 #pragma once
 
+#if SPI_OUTPUT
+#include <GPIOHelper.h>
+#endif
+
 class HotkeyBinding
 {
 public:
@@ -25,3 +29,21 @@ private:
 	char _key;
 	
 };
+
+
+#if SPI_OUTPUT //TODO: Rename to include both the SPI and GPIO input.
+class GPIOBinding : public HotkeyBinding
+{
+public:
+	GPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue)());
+	bool Evaluate();
+private:
+	int _memoryAddress;
+	int _bit;
+	int _bcmNumber;
+	bool _lastValue;
+	gpio_t _pinDef;
+};
+
+
+#endif

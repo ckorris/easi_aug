@@ -90,12 +90,12 @@ SPIScreen::SPIScreen()
 	}
 
 	//Initialize pins.
-	dinPin = GPIOHelper::InitPin_Out(base, pagemask, DIN_MEM, DIN_BIT);
-	clkPin = GPIOHelper::InitPin_Out(base, pagemask, CLK_MEM, CLK_BIT);
-	csPin = GPIOHelper::InitPin_Out(base, pagemask, CS_MEM, CS_BIT);
-	dcPin = GPIOHelper::InitPin_Out(base, pagemask, DC_MEM, DC_BIT);
-	rstPin = GPIOHelper::InitPin_Out(base, pagemask, RST_MEM, RST_BIT);
-	blPin = GPIOHelper::InitPin_Out(base, pagemask, BL_MEM, BL_BIT);
+	dinPin = GPIOHelper::InitPin_Out(DIN_MEM, DIN_BIT);
+	clkPin = GPIOHelper::InitPin_Out(CLK_MEM, CLK_BIT);
+	csPin = GPIOHelper::InitPin_Out(CS_MEM, CS_BIT);
+	dcPin = GPIOHelper::InitPin_Out( DC_MEM, DC_BIT);
+	rstPin = GPIOHelper::InitPin_Out(RST_MEM, RST_BIT);
+	blPin = GPIOHelper::InitPin_Out(BL_MEM, BL_BIT);
 
 	//Just to be sure, we make sure isSetToCommand matches the DC pin status. 
 	//This is in case it's set to high somehow before our first command, as otherwise it 
@@ -106,21 +106,22 @@ SPIScreen::SPIScreen()
 	Reset();
 	InitLCD(); 
 
+	
 	//TEST
-	GPIOHelper::GPIOSetup_Mem(INPUT_TEST_BCM, GPIOHelper::GPIODirection::IN);
+	//GPIOHelper::GPIOSetup_Mem(INPUT_TEST_BCM, GPIOHelper::GPIODirection::IN);
 	//GPIOHelper::GPIOSetup_Mem(INPUT_TEST_BCM, GPIOHelper::GPIODirection::OUT);
 
 	//Turn on back light. 
 	SetValue_Mem(blPin, BL_BIT, true); 
 
 	//TEST
-	inputTestPin = GPIOHelper::InitPin_In(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
+	//inputTestPin = GPIOHelper::InitPin_In(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
 	//inputTestPin = GPIOHelper::InitPin_Out(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
 
 	//SetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT, false);
 
-	bool inputInInitValue = GPIOHelper::GetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT);
-	std::cout << "Input state: " << inputInInitValue << std::endl;
+	//bool inputInInitValue = GPIOHelper::GetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT);
+	//std::cout << "Input state: " << inputInInitValue << std::endl;
 	
 }
 

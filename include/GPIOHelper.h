@@ -29,10 +29,10 @@ public:
 	enum GPIODirection { IN, OUT };
 	static void GPIOSetup_Mem(const int gpio, GPIODirection direction);
 	static void UnexportGPIO_Mem(const int gpio);
-	static volatile gpio_t* InitPin_Out(void *base, int pagemask, int memaddress, int bit);
-	static volatile gpio_t* InitPin_In(void *base, int pagemask, int memaddress, int bit);
+	static volatile gpio_t* InitPin_Out(int memaddress, int bit);
+	static volatile gpio_t* InitPin_In(int memaddress, int bit);
 	static bool GetValue_Mem(volatile gpio_t *pinLed, int bit);
-
+	static void* _base;
 };
 
 
