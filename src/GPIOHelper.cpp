@@ -101,11 +101,24 @@ volatile gpio_t* GPIOHelper::InitPin_In(void *base, int pagemask, int memaddress
 	pinLed->CNF = pinLed->CNF | bit; //Set to GPIO, not SPIO.
 	pinLed->OE = pinLed->OE & (~bit); //Disable output.
 	pinLed->INT_ENB = pinLed->INT_ENB & (~bit); //Disable interrupts.
+	//pinLed->IN = pinLed->IN | bit; //Set initial value to one, but should be readonly.
+	//pinLed->OUT = pinLed->OUT & (~bit); //Make sure output is off.
+	pinLed->INT_STA = pinLed->INT_STA | bit;
+	pinLed->INT_LVL = pinLed->INT_LVL | bit;
+	pinLed->INT_LVL = pinLed->INT_LVL | (bit << 8);
+	pinLed->INT_LVL = pinLed->INT_LVL | (bit << 16);
+	pinLed->INT_CLR = pinLed->INT_CLR | bit;
+
+	return pinLed;
 }
 
 bool GPIOHelper::GetValue_Mem(volatile gpio_t *pinLed, int bit)
 {
 	uint32_t readval = pinLed->IN &= bit;
+	std::cout << "Bit: " << bit << std::endl;
+	std::cout << "CNF: " << pinLed->CNF << std::endl;
+	std::cout << "OE: " << pinLed->OE << std::endl;
+	std::cout << "In: " << pinLed->IN << std::endl;
 	return readval == bit;
 }
 

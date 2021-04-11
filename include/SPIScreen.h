@@ -68,8 +68,8 @@ int BL = GPIO24; //Pin 12
 #define DINOFF_CLKOFF_CSON 0x08
 
 //TEST. Move to hotkey-specific class.
-#define TEST_GPIO_IN_MEM 0x6000d704 //PDD
-#define TEST_GPIO_IN_BIT 0x00;
+#define TEST_GPIO_IN_MEM 0x6000d704 //PDD 0x6000d704
+#define TEST_GPIO_IN_BIT 0x01 //0x01
 
 //For shared pins DC and RST, which both use 0x6000d004.
 #define DCOFF_RSTON 0x40

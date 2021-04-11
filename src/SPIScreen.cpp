@@ -108,12 +108,16 @@ SPIScreen::SPIScreen()
 
 	//TEST
 	GPIOHelper::GPIOSetup_Mem(INPUT_TEST_BCM, GPIOHelper::GPIODirection::IN);
+	//GPIOHelper::GPIOSetup_Mem(INPUT_TEST_BCM, GPIOHelper::GPIODirection::OUT);
 
 	//Turn on back light. 
 	SetValue_Mem(blPin, BL_BIT, true); 
 
 	//TEST
-	inputTestPin = GPIOHelper::InitPin_IN(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
+	inputTestPin = GPIOHelper::InitPin_In(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
+	//inputTestPin = GPIOHelper::InitPin_Out(base, pagemask, TEST_GPIO_IN_MEM, TEST_GPIO_IN_BIT);
+
+	//SetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT, false);
 
 	bool inputInInitValue = GPIOHelper::GetValue_Mem(inputTestPin, TEST_GPIO_IN_BIT);
 	std::cout << "Input state: " << inputInInitValue << std::endl;
@@ -249,6 +253,7 @@ void SPIScreen::CleanupGPIO()
 	GPIOHelper::UnexportGPIO_Mem(DC_BCM);
 	GPIOHelper::UnexportGPIO_Mem(RST_BCM);
 	GPIOHelper::UnexportGPIO_Mem(BL_BCM);
+	GPIOHelper::UnexportGPIO_Mem(INPUT_TEST_BCM);
 }
 
 
