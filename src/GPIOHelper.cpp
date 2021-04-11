@@ -13,7 +13,7 @@ using namespace std;
 
 constexpr auto ROOT = "/sys/class/gpio"; //To do: Move this and remove auto. 
 
-void GPIOHelper::GPIOSetup_Mem(const int gpio)
+void GPIOHelper::GPIOSetup_Mem(const int gpio, GPIODirection direction)
 {
 
 	//Export the GPIO so we can start using it. 
@@ -53,7 +53,16 @@ void GPIOHelper::GPIOSetup_Mem(const int gpio)
 	{
 		//std::cout << "Set direction of pin " << gpio << " to out." << std::endl;
 		std::ofstream direction_file(gpio_dir_path);
-		direction_file << "out";
+		//direction_file << "out";
+		switch (direction)
+		{
+		case GPIODirection::IN:
+			direction_file << "in";
+			break;
+		case GPIODirection::OUT:
+			direction_file >> "out";
+			break;
+		}
 	}
 
 

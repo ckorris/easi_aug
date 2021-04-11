@@ -213,12 +213,12 @@ for(int v = rows; v > 0; --v)
 
 void SPIScreen::InitGPIO()
 {
-	GPIOHelper::GPIOSetup_Mem(DIN_BCM);
-	GPIOHelper::GPIOSetup_Mem(CLK_BCM);
-	GPIOHelper::GPIOSetup_Mem(CS_BCM);
-	GPIOHelper::GPIOSetup_Mem(DC_BCM);
-	GPIOHelper::GPIOSetup_Mem(RST_BCM);
-	GPIOHelper::GPIOSetup_Mem(BL_BCM);
+	GPIOHelper::GPIOSetup_Mem(DIN_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(CLK_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(CS_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(DC_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(RST_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(BL_BCM, GPIOHelper::GPIODirection::OUT);
 	
 	
 	printf("GPIO pins initialized.\r\n");

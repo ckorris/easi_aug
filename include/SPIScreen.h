@@ -124,9 +124,9 @@ private:
 	volatile gpio_t* InitPin_Mem(void *base, int pagemask, int memaddress, int bit);
 	void SetValue_Mem(volatile gpio_t *pinLed, int bit, bool state);
 
-	void GPIOSetup_Mem(const int gpio);
+	//void GPIOSetup_Mem(const int gpio);
 	//void ExportGPIO_Mem(const int gpio);
-	void UnexportGPIO_Mem(const int gpio);
+	//void UnexportGPIO_Mem(const int gpio);
 	
 };
 
