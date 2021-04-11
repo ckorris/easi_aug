@@ -77,6 +77,7 @@ int BL = GPIO24; //Pin 12
 #include <chrono>
 #include <GPIOHelper.h>
 
+/* //Moved to GPIOHelper.
 typedef struct {
     uint32_t CNF;
     uint32_t _padding1[3];
@@ -95,7 +96,7 @@ typedef struct {
     uint32_t INT_CLR;
     uint32_t _padding8[3];
 } gpio_t;
-
+*/
 
 class SPIScreen
 {
@@ -121,7 +122,7 @@ private:
 
 	void SetCommandMode(bool isCommand);
 
-	volatile gpio_t* InitPin_Mem(void *base, int pagemask, int memaddress, int bit);
+	//volatile gpio_t* InitPin_Mem(void *base, int pagemask, int memaddress, int bit); //Moved to GPIOHelper.
 	void SetValue_Mem(volatile gpio_t *pinLed, int bit, bool state);
 
 	//void GPIOSetup_Mem(const int gpio);

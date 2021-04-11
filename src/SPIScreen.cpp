@@ -86,12 +86,12 @@ SPIScreen::SPIScreen()
 	}
 
 	//Initialize pins.
-	dinPin = InitPin_Mem(base, pagemask, DIN_MEM, DIN_BIT);
-	clkPin = InitPin_Mem(base, pagemask, CLK_MEM, CLK_BIT);
-	csPin = InitPin_Mem(base, pagemask, CS_MEM, CS_BIT);
-	dcPin = InitPin_Mem(base, pagemask, DC_MEM, DC_BIT);
-	rstPin = InitPin_Mem(base, pagemask, RST_MEM, RST_BIT);
-	blPin = InitPin_Mem(base, pagemask, BL_MEM, BL_BIT);
+	dinPin = GPIOHelper::InitPin_Mem(base, pagemask, DIN_MEM, DIN_BIT);
+	clkPin = GPIOHelper::InitPin_Mem(base, pagemask, CLK_MEM, CLK_BIT);
+	csPin = GPIOHelper::InitPin_Mem(base, pagemask, CS_MEM, CS_BIT);
+	dcPin = GPIOHelper::InitPin_Mem(base, pagemask, DC_MEM, DC_BIT);
+	rstPin = GPIOHelper::InitPin_Mem(base, pagemask, RST_MEM, RST_BIT);
+	blPin = GPIOHelper::InitPin_Mem(base, pagemask, BL_MEM, BL_BIT);
 
 	//Just to be sure, we make sure isSetToCommand matches the DC pin status. 
 	//This is in case it's set to high somehow before our first command, as otherwise it 
@@ -438,6 +438,7 @@ void SPIScreen::SetCommandMode(bool isCommand)
 	}
 }
 
+/* //Moved to GPIOHelper.
 volatile gpio_t* SPIScreen::InitPin_Mem(void *base, int pagemask, int memaddress, int bit)
 {
 	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)base + (memaddress & pagemask));
@@ -449,6 +450,7 @@ volatile gpio_t* SPIScreen::InitPin_Mem(void *base, int pagemask, int memaddress
 
 	return pinLed;
 } 
+*/
 
 void SPIScreen::SetValue_Mem(volatile gpio_t *pinLed, int bit, bool state)
 {
