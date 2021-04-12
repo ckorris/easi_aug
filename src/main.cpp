@@ -130,7 +130,7 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterKeyBinding('q', RequestClose);
 
 #if SPI_OUTPUT
-	hotkeyManager.RegisterGPIOBinding(0x6000d704, 0x01, 232, IOShortcuts::IncrementZoom); //TODO: Declare those vals somewhere.
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN16, NANO_GPIO_BIT_PIN16, NANO_GPIO_BCM_PIN16, IOShortcuts::IncrementZoom); //TODO: Declare those vals somewhere.
 
 #endif
 

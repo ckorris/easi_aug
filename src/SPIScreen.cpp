@@ -56,11 +56,6 @@ gpio_t volatile *blPin;
 int LCD_WIDTH = 240;
 int LCD_HEIGHT = 320;
 
-
-//TEST
-int INPUT_TEST_BCM = 232; 
-gpio_t volatile *inputTestPin;
-
 using namespace std;
 
 bool isSetToCommand = false; //Note: Be careful if the first packet sent is data. 
@@ -210,7 +205,6 @@ void SPIScreen::CleanupGPIO()
 	GPIOHelper::UnexportGPIO_Mem(DC_BCM);
 	GPIOHelper::UnexportGPIO_Mem(RST_BCM);
 	GPIOHelper::UnexportGPIO_Mem(BL_BCM);
-	GPIOHelper::UnexportGPIO_Mem(INPUT_TEST_BCM);
 }
 
 
