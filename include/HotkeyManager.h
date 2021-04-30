@@ -22,14 +22,14 @@ using namespace std;
 #define NANO_GPIO_BIT_PIN38 0x20 //05, sixth bit.
 #define NANO_GPIO_BCM_PIN38 77
 
+
+#define NANO_GPIO_ADDRESS_PIN40 0x6000d204 //GPIO3 PJ.
+#define NANO_GPIO_BIT_PIN40 0x40 //06, seventh bit.
+#define NANO_GPIO_BCM_PIN40 78
 #endif
 
 class HotkeyManager
 {
-
-
-
-
 public:
 	void RegisterKeyBinding(char key, void(*onTrue)());
 #if SPI_OUTPUT

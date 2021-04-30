@@ -51,12 +51,12 @@ int BL = GPIO24; //Pin 12
 #define RST_MEM 0x6000d004 //PB.
 #define BL_MEM 0x6000d204 //PJ.
 
-#define DIN_BIT 0x01 //Bit 0 - 00000001
-#define CLK_BIT 0x04 //02. 
-#define CS_BIT 0x08 //03.
-#define DC_BIT 0x20 //05.
-#define RST_BIT 0x40 //06.
-#define BL_BIT 0x80 //07.
+#define DIN_BIT 0x01 //Bit 0, first - 00000001
+#define CLK_BIT 0x04 //02, third - 00000100. 
+#define CS_BIT 0x08 //03, fourth - 00001000.
+#define DC_BIT 0x20 //05, sixth - 00100000.
+#define RST_BIT 0x40 //06, seventh - 01000000.
+#define BL_BIT 0x80 //07, eight - 10000000.
 
 //For shared pins DIN, CLK and CS, which all use 0x6000d008. 
 #define DINOFF_CLKOFF_CSOFF 0x00

@@ -130,6 +130,12 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterKeyBinding('q', RequestClose);
 
 #if SPI_OUTPUT
+	//Enable pin 40 as an output to provide power to the GPIO pins. 
+	GPIOHelper::GPIOSetup_Mem(NANO_GPIO_BCM_PIN40, GPIOHelper::GPIODirection::OUT);
+	gpio_t volatile *gpioPowerPin = GPIOHelper::InitPin_Out(NANO_GPIO_ADDRESS_PIN40, NANO_GPIO_BIT_PIN40);
+	SetValue_Mem(gpioPowerPin, NANO_GPIO_BIT_PIN40, true);
+
+	//Bind the hotkeys for the GPIO pins.
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN16, NANO_GPIO_BIT_PIN16, NANO_GPIO_BCM_PIN16, IOShortcuts::IncrementZoom); 
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN18, NANO_GPIO_BIT_PIN18, NANO_GPIO_BCM_PIN18, IOShortcuts::ToggleSimulationOverlay); 
 
@@ -179,6 +185,10 @@ int main(int argc, char **argv)
 	}
 	recorder->StopRecording(); //If we're recording, close it out. 
 	zed.close();
+#if SPI_OUTPUT
+	GPIOHelper::UnexportGPIO_Mem(NANO_GPIO_BCM_PIN40);
+#endif
+
 	return 0;
 }
 
