@@ -26,6 +26,14 @@ void HotkeyBinding::Process()
 	}
 }
 
+/*
+bool HotkeyBinding::Evaluate()
+{
+	std::cout << "BASE" << std::endl;
+	return false;
+}
+*/
+
 char KeyBinding::_lastKey = ' ';
 
 KeyBinding::KeyBinding(char key, void(*onTrue)())
@@ -35,12 +43,20 @@ KeyBinding::KeyBinding(char key, void(*onTrue)())
 	_lastKey = ' ';
 }
 
+/*
+void KeyBinding::Process()
+{
+	std::cout << "Child Process" << std::endl;
+	this->Evaluate();
+}
+*/
+
 void KeyBinding::PreProcess()
 {
 	KeyBinding::_lastKey = cv::waitKey(10);
 }
 
-bool KeyBinding::Evaluate()
+bool KeyBinding::Evaluate()  
 {
 	return KeyBinding::_lastKey == _key;
 }

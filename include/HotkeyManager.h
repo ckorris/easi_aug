@@ -40,4 +40,9 @@ public:
 	void Process();
 private:
 	vector<unique_ptr<HotkeyBinding>> _bindings;
+	//vector<HotkeyBinding*> _bindings;
+	vector<KeyBinding> _keyBindings;
+#if SPI_OUTPUT
+	vector<GPIOBinding> _gpioBindings;
+#endif
 };
