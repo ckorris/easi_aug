@@ -29,10 +29,11 @@ void HotkeyBinding::Process()
 /*
 bool HotkeyBinding::Evaluate()
 {
-	std::cout << "BASE" << std::endl;
+	//std::cout << "BASE" << std::endl;
 	return false;
 }
 */
+
 
 char KeyBinding::_lastKey = ' ';
 
@@ -43,13 +44,13 @@ KeyBinding::KeyBinding(char key, void(*onTrue)())
 	_lastKey = ' ';
 }
 
-/*
+
 void KeyBinding::Process()
 {
-	std::cout << "Child Process" << std::endl;
-	this->Evaluate();
+	//std::cout << "Child Process" << std::endl;
+	this->HotkeyBinding::Process();
 }
-*/
+
 
 void KeyBinding::PreProcess()
 {

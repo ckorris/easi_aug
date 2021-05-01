@@ -51,6 +51,9 @@ TextureHolder *textureHolder;
 
 bool wantsToQuit = false;
 
+shared_ptr<HotkeyBinding> sleepBinding;
+bool isSleepingaa = false;
+
 //cv::Mat image_ocv;
 
 int zedWidth()
@@ -126,9 +129,13 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterKeyBinding('z', IOShortcuts::IncrementZoom);
 	hotkeyManager.RegisterKeyBinding('x', IOShortcuts::ToggleSimulationOverlay);
 	hotkeyManager.RegisterKeyBinding('c', []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
-	hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed); });
 	hotkeyManager.RegisterKeyBinding('q', RequestClose);
+	
+	//The sleep mode one is more complicated, because the delegate needs to refer to the keybinding itself.
+	sleepBinding = hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBinding); });
 
+	sleepBinding->Evaluate();
+	
 #if SPI_OUTPUT
 	//Enable pin 40 as an output to provide power to the GPIO pins. 
 	GPIOHelper::GPIOSetup_Mem(NANO_GPIO_BCM_PIN40, GPIOHelper::GPIODirection::OUT);
@@ -140,7 +147,7 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN18, NANO_GPIO_BIT_PIN18, NANO_GPIO_BCM_PIN18, IOShortcuts::ToggleSimulationOverlay); 
 
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN26, NANO_GPIO_BIT_PIN26, NANO_GPIO_BCM_PIN26, []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); }); 
-	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN38, NANO_GPIO_BIT_PIN38, NANO_GPIO_BCM_PIN38, []() { IOShortcuts::SleepMode(&zed); }); 
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN38, NANO_GPIO_BIT_PIN38, NANO_GPIO_BCM_PIN38, []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBinding); });
 #endif
 
 	// Loop until 'q' is pressed
@@ -178,9 +185,6 @@ int main(int argc, char **argv)
 		
 			//Process hotkeys.
 			hotkeyManager.Process();
-
-			// Handle key event
-			//key = cv::waitKey(10);
 		}
 	}
 	recorder->StopRecording(); //If we're recording, close it out. 

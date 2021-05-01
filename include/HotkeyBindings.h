@@ -10,9 +10,10 @@ public:
 	HotkeyBinding(void(*onTrue)());
 	
 	virtual void Process();
-protected:
 	virtual bool Evaluate() = 0;
 	//virtual bool Evaluate();
+protected:
+	
 	bool lastState;
 private:
 	void(*_onTrue)();
@@ -22,8 +23,8 @@ class KeyBinding : public HotkeyBinding
 {
 public:
 	KeyBinding(char key, void(*onTrue)());
-	//void Process() override;
 	bool Evaluate() override;
+	void Process() override;
 	static char _lastKey;
 	static void PreProcess();
 
