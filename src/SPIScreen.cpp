@@ -140,10 +140,11 @@ void SPIScreen::LCD_ShowImage(vector<unsigned char> image, int rows, int cols, i
 	bool hasprinted = false; //For test. 
 
 
-for(int v = rows; v > 0; --v)
+//for(int v = rows; v > 0; --v)
+for(int v = 0; v < rows; v++)
 	{
-		for(int u = 0; u < cols; ++u)
-		//for(int u = cols; u > 0; --u) //Makes it inverted on X.
+		//for(int u = 0; u < cols; ++u)
+		for(int u = cols; u > 0; --u) //Makes it inverted on X.
 		{	
 			//int startindex = (v * rows * 3) + u * 3; //3 channels. 
 			int startindex = (u * rows * 3) + v * 3; //3 channels. 

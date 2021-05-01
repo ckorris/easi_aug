@@ -140,7 +140,9 @@ int main(int argc, char **argv)
 	//Enable pin 40 as an output to provide power to the GPIO pins. 
 	GPIOHelper::GPIOSetup_Mem(NANO_GPIO_BCM_PIN40, GPIOHelper::GPIODirection::OUT);
 	gpio_t volatile *gpioPowerPin = GPIOHelper::InitPin_Out(NANO_GPIO_ADDRESS_PIN40, NANO_GPIO_BIT_PIN40);
-	SetValue_Mem(gpioPowerPin, NANO_GPIO_BIT_PIN40, true);
+	//TODO: This function needs to be moved somewhere else.	
+	//SPIScreen::SetValue_Mem(gpioPowerPin, NANO_GPIO_BIT_PIN40, true);
+	gpioPowerPin->OUT = gpioPowerPin->OUT | NANO_GPIO_BIT_PIN40;
 
 	//Bind the hotkeys for the GPIO pins.
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN16, NANO_GPIO_BIT_PIN16, NANO_GPIO_BCM_PIN16, IOShortcuts::IncrementZoom); 

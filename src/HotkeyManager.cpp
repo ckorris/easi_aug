@@ -17,7 +17,7 @@ shared_ptr<HotkeyBinding> HotkeyManager::RegisterGPIOBinding(int memoryAddress, 
 	GPIOBinding newBinding(memoryAddress, bit, bcmNumber, onTrue);
 	_gpioBindings.emplace_back(newBinding);
 	shared_ptr<HotkeyBinding> sharedBinding = make_shared<GPIOBinding>(newBinding);
-	__bindings.push_back(sharedBinding);
+	_bindings.push_back(sharedBinding);
 	return sharedBinding;
 }
 

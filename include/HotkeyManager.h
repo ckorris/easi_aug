@@ -33,7 +33,7 @@ class HotkeyManager
 public:
 	shared_ptr<HotkeyBinding> RegisterKeyBinding(char key, void(*onTrue)());
 #if SPI_OUTPUT
-	void shared_ptr<HotkeyBinding>(int memoryAddress, int bit, int bcmNumber, void(*onTrue)());
+	shared_ptr<HotkeyBinding> RegisterGPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue)());
 #endif
 
 
