@@ -41,7 +41,7 @@ int DIN_BCM = 16;
 int CLK_BCM = 18;
 int CS_BCM = 19;
 //int DC_BCM = 13;
-int DC_BCM = 16;
+int DC_BCM = 17;
 //int RST_BCM = 14;
 int RST_BCM = 15;
 //int BL_BCM = 79;
@@ -212,7 +212,7 @@ for(int v = rows; v > 0; --v)
 		}
 	}
 
-	dinPin->OUT = DINOFF_CLKOFF_CSON_DCON;
+	dinPin->OUT = DINOFF_CLKOFF_CSON_DCOFF;
 	
 	
 }
