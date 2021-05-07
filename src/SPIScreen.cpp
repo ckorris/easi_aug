@@ -131,7 +131,7 @@ void SPIScreen::LCD_Clear(uint16_t color)
 	SetWindow(0, 0, LCD_WIDTH, LCD_HEIGHT);
 
 	//Set the command status here, letting us skip the check when we send each word. 
-	dcPin->OUT = DCON_RSTON; //Sets to high, indicating data. 
+	//dcPin->OUT = DCON_RSTON; //Sets to high, indicating data. //No longer needed, command 	//embedded in the writes to the other pins.
 
 	for(int u = 0; u < LCD_WIDTH; u++)
 	{
@@ -143,7 +143,7 @@ void SPIScreen::LCD_Clear(uint16_t color)
 			SendData_Word_NoCmdCheck(color);
 		}
 	}
-	dinPin->OUT = DINOFF_CLKOFF_CSON; //TEST
+	dinPin->OUT = DINOFF_CLKOFF_CSON_DCON; //TEST
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> finish = 				std::chrono::high_resolution_clock::now();
 	
@@ -165,7 +165,7 @@ void SPIScreen::LCD_ShowImage(vector<unsigned char> image, int rows, int cols, i
 	SetWindow(0, 0, LCD_WIDTH, LCD_HEIGHT);
 	//SetWindow(0, 0, LCD_HEIGHT, LCD_WIDTH);
 
-	dcPin->OUT = DCON_RSTON; //Sets to high, indicating data. 
+	//dcPin->OUT = DCON_RSTON; //Sets to high, indicating data. 
 
 
 	bool hasprinted = false; //For test. 
@@ -212,7 +212,7 @@ for(int v = rows; v > 0; --v)
 		}
 	}
 
-	dinPin->OUT = DINOFF_CLKOFF_CSON;
+	dinPin->OUT = DINOFF_CLKOFF_CSON_DCON;
 	
 	
 }

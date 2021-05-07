@@ -33,7 +33,7 @@ public:
 	static volatile gpio_t* InitPin_Out(int memaddress, int bit);
 	static volatile gpio_t* InitPin_In(int memaddress, int bit);
 	static bool GetValue_Mem(volatile gpio_t *pinLed, int bit);
-	
+	static volatile gpio_t* InitPin_Mem(void *base, int pagemask, int memaddress, int bit);
 	static int _fd;
 };
 

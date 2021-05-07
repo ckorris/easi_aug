@@ -155,4 +155,16 @@ int GetFD()
 	return _fd;
 }
 
+volatile gpio_t* GPIOHelper::InitPin_Mem(void *base, int pagemask, int memaddress, int bit)
+{
+	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)base + (memaddress & pagemask));
+
+	pinLed->CNF = pinLed->CNF | bit;
+	pinLed->OE = pinLed->OE | bit; 
+	pinLed->OUT = pinLed->OUT & (~bit);
+	pinLed->INT_ENB = pinLed->INT_ENB & (~bit);
+
+	return pinLed;
+} 
+
 #endif
