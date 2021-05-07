@@ -96,5 +96,6 @@ void IOShortcuts::SleepMode(sl::Camera *zed, RuntimeParameters *runtime_paramete
 	cout << "Sleep ended." << endl;
 
 	CamUtilities::InitZed(zed, runtime_parameters, image_size);
+	sleep_ms(10);
 	textureHolder->CreateMatrixesFromZed(zed);
 }

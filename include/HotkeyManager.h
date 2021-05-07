@@ -34,6 +34,7 @@ public:
 	shared_ptr<HotkeyBinding> RegisterKeyBinding(char key, void(*onTrue)());
 #if SPI_OUTPUT
 	shared_ptr<HotkeyBinding> RegisterGPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue)());
+	void CleanUpGPIOBindings();
 #endif
 
 

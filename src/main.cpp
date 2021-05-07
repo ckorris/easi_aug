@@ -130,12 +130,10 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterKeyBinding('x', IOShortcuts::ToggleSimulationOverlay);
 	hotkeyManager.RegisterKeyBinding('c', []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
 	hotkeyManager.RegisterKeyBinding('q', RequestClose);
-	
+
 	//The sleep mode one is more complicated, because the delegate needs to refer to the keybinding itself.
 	sleepBinding = hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBinding); });
 
-	sleepBinding->Evaluate();
-	
 #if SPI_OUTPUT
 	//Enable pin 40 as an output to provide power to the GPIO pins. 
 	GPIOHelper::GPIOSetup_Mem(NANO_GPIO_BCM_PIN40, GPIOHelper::GPIODirection::OUT);

@@ -21,6 +21,11 @@ shared_ptr<HotkeyBinding> HotkeyManager::RegisterGPIOBinding(int memoryAddress, 
 	return sharedBinding;
 }
 
+void HotkeyManager::CleanUpGPIOBindings()
+{
+
+}
+
 #endif
 
 void HotkeyManager::Process()
@@ -30,9 +35,11 @@ void HotkeyManager::Process()
 	//TODO: Would be better to do procedurally without needing to explicitly list each type.
 	KeyBinding::PreProcess();
 
-	for (int i = 0; i < _keyBindings.size(); i++)
+	for (int i = 0; i < _bindings.size(); i++)
 	{
 		_bindings[i]->Process();
 	}
 }
+
+
 
