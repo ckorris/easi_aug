@@ -143,10 +143,10 @@ int main(int argc, char **argv)
 	gpioPowerPin->OUT = gpioPowerPin->OUT | NANO_GPIO_BIT_PIN40;
 
 	//Bind the hotkeys for the GPIO pins.
-	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN16, NANO_GPIO_BIT_PIN16, NANO_GPIO_BCM_PIN16, IOShortcuts::IncrementZoom); 
-	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN18, NANO_GPIO_BIT_PIN18, NANO_GPIO_BCM_PIN18, IOShortcuts::ToggleSimulationOverlay); 
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN33, NANO_GPIO_BIT_PIN33, NANO_GPIO_BCM_PIN33, IOShortcuts::IncrementZoom);
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN35, NANO_GPIO_BIT_PIN35, NANO_GPIO_BCM_PIN35, IOShortcuts::ToggleSimulationOverlay);
 
-	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN26, NANO_GPIO_BIT_PIN26, NANO_GPIO_BCM_PIN26, []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); }); 
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN36, NANO_GPIO_BIT_PIN36, NANO_GPIO_BCM_PIN36, []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN38, NANO_GPIO_BIT_PIN38, NANO_GPIO_BCM_PIN38, []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBinding); });
 #endif
 

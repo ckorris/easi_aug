@@ -56,11 +56,8 @@ int BL = GPIO24; //Pin 12
 #define DIN_BIT 0x01 //Bit 0 - 00000001
 #define CLK_BIT 0x04 //02. 
 #define CS_BIT 0x08 //03.
-//#define DC_BIT 0x20 //05.
 #define DC_BIT 0x02 //01.
-//#define RST_BIT 0x40 //06.
 #define RST_BIT 0x80 //07.
-//#define BL_BIT 0x80 //07.
 #define BL_BIT 0x20 //05.
 
 //For shared pins DIN, CLK CS, which all use 0x6000d008. 

@@ -6,6 +6,8 @@
 using namespace std;
 
 #if SPI_OUTPUT
+//To find more of these, refer to the TRM page 247 as of writing.
+
 #define NANO_GPIO_ADDRESS_PIN16 0x6000d704 //GPIO3 PDD.
 #define NANO_GPIO_BIT_PIN16 0x01 //00, first bit.
 #define NANO_GPIO_BCM_PIN16 232
@@ -17,6 +19,18 @@ using namespace std;
 #define NANO_GPIO_ADDRESS_PIN26 0x6000d008 //GPIO3 PC.
 #define NANO_GPIO_BIT_PIN26 0x10 //04, fifth bit.
 #define NANO_GPIO_BCM_PIN26 20
+
+#define NANO_GPIO_ADDRESS_PIN33 0x6000d100 //GPIO3 PJE
+#define NANO_GPIO_BIT_PIN33 0x40 //06, seventh bit.
+#define NANO_GPIO_BCM_PIN33 38
+
+#define NANO_GPIO_ADDRESS_PIN35 0x6000d204 //GPIO3 PJ.
+#define NANO_GPIO_BIT_PIN35 0x10 //04, fifth bit.
+#define NANO_GPIO_BCM_PIN35 76
+
+#define NANO_GPIO_ADDRESS_PIN36 0x6000d108 //GPIO3 PG.
+#define NANO_GPIO_BIT_PIN36 0x08 //03, fourth bit.
+#define NANO_GPIO_BCM_PIN36 51
 
 #define NANO_GPIO_ADDRESS_PIN38 0x6000d204 //GPIO3 PJ.
 #define NANO_GPIO_BIT_PIN38 0x20 //05, sixth bit.

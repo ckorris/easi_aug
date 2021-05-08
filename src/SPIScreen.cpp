@@ -26,27 +26,21 @@
 
 
 //BOARD numbering.
+int RST = 18;
 int DIN = 19;
+int DC = 21;
+int BL = 22;
 int CLK = 23;
 int CS = 24;
-//int DC = 22;
-int DC = 21;
-//int RST = 13;
-int RST = 18;
-//int BL = 12;
-int BL = 22;
+
 
 //BCM numbering.
+int RST_BCM = 15;
 int DIN_BCM = 16;
+int DC_BCM = 17;
+int BL_BCM = 13;
 int CLK_BCM = 18;
 int CS_BCM = 19;
-//int DC_BCM = 13;
-int DC_BCM = 17;
-//int RST_BCM = 14;
-int RST_BCM = 15;
-//int BL_BCM = 79;
-int BL_BCM = 13;
-
 
 
 //Note some of these will end up being identical.
