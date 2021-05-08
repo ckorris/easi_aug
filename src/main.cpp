@@ -151,7 +151,7 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN33, NANO_GPIO_BIT_PIN33, NANO_GPIO_BCM_PIN33, IOShortcuts::IncrementZoom);
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN35, NANO_GPIO_BIT_PIN35, NANO_GPIO_BCM_PIN35, IOShortcuts::ToggleSimulationOverlay);
 
-	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN36, NANO_GPIO_BIT_PIN36, NANO_GPIO_BCM_PIN36, []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN31, NANO_GPIO_BIT_PIN31, NANO_GPIO_BCM_PIN31, []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
 	
 	sleepBindingGPIO = hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN38, NANO_GPIO_BIT_PIN38, NANO_GPIO_BCM_PIN38, []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBindingGPIO); });
 #endif

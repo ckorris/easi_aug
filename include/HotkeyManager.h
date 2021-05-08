@@ -20,7 +20,11 @@ using namespace std;
 #define NANO_GPIO_BIT_PIN26 0x10 //04, fifth bit.
 #define NANO_GPIO_BCM_PIN26 20
 
-#define NANO_GPIO_ADDRESS_PIN33 0x6000d100 //GPIO3 PJE
+#define NANO_GPIO_ADDRESS_PIN31 0x6000d604 //GPIO3 PZ
+#define NANO_GPIO_BIT_PIN31 0x01 //00, first bit.
+#define NANO_GPIO_BCM_PIN31 200
+
+#define NANO_GPIO_ADDRESS_PIN33 0x6000d100 //GPIO3 PE
 #define NANO_GPIO_BIT_PIN33 0x40 //06, seventh bit.
 #define NANO_GPIO_BCM_PIN33 38
 
