@@ -51,7 +51,12 @@ TextureHolder *textureHolder;
 
 bool wantsToQuit = false;
 
-shared_ptr<HotkeyBinding> sleepBinding;
+shared_ptr<HotkeyBinding> sleepBindingKey;
+
+#if SPI_OUTPUT
+shared_ptr<HotkeyBinding> sleepBindingGPIO;
+#endif
+
 bool isSleepingaa = false;
 
 //cv::Mat image_ocv;
@@ -132,7 +137,7 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterKeyBinding('q', RequestClose);
 
 	//The sleep mode one is more complicated, because the delegate needs to refer to the keybinding itself.
-	sleepBinding = hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBinding); });
+	sleepBindingKey = hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBindingKey); });
 
 #if SPI_OUTPUT
 	//Enable pin 40 as an output to provide power to the GPIO pins. 
@@ -147,7 +152,8 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN35, NANO_GPIO_BIT_PIN35, NANO_GPIO_BCM_PIN35, IOShortcuts::ToggleSimulationOverlay);
 
 	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN36, NANO_GPIO_BIT_PIN36, NANO_GPIO_BCM_PIN36, []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
-	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN38, NANO_GPIO_BIT_PIN38, NANO_GPIO_BCM_PIN38, []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBinding); });
+	
+	sleepBindingGPIO = hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN38, NANO_GPIO_BIT_PIN38, NANO_GPIO_BCM_PIN38, []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBindingGPIO); });
 #endif
 
 	// Loop until 'q' is pressed
