@@ -1,9 +1,8 @@
 #include <sl/Camera.hpp>
 
 #include <opencv2/opencv.hpp>
-
+#include <external/Simulation.h>
 #include <CamUtilities.h>
-#include <Simulation.h>
 #include <Config.h>
 #include <Drawables.h>
 #include <ImageHelper.h>
@@ -16,6 +15,7 @@
 #if SPI_OUTPUT
 #include <SPIOutputHelper.h>
 #endif
+using namespace hps;
 
 using namespace std;
 using namespace sl;
@@ -67,12 +67,18 @@ cv::Mat slMat2cvMat(Mat& input);
 int slMatType2cvMatType(sl::MAT_TYPE sltype);
 void ClickCallback(int event, int x, int y, int flags, void* userdata);
 void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat);
-void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_ocv, cv::Mat *outSimMat);
-void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat);
+void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projectionMatrix, 
+	cv::Mat image_ocv, cv::Mat *outSimMat);
+bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& currentPoint);
+void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, 
+	cv::Mat *finalMat);
 void HandleOutputAndMouse(cv::Mat finalImageMat);
 void RequestClose();
 
 Camera zed;
+
+Mat depth_measure;
+cv::Mat projectionMatrix;
 
 int main(int argc, char **argv) 
 {
@@ -95,16 +101,20 @@ int main(int argc, char **argv)
 	// Prepare new images to be used as the background, or video of the real world in both formats.
 	Mat zedimage;
 	cv::Mat image_ocv;
-	Mat depth_measure;
+
+
 
 	TextureHolder texholder(&zedimage, &depth_measure, &image_ocv);
 	textureHolder = &texholder;
 	textureHolder->CreateMatrixesFromZed(&zed);
-
-	Simulation simReal = Simulation(&zed);
+	
+	Simulation simReal = Simulation();
 	sim = &simReal;
 
 	imageHelper = &ImageHelper(&zed);
+
+	sl::CameraInformation info = zed.getCameraInformation();
+	projectionMatrix = CamUtilities::GetProjectionMatrix(info);
 
 	//Declare the recording helper (for recording SVO files) and button.
 	recorder = &RecordingHelper(&zed);
@@ -146,7 +156,7 @@ int main(int argc, char **argv)
 
 			//Run the simulation and draw the relevant images onto the relevant mats.
 			cv::Mat sim_mat;
-			DrawSimulation(uiwidth, uiheight, depth_measure, image_ocv, &sim_mat);
+			DrawSimulation(uiwidth, uiheight, depth_measure, projectionMatrix, image_ocv, &sim_mat);
 
 			//Draw the UI into a mat.
 			cv::Mat menu_mat;
@@ -236,7 +246,8 @@ void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
 	*outMat = menu_mat;
 }
 
-void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_ocv, cv::Mat *outSimMat)
+void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projectionMatrix, 
+					cv::Mat image_ocv, cv::Mat *outSimMat)
 {//Make the image used for some displays, like the distance text.
 	cv::Mat sim_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
 	sim_mat.setTo(cv::Scalar(0, 0, 0, 0)); //Maaaay not need, now that we're drawing the menu separately. 
@@ -244,11 +255,15 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_
 	//Laser crosshair - no gravity. 
 	if (Config::toggleLaserCrosshair() || Config::toggleLaserPath())
 	{
-		int2 collisionpoint_nograv;
-		float collisiondepth_nograv;
-		float traveltime_nograv;
-		bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, sensorData, collisionpoint_nograv, collisiondepth_nograv, traveltime_nograv,
-			Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0, 1));
+		//TODO: Make this work.
+		/*
+		bool collided = sim->Simulate(traveltime_nograv, maxSamples, camPosOffset, camRotOffset, physicsArgs,
+			gravityVector, collisionDetectionFunc, collisionDepth, totalTime, linePoints, sampleStats, stats);
+
+		//bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, sensorData, collisionpoint_nograv, collisiondepth_nograv, 
+		//	traveltime_nograv, Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0, 1));
+		
+		
 		if (collided && Config::toggleLaserCrosshair())
 		{
 			float dotradius = 15 / collisiondepth_nograv;
@@ -260,16 +275,66 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_
 
 			cv::circle(image_ocv, cv::Point(collisionpoint_nograv.x, collisionpoint_nograv.y), dotradius, cv::Scalar(0, 255.0, 0), -1);
 		}
+		*/
 	}
 
 	//Laser crosshair - gravity.
 	if (Config::toggleGravityCrosshair() || Config::toggleGravityPath())
 	{
-		int2 collisionpoint_grav;
+		hps::int2 collisionpoint_grav;
 		float collisiondepth_grav;
 		float traveltime_grav;
-		bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, sensorData, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
-			Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0, 1));
+
+		//TEMP consts that should be messed with and made real consts.
+		int maxSamples = 1000;
+
+
+		hps::float3 camPosOffset(0, 0, 0);
+		camPosOffset.x = Config::camXPos();
+		camPosOffset.y = Config::camYPos();
+		camPosOffset.z = Config::camZPos();
+
+		hps::float3 camRotOffset(Config::camXRot(), Config::camYRot(), Config::camZRot());
+
+		hps::PhysicsArgs physicsArgs;
+		physicsArgs.BBDiameterMM = Config::bbDiameterMM();
+		physicsArgs.BBMassGrams = Config::bbMassGrams();
+		physicsArgs.StartSpeedMPS = Config::forwardSpeedMPS();
+		physicsArgs.SpinRPM = Config::hopUpRPM();
+		physicsArgs.TemperatureCelsius = Config::temperatureC();
+		physicsArgs.RelativeHumidity01 = Config::relativeHumidity01();
+		physicsArgs.PressureHPa = sensorData.barometer.pressure;
+		physicsArgs.BBToAirFrictionCoefficient = Config::bbToAirFrictionCoef();
+
+		sl::float3 gravityVectorSL = sensorData.imu.linear_acceleration;
+
+		//Convert to custom format, and invert X to handle handedness.
+		hps::float3 gravityVector = hps::float3(-gravityVectorSL.x, gravityVectorSL.y, gravityVectorSL.z);
+
+		//Get the collision function, which looks up the depth values to decide if there was a collision or not.
+
+		CollisionDetectionFunc collisionDetectionFunc = [](const hps::float3& lastValidPoint, const hps::float3& currentPoint) ->
+			bool {
+
+			return DetectCollision(lastValidPoint, currentPoint);
+			};
+
+		float collisionDepth;
+		float totalTime;
+		int linePointsCount;
+
+		std::vector<hps::float3> linePoints;
+
+		//SampleStats** sampleStats;
+		std::vector<SampleStats> sampleStats;
+		Stats stats;
+
+		bool collided = sim->Simulate(traveltime_grav, maxSamples, camPosOffset, camRotOffset, physicsArgs,
+			gravityVector, collisionDetectionFunc, collisionDepth, totalTime, linePoints, sampleStats, stats);
+
+		//bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, sensorData, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
+		//	Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0, 1));
+
 		if (collided && Config::toggleGravityCrosshair())
 		{
 			float dotradius = 15 / collisiondepth_grav;
@@ -324,6 +389,41 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat image_
 	}
 
 	*outSimMat = sim_mat;
+}
+
+bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& currentPoint)
+{
+	//For simplicity, just check the current position against the depth of its corresponding point
+	//in the ZED depth image. We could be fancier and check for collision along all the 2D points between
+	//the last and current one, but this would very rarely make a difference, and it would be slight,
+	//for a sizeable performance drop.
+
+	if (currentPoint.z < 0) //If behind the camera, don't test.
+	{
+		return false; 
+	}
+
+	int imageWidth = (int)depth_measure.getWidth();
+	int imageHeight = (int)depth_measure.getHeight();
+
+	sl::float3 currentPointSL = sl::float3(currentPoint.x, currentPoint.y, currentPoint.z);
+
+	//hps::int2 screenPosition = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix,
+	::int2 screenPosition = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix,
+		imageWidth, imageHeight);
+
+	//If it's outside view of the screen, we won't be able to calculate depth. 
+	if (screenPosition.x < 0.0 || screenPosition.y < 0.0 || 
+		screenPosition.x > imageWidth || screenPosition.y > imageHeight)
+	{
+		return false;
+	}
+
+	float zedDepth;
+	depth_measure.getValue(screenPosition.x, screenPosition.y, &zedDepth);
+	
+	return zedDepth > 0.0 && currentPoint.z > zedDepth; //Current point is behind the depth of the image.
+
 }
 
 void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat)
