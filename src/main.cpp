@@ -282,8 +282,7 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 	if (Config::toggleGravityCrosshair() || Config::toggleGravityPath())
 	{
 		
-		hps::int2 collisionpoint_grav;
-		float collisiondepth_grav = 1; //TEMP
+		
 
 		//TEMP consts that should be messed with and made real consts.
 		int maxSamples = 100;
@@ -332,26 +331,18 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 		bool collided = sim->Simulate(sampleTime, maxSamples, camPosOffset, camRotOffset, physicsArgs,
 			gravityVector, collisionDetectionFunc, collisionDepth, totalTime, linePoints, sampleStats, stats);
 		
-		std::cout << "Collided: " << collided << " Count: " << linePoints.size() << std::endl;
-
-		if (collided == false || linePoints.size() == 0)
+		if (linePoints.size() == 0)
 		{
 			*outSimMat = sim_mat;
-			//return;
+			return;
 		}
 		
 		float depthWidth = (int)depth_measure.getWidth();
 		float depthHeight = (int)depth_measure.getHeight();
 		
-		//hps::float3 firstPoint = linePoints[0];
-		//sl::float3 firstPointSL = sl::float3(camPosOffset.x, camPosOffset.y, camPosOffset.z);
 		sl::float3 firstPointSL = sl::float3(camPosOffset.x, camPosOffset.y, 0);
-		//sl::float3 firstPointSL = sl::float3(firstPoint.x, firstPoint.y, firstPoint.z);
 				
 		::int2 lastScreenPos = CamUtilities::CameraToScreenPos(firstPointSL, projectionMatrix, depthWidth, depthHeight);
-		
-		std::cout << "Vec at Start: " << firstPointSL.x << ", " << firstPointSL.y << ", " << firstPointSL.z << std::endl;
-		std::cout << " ScreenPos: " << lastScreenPos.x << ", " << lastScreenPos.y << std::endl;
 
 		for(size_t i = 0; i < linePoints.size() ; i++) //Start on the second, so the last one is the first one.
 		{
@@ -371,10 +362,12 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 
 				lastScreenPos = currentScreenPos;
 			}
-			
 		}
 		
-		
+		hps::int2 collisionpoint_grav = hps::int2(lastScreenPos.x, lastScreenPos.y);
+		float collisiondepth_grav = linePoints[linePoints.size() - 1].z; 
+		float traveltime_grav = sampleTime * linePoints.size();
+
 		//bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, sensorData, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
 		//	Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0, 1));
 		
@@ -414,8 +407,7 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 				if (Config::toggleTravelTime())
 				{
 					char timebuffer[20];
-					//int t = sprintf(timebuffer, "%0.2f", traveltime_grav);
-					int t = sprintf(timebuffer, "%0.2f", 0); //TODO: Our simulation method doesn't output time anymore. Put it in stats?
+					int t = sprintf(timebuffer, "%0.2f", traveltime_grav);
 					string timesuffix = "s";
 					string timetext = timebuffer + timesuffix;
 
@@ -562,7 +554,8 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 	}
 	else if (event == cv::EVENT_RBUTTONDOWN)
 	{
-		IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder);
+		//IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder);
+		IOShortcuts::IncrementZoom();
 	}
 	else if (event == cv::EVENT_MOUSEMOVE)
 	{
