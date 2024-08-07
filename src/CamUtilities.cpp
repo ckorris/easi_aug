@@ -78,6 +78,15 @@ int2 CamUtilities::CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, i
 	
 	float w = multmat.at<float>(3, 0);
 
+	//Check if point is outside the view frustum.
+	if (w <= 0.0f) 
+	{
+		//Point is behind the camera, clip it to the near plane.
+		//This lets us draw to a point that's off screen.
+		w = nearPlane;
+	}
+
+
 	float vp_x = multmat.at<float>(0, 0) / w;
 	float vp_y = -multmat.at<float>(1, 0) / w;
 

@@ -343,28 +343,11 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 		float depthWidth = (int)depth_measure.getWidth();
 		float depthHeight = (int)depth_measure.getHeight();
 		
-		//for (const hps::float3& element : linePoints)
-		hps::float3 firstPoint = linePoints[0];
+		//hps::float3 firstPoint = linePoints[0];
 		//sl::float3 firstPointSL = sl::float3(camPosOffset.x, camPosOffset.y, camPosOffset.z);
-		sl::float3 firstPointSL = sl::float3(firstPoint.x, firstPoint.y, firstPoint.z);
-		
-		//TEST
-		/*
-		sl::float3 point0 = sl::float3(-0.01, 0, 0.1);
-		sl::float3 point1 = sl::float3(0, 0, 0.1);
-		sl::float3 point2 = sl::float3(0.01, 0, 0.1);
-		
-		::int2 sp0 = CamUtilities::CameraToScreenPos(point0, projectionMatrix, depthWidth, depthHeight);
-		::int2 sp1 = CamUtilities::CameraToScreenPos(point1, projectionMatrix, depthWidth, depthHeight);
-		::int2 sp2 = CamUtilities::CameraToScreenPos(point2, projectionMatrix, depthWidth, depthHeight);
-		
-		cv::line(image_ocv, cv::Point(sp0.x, sp0.y), cv::Point(sp1.x, sp1.y),
-			cv::Scalar(0, 0, 255.0, 1), 2);
-
-		cv::line(image_ocv, cv::Point(sp1.x, sp1.y), cv::Point(sp2.x, sp2.y),
-			cv::Scalar(0, 255.0, 0, 1), 2);
-			*/
-		
+		sl::float3 firstPointSL = sl::float3(camPosOffset.x, camPosOffset.y, 0);
+		//sl::float3 firstPointSL = sl::float3(firstPoint.x, firstPoint.y, firstPoint.z);
+				
 		::int2 lastScreenPos = CamUtilities::CameraToScreenPos(firstPointSL, projectionMatrix, depthWidth, depthHeight);
 		
 		std::cout << "Vec at Start: " << firstPointSL.x << ", " << firstPointSL.y << ", " << firstPointSL.z << std::endl;
@@ -385,12 +368,6 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 
 				cv::line(image_ocv, cv::Point(lastScreenPos.x, lastScreenPos.y), cv::Point(currentScreenPos.x, currentScreenPos.y), 
 					color, 2);
-
-				if (i <= 5)
-				{
-					std::cout << "Vec at " << i << ": " << currentPoint.x << ", " << currentPoint.y << ", " << currentPoint.z << std::endl;
-					std::cout << " ScreenPos: " << currentScreenPos.x << ", " << currentScreenPos.y << std::endl;
-				}
 
 				lastScreenPos = currentScreenPos;
 			}
