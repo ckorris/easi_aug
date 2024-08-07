@@ -283,11 +283,11 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 	{
 		
 		hps::int2 collisionpoint_grav;
-		float collisiondepth_grav;;
+		float collisiondepth_grav = 1; //TEMP
 
 		//TEMP consts that should be messed with and made real consts.
-		int maxSamples = 1000;
-		float sampleTime = 0.02f;
+		int maxSamples = 100;
+		float sampleTime = 0.01f;
 
 		hps::float3 camPosOffset(0, 0, 0);
 		camPosOffset.x = Config::camXPos();
@@ -332,36 +332,65 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 		bool collided = sim->Simulate(sampleTime, maxSamples, camPosOffset, camRotOffset, physicsArgs,
 			gravityVector, collisionDetectionFunc, collisionDepth, totalTime, linePoints, sampleStats, stats);
 		
+		std::cout << "Collided: " << collided << " Count: " << linePoints.size() << std::endl;
+
 		if (collided == false || linePoints.size() == 0)
 		{
 			*outSimMat = sim_mat;
-			return;
+			//return;
 		}
 		
 		float depthWidth = (int)depth_measure.getWidth();
 		float depthHeight = (int)depth_measure.getHeight();
 		
 		//for (const hps::float3& element : linePoints)
-		
 		hps::float3 firstPoint = linePoints[0];
+		//sl::float3 firstPointSL = sl::float3(camPosOffset.x, camPosOffset.y, camPosOffset.z);
 		sl::float3 firstPointSL = sl::float3(firstPoint.x, firstPoint.y, firstPoint.z);
+		
+		//TEST
+		/*
+		sl::float3 point0 = sl::float3(-0.01, 0, 0.1);
+		sl::float3 point1 = sl::float3(0, 0, 0.1);
+		sl::float3 point2 = sl::float3(0.01, 0, 0.1);
+		
+		::int2 sp0 = CamUtilities::CameraToScreenPos(point0, projectionMatrix, depthWidth, depthHeight);
+		::int2 sp1 = CamUtilities::CameraToScreenPos(point1, projectionMatrix, depthWidth, depthHeight);
+		::int2 sp2 = CamUtilities::CameraToScreenPos(point2, projectionMatrix, depthWidth, depthHeight);
+		
+		cv::line(image_ocv, cv::Point(sp0.x, sp0.y), cv::Point(sp1.x, sp1.y),
+			cv::Scalar(0, 0, 255.0, 1), 2);
+
+		cv::line(image_ocv, cv::Point(sp1.x, sp1.y), cv::Point(sp2.x, sp2.y),
+			cv::Scalar(0, 255.0, 0, 1), 2);
+			*/
 		
 		::int2 lastScreenPos = CamUtilities::CameraToScreenPos(firstPointSL, projectionMatrix, depthWidth, depthHeight);
 		
-		for(size_t i = 1; i < linePoints.size() ; ++i) //Start on the second, so the last one is the first one.
+		std::cout << "Vec at Start: " << firstPointSL.x << ", " << firstPointSL.y << ", " << firstPointSL.z << std::endl;
+		std::cout << " ScreenPos: " << lastScreenPos.x << ", " << lastScreenPos.y << std::endl;
+
+		for(size_t i = 0; i < linePoints.size() ; i++) //Start on the second, so the last one is the first one.
 		{
-			hps::float3 currentPoint = linePoints[i + 1];
+			hps::float3 currentPoint = linePoints[i];
 			sl::float3 currentPointSL = sl::float3(currentPoint.x, currentPoint.y, currentPoint.z);
 
-			
 			::int2 currentScreenPos = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix, depthWidth, depthHeight);
 			
 			if (lastScreenPos.x != currentScreenPos.x || lastScreenPos.y != currentScreenPos.y) //Comparing int2 to int2 causes weird errors.
 			{
 				//Due to how this works, we're transforming the points twice, once during collision, once here.
 				//TODO: Optimize.
+				cv::Scalar color = cv::Scalar(0, 0, 255.0, 1);
+
 				cv::line(image_ocv, cv::Point(lastScreenPos.x, lastScreenPos.y), cv::Point(currentScreenPos.x, currentScreenPos.y), 
-					cv::Scalar(0, 0, 255.0, 1), 2);
+					color, 2);
+
+				if (i <= 5)
+				{
+					std::cout << "Vec at " << i << ": " << currentPoint.x << ", " << currentPoint.y << ", " << currentPoint.z << std::endl;
+					std::cout << " ScreenPos: " << currentScreenPos.x << ", " << currentScreenPos.y << std::endl;
+				}
 
 				lastScreenPos = currentScreenPos;
 			}
@@ -432,6 +461,8 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 
 bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& currentPoint)
 {
+	//return false;
+	
 	//For simplicity, just check the current position against the depth of its corresponding point
 	//in the ZED depth image. We could be fancier and check for collision along all the 2D points between
 	//the last and current one, but this would very rarely make a difference, and it would be slight,
