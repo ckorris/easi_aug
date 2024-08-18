@@ -71,8 +71,31 @@ void IOShortcuts::IncrementResolution(sl::Camera *zed, RuntimeParameters *runtim
 	textureHolder->CreateMatrixesFromZed(zed);
 }
 
-
-void IOShortcuts::SleepMode(sl::Camera *zed)
+bool isSleeping = false;
+void IOShortcuts::SleepMode(sl::Camera *zed, RuntimeParameters *runtime_parameters,
+	Resolution *image_size, TextureHolder *textureHolder, shared_ptr<HotkeyBinding> binding)
 {
-	//TODO:
+	if (isSleeping == true)
+	{
+		isSleeping = false;
+		return;
+	}
+
+	cout << "Sleep started." << endl;
+	zed->close();
+	isSleeping = true;
+	bool buttonPressed = false;
+	sleep_ms(200);
+	while (isSleeping == true)
+	{
+		sleep_ms(20);
+		KeyBinding::PreProcess();
+		binding->Process();
+	}
+
+	cout << "Sleep ended." << endl;
+
+	CamUtilities::InitZed(zed, runtime_parameters, image_size);
+	sleep_ms(10);
+	textureHolder->CreateMatrixesFromZed(zed);
 }

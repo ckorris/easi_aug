@@ -1,10 +1,32 @@
 #include <HotkeyManager.h>
 
 
-void HotkeyManager::RegisterKeyBinding(char key, void(*onTrue)())
+shared_ptr<HotkeyBinding> HotkeyManager::RegisterKeyBinding(char key, void(*onTrue)())
 {
-	_bindings.emplace_back(new KeyBinding(key, onTrue));
+	KeyBinding newBinding(key, onTrue);
+	_keyBindings.emplace_back(newBinding);
+	shared_ptr<HotkeyBinding> sharedBinding = make_shared<KeyBinding>(newBinding);
+	_bindings.push_back(sharedBinding);
+	return sharedBinding;
 }
+
+#if SPI_OUTPUT
+
+shared_ptr<HotkeyBinding> HotkeyManager::RegisterGPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue)())
+{
+	GPIOBinding newBinding(memoryAddress, bit, bcmNumber, onTrue);
+	_gpioBindings.emplace_back(newBinding);
+	shared_ptr<HotkeyBinding> sharedBinding = make_shared<GPIOBinding>(newBinding);
+	_bindings.push_back(sharedBinding);
+	return sharedBinding;
+}
+
+void HotkeyManager::CleanUpGPIOBindings()
+{
+
+}
+
+#endif
 
 void HotkeyManager::Process()
 {
@@ -18,3 +40,6 @@ void HotkeyManager::Process()
 		_bindings[i]->Process();
 	}
 }
+
+
+

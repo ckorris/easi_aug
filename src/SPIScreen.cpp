@@ -26,21 +26,21 @@
 
 
 //BOARD numbering.
+int RST = 18;
 int DIN = 19;
+int DC = 21;
+int BL = 22;
 int CLK = 23;
 int CS = 24;
-int DC = 22;
-int RST = 13;
-int BL = 12;
+
 
 //BCM numbering.
+int RST_BCM = 15;
 int DIN_BCM = 16;
+int DC_BCM = 17;
+int BL_BCM = 13;
 int CLK_BCM = 18;
 int CS_BCM = 19;
-int DC_BCM = 13;
-int RST_BCM = 14;
-int BL_BCM = 79;
-
 
 
 //Note some of these will end up being identical.
@@ -86,12 +86,12 @@ SPIScreen::SPIScreen()
 	}
 
 	//Initialize pins.
-	dinPin = InitPin_Mem(base, pagemask, DIN_MEM, DIN_BIT);
-	clkPin = InitPin_Mem(base, pagemask, CLK_MEM, CLK_BIT);
-	csPin = InitPin_Mem(base, pagemask, CS_MEM, CS_BIT);
-	dcPin = InitPin_Mem(base, pagemask, DC_MEM, DC_BIT);
-	rstPin = InitPin_Mem(base, pagemask, RST_MEM, RST_BIT);
-	blPin = InitPin_Mem(base, pagemask, BL_MEM, BL_BIT);
+	dinPin = GPIOHelper::InitPin_Mem(base, pagemask, DIN_MEM, DIN_BIT);
+	clkPin = GPIOHelper::InitPin_Mem(base, pagemask, CLK_MEM, CLK_BIT);
+	csPin = GPIOHelper::InitPin_Mem(base, pagemask, CS_MEM, CS_BIT);
+	dcPin = GPIOHelper::InitPin_Mem(base, pagemask, DC_MEM, DC_BIT);
+	rstPin = GPIOHelper::InitPin_Mem(base, pagemask, RST_MEM, RST_BIT);
+	blPin = GPIOHelper::InitPin_Mem(base, pagemask, BL_MEM, BL_BIT);
 
 	//Just to be sure, we make sure isSetToCommand matches the DC pin status. 
 	//This is in case it's set to high somehow before our first command, as otherwise it 
@@ -125,7 +125,7 @@ void SPIScreen::LCD_Clear(uint16_t color)
 	SetWindow(0, 0, LCD_WIDTH, LCD_HEIGHT);
 
 	//Set the command status here, letting us skip the check when we send each word. 
-	dcPin->OUT = DCON_RSTON; //Sets to high, indicating data. 
+	//dcPin->OUT = DCON_RSTON; //Sets to high, indicating data. //No longer needed, command 	//embedded in the writes to the other pins.
 
 	for(int u = 0; u < LCD_WIDTH; u++)
 	{
@@ -137,7 +137,7 @@ void SPIScreen::LCD_Clear(uint16_t color)
 			SendData_Word_NoCmdCheck(color);
 		}
 	}
-	dinPin->OUT = DINOFF_CLKOFF_CSON; //TEST
+	dinPin->OUT = DINOFF_CLKOFF_CSON_DCON; //TEST
 
 	std::chrono::time_point<std::chrono::high_resolution_clock> finish = 				std::chrono::high_resolution_clock::now();
 	
@@ -159,18 +159,18 @@ void SPIScreen::LCD_ShowImage(vector<unsigned char> image, int rows, int cols, i
 	SetWindow(0, 0, LCD_WIDTH, LCD_HEIGHT);
 	//SetWindow(0, 0, LCD_HEIGHT, LCD_WIDTH);
 
-	dcPin->OUT = DCON_RSTON; //Sets to high, indicating data. 
+	//dcPin->OUT = DCON_RSTON; //Sets to high, indicating data. 
 
 
 	bool hasprinted = false; //For test. 
 
 
 //for(int v = 0; v < rows; ++v)
-//for(int v = 0; v < rows; ++v) //Makes it inverted on Y (upside down).
-for(int v = rows; v > 0; --v)
+for(int v = 0; v < rows; ++v) //Makes it inverted on Y (upside down).
+//for(int v = rows; v > 0; --v)
 	{
-		for(int u = 0; u < cols; ++u)
-		//for(int u = cols; u > 0; --u) //Makes it inverted on X.
+		//for(int u = 0; u < cols; ++u)
+		for(int u = cols; u > 0; --u) //Makes it inverted on X.
 		{	
 			//int startindex = (v * rows * 3) + u * 3; //3 channels. 
 			int startindex = (u * rows * 3) + v * 3; //3 channels. 
@@ -206,19 +206,19 @@ for(int v = rows; v > 0; --v)
 		}
 	}
 
-	dinPin->OUT = DINOFF_CLKOFF_CSON;
+	dinPin->OUT = DINOFF_CLKOFF_CSON_DCOFF;
 	
 	
 }
 
 void SPIScreen::InitGPIO()
 {
-	GPIOHelper::GPIOSetup_Mem(DIN_BCM);
-	GPIOHelper::GPIOSetup_Mem(CLK_BCM);
-	GPIOHelper::GPIOSetup_Mem(CS_BCM);
-	GPIOHelper::GPIOSetup_Mem(DC_BCM);
-	GPIOHelper::GPIOSetup_Mem(RST_BCM);
-	GPIOHelper::GPIOSetup_Mem(BL_BCM);
+	GPIOHelper::GPIOSetup_Mem(DIN_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(CLK_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(CS_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(DC_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(RST_BCM, GPIOHelper::GPIODirection::OUT);
+	GPIOHelper::GPIOSetup_Mem(BL_BCM, GPIOHelper::GPIODirection::OUT);
 	
 	
 	printf("GPIO pins initialized.\r\n");
@@ -287,7 +287,7 @@ void SPIScreen::LogDuration(std::chrono::time_point<std::chrono::high_resolution
 
 void SPIScreen::SendCommand(uint8_t byte)
 {
-	SetCommandMode(true);
+	//SetCommandMode(true);
 
 	for(int bit = 7; bit >= 0; bit--) //MSB.	
 	{
@@ -295,13 +295,13 @@ void SPIScreen::SendCommand(uint8_t byte)
 		//if(value == true) 
 		if((byte>>bit)&1 == true)
 		{
-			dinPin->OUT = DINON_CLKOFF_CSOFF;
-			dinPin->OUT = DINON_CLKON_CSOFF;
+			dinPin->OUT = DINON_CLKOFF_CSOFF_DCOFF;
+			dinPin->OUT = DINON_CLKON_CSOFF_DCOFF;
 		}
 		else 
 		{
-			dinPin->OUT = DINOFF_CLKOFF_CSOFF;
-			dinPin->OUT = DINOFF_CLKON_CSOFF;	
+			dinPin->OUT = DINOFF_CLKOFF_CSOFF_DCOFF;
+			dinPin->OUT = DINOFF_CLKON_CSOFF_DCOFF;
 		}
 	}
 
@@ -311,7 +311,7 @@ void SPIScreen::SendCommand(uint8_t byte)
 
 void SPIScreen::SendData(uint8_t byte)
 {
-	SetCommandMode(false);
+	//SetCommandMode(false);
 
 	//for(int bit = 0; bit < 8; bit++) //LSB.
 	for(int bit = 7; bit >= 0; bit--) //MSB.
@@ -320,13 +320,13 @@ void SPIScreen::SendData(uint8_t byte)
 		
 		if((byte>>bit)&1 == true)		
 		{
-			dinPin->OUT = DINON_CLKOFF_CSOFF;
-			dinPin->OUT = DINON_CLKON_CSOFF;
+			dinPin->OUT = DINON_CLKOFF_CSOFF_DCON;
+			dinPin->OUT = DINON_CLKON_CSOFF_DCON;
 		}
 		else 
 		{
-			dinPin->OUT = DINOFF_CLKOFF_CSOFF;
-			dinPin->OUT = DINOFF_CLKON_CSOFF;	
+			dinPin->OUT = DINOFF_CLKOFF_CSOFF_DCON;
+			dinPin->OUT = DINOFF_CLKON_CSOFF_DCON;
 		}
 	}
 
@@ -335,7 +335,7 @@ void SPIScreen::SendData(uint8_t byte)
 
 void SPIScreen::SendData_Word(uint16_t word)
 {	
-	SetCommandMode(false);
+	//SetCommandMode(false);
 
 	//for(int bit = 0; bit < 16; bit++) //LSB.
 	for(int bit = 15; bit >= 0; bit--) //MSB.
@@ -344,13 +344,13 @@ void SPIScreen::SendData_Word(uint16_t word)
 		//if(value == true) 
 		if((word>>bit)&1 == true)
 		{
-			dinPin->OUT = DINON_CLKOFF_CSOFF;
-			dinPin->OUT = DINON_CLKON_CSOFF;
+			dinPin->OUT = DINON_CLKOFF_CSOFF_DCON;
+			dinPin->OUT = DINON_CLKON_CSOFF_DCON;
 		}
 		else 
 		{
-			dinPin->OUT = DINOFF_CLKOFF_CSOFF;
-			dinPin->OUT = DINOFF_CLKON_CSOFF;	
+			dinPin->OUT = DINOFF_CLKOFF_CSOFF_DCON;
+			dinPin->OUT = DINOFF_CLKON_CSOFF_DCON;
 		}
 		
 	}
@@ -371,13 +371,13 @@ void SPIScreen::SendData_Word_NoCmdCheck(uint16_t word)
 		//if(value == true) 
 		if((word>>bit)&1 == true)
 		{
-			dinPin->OUT = DINON_CLKOFF_CSOFF;
-			dinPin->OUT = DINON_CLKON_CSOFF;
+			dinPin->OUT = DINON_CLKOFF_CSOFF_DCON;
+			dinPin->OUT = DINON_CLKON_CSOFF_DCON;
 		}
 		else 
 		{
-			dinPin->OUT = DINOFF_CLKOFF_CSOFF;
-			dinPin->OUT = DINOFF_CLKON_CSOFF;	
+			dinPin->OUT = DINOFF_CLKOFF_CSOFF_DCON;
+			dinPin->OUT = DINOFF_CLKON_CSOFF_DCON;
 		}
 		
 	}
@@ -419,6 +419,7 @@ void SPIScreen::Reset()
 	usleep(100 * 1000); //100 milliseconds.
 }
 
+/*
 void SPIScreen::SetCommandMode(bool isCommand)
 {
 	if(isSetToCommand != isCommand)
@@ -437,7 +438,9 @@ void SPIScreen::SetCommandMode(bool isCommand)
 		isSetToCommand = isCommand;
 	}
 }
+*/
 
+/* //Moved to GPIOHelper.
 volatile gpio_t* SPIScreen::InitPin_Mem(void *base, int pagemask, int memaddress, int bit)
 {
 	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)base + (memaddress & pagemask));
@@ -449,6 +452,7 @@ volatile gpio_t* SPIScreen::InitPin_Mem(void *base, int pagemask, int memaddress
 
 	return pinLed;
 } 
+*/
 
 void SPIScreen::SetValue_Mem(volatile gpio_t *pinLed, int bit, bool state)
 {

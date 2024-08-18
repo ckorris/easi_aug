@@ -47,29 +47,38 @@ int BL = GPIO24; //Pin 12
 #define DIN_MEM 0x6000d008 //PC.
 #define CLK_MEM 0x6000d008 //PC.
 #define CS_MEM 0x6000d008 //PC.
-#define DC_MEM 0x6000d004 //PB.
+//#define DC_MEM 0x6000d004 //PB.
+#define DC_MEM 0x6000d008 //PC.
 #define RST_MEM 0x6000d004 //PB.
-#define BL_MEM 0x6000d204 //PJ.
+//#define BL_MEM 0x6000d204 //PJ.
+#define BL_MEM 0x6000d004 //PB.
 
 #define DIN_BIT 0x01 //Bit 0 - 00000001
 #define CLK_BIT 0x04 //02. 
 #define CS_BIT 0x08 //03.
-#define DC_BIT 0x20 //05.
-#define RST_BIT 0x40 //06.
-#define BL_BIT 0x80 //07.
+#define DC_BIT 0x02 //01.
+#define RST_BIT 0x80 //07.
+#define BL_BIT 0x20 //05.
 
-//For shared pins DIN, CLK and CS, which all use 0x6000d008. 
-#define DINOFF_CLKOFF_CSOFF 0x00
-#define DINON_CLKOFF_CSOFF 0x01
+//For shared pins DIN, CLK CS, which all use 0x6000d008. 
 
-#define DINOFF_CLKON_CSOFF 0x04 
-#define DINON_CLKON_CSOFF 0x05
+//With DC off, for data.
+#define DINOFF_CLKOFF_CSOFF_DCOFF 0x00
+#define DINON_CLKOFF_CSOFF_DCOFF 0x01
+#define DINOFF_CLKON_CSOFF_DCOFF 0x04 
+#define DINON_CLKON_CSOFF_DCOFF 0x05
+#define DINOFF_CLKOFF_CSON_DCOFF 0x08
 
-#define DINOFF_CLKOFF_CSON 0x08
+//With DC on, for commands.
+#define DINOFF_CLKOFF_CSOFF_DCON 0x02
+#define DINON_CLKOFF_CSOFF_DCON 0x03
+#define DINOFF_CLKON_CSOFF_DCON 0x06 
+#define DINON_CLKON_CSOFF_DCON 0x07
+#define DINOFF_CLKOFF_CSON_DCON 0x0A //Might need to be 0x10 but I don't think so.
 
 //For shared pins DC and RST, which both use 0x6000d004.
-#define DCOFF_RSTON 0x40
-#define DCON_RSTON 0x60
+//#define DCOFF_RSTON 0x40
+//#define DCON_RSTON 0x60
 
 #include <vector>
 #include <stdio.h>
@@ -77,6 +86,7 @@ int BL = GPIO24; //Pin 12
 #include <chrono>
 #include <GPIOHelper.h>
 
+/* //Moved to GPIOHelper.
 typedef struct {
     uint32_t CNF;
     uint32_t _padding1[3];
@@ -95,7 +105,7 @@ typedef struct {
     uint32_t INT_CLR;
     uint32_t _padding8[3];
 } gpio_t;
-
+*/
 
 class SPIScreen
 {
@@ -121,12 +131,12 @@ private:
 
 	void SetCommandMode(bool isCommand);
 
-	volatile gpio_t* InitPin_Mem(void *base, int pagemask, int memaddress, int bit);
+	//volatile gpio_t* InitPin_Mem(void *base, int pagemask, int memaddress, int bit); //Moved to GPIOHelper.
 	void SetValue_Mem(volatile gpio_t *pinLed, int bit, bool state);
 
-	void GPIOSetup_Mem(const int gpio);
+	//void GPIOSetup_Mem(const int gpio);
 	//void ExportGPIO_Mem(const int gpio);
-	void UnexportGPIO_Mem(const int gpio);
+	//void UnexportGPIO_Mem(const int gpio);
 	
 };
 

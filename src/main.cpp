@@ -20,7 +20,7 @@
 using namespace std;
 using namespace sl;
 
-const bool SET_TO_FULL_SCREEN = false; //If true, will make window full-screen. Best for small HDMI screens.
+const bool SET_TO_FULL_SCREEN = true; //If true, will make window full-screen. Best for small HDMI screens.
 
 //Variables.
 cv::Point mousePos(0,0); //Current position of the mouse. Updated within ClickCallback (okay so I need to rename that). 
@@ -50,6 +50,14 @@ Resolution image_size;
 TextureHolder *textureHolder;
 
 bool wantsToQuit = false;
+
+shared_ptr<HotkeyBinding> sleepBindingKey;
+
+#if SPI_OUTPUT
+shared_ptr<HotkeyBinding> sleepBindingGPIO;
+#endif
+
+bool isSleepingaa = false;
 
 //cv::Mat image_ocv;
 
@@ -126,8 +134,27 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterKeyBinding('z', IOShortcuts::IncrementZoom);
 	hotkeyManager.RegisterKeyBinding('x', IOShortcuts::ToggleSimulationOverlay);
 	hotkeyManager.RegisterKeyBinding('c', []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
-	hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed); });
 	hotkeyManager.RegisterKeyBinding('q', RequestClose);
+
+	//The sleep mode one is more complicated, because the delegate needs to refer to the keybinding itself.
+	sleepBindingKey = hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBindingKey); });
+
+#if SPI_OUTPUT
+	//Enable pin 40 as an output to provide power to the GPIO pins. 
+	GPIOHelper::GPIOSetup_Mem(NANO_GPIO_BCM_PIN40, GPIOHelper::GPIODirection::OUT);
+	gpio_t volatile *gpioPowerPin = GPIOHelper::InitPin_Out(NANO_GPIO_ADDRESS_PIN40, NANO_GPIO_BIT_PIN40);
+	//TODO: This function needs to be moved somewhere else.	
+	//SPIScreen::SetValue_Mem(gpioPowerPin, NANO_GPIO_BIT_PIN40, true);
+	gpioPowerPin->OUT = gpioPowerPin->OUT | NANO_GPIO_BIT_PIN40;
+
+	//Bind the hotkeys for the GPIO pins.
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN33, NANO_GPIO_BIT_PIN33, NANO_GPIO_BCM_PIN33, IOShortcuts::IncrementZoom);
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN35, NANO_GPIO_BIT_PIN35, NANO_GPIO_BCM_PIN35, IOShortcuts::ToggleSimulationOverlay);
+
+	hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN31, NANO_GPIO_BIT_PIN31, NANO_GPIO_BCM_PIN31, []() { IOShortcuts::IncrementResolution(&zed, &runtime_parameters, &image_size, textureHolder); });
+	
+	sleepBindingGPIO = hotkeyManager.RegisterGPIOBinding(NANO_GPIO_ADDRESS_PIN38, NANO_GPIO_BIT_PIN38, NANO_GPIO_BCM_PIN38, []() { IOShortcuts::SleepMode(&zed, &runtime_parameters, &image_size, textureHolder, sleepBindingGPIO); });
+#endif
 
 	// Loop until 'q' is pressed
 	char key = ' ';
@@ -164,13 +191,14 @@ int main(int argc, char **argv)
 		
 			//Process hotkeys.
 			hotkeyManager.Process();
-
-			// Handle key event
-			//key = cv::waitKey(10);
 		}
 	}
 	recorder->StopRecording(); //If we're recording, close it out. 
 	zed.close();
+#if SPI_OUTPUT
+	GPIOHelper::UnexportGPIO_Mem(NANO_GPIO_BCM_PIN40);
+#endif
+
 	return 0;
 }
 
@@ -380,7 +408,8 @@ void HandleOutputAndMouse(cv::Mat finalImageMat)
 	//Output to desktop.
 	if (SET_TO_FULL_SCREEN == true)
 	{
-		cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+		//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+		cv::namedWindow("EasiAug", cv::WINDOW_NORMAL );
 		cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
 	}
 	else

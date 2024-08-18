@@ -1,6 +1,10 @@
 #include <HotkeyBindings.h>
 #include <opencv2/opencv.hpp>
 
+#if SPI_OUTPUT
+#include <GPIOHelper.h>
+#endif
+
 HotkeyBinding::HotkeyBinding(void(*onTrue)())
 {
 	_onTrue = onTrue;
@@ -22,6 +26,15 @@ void HotkeyBinding::Process()
 	}
 }
 
+/*
+bool HotkeyBinding::Evaluate()
+{
+	//std::cout << "BASE" << std::endl;
+	return false;
+}
+*/
+
+
 char KeyBinding::_lastKey = ' ';
 
 KeyBinding::KeyBinding(char key, void(*onTrue)())
@@ -31,15 +44,45 @@ KeyBinding::KeyBinding(char key, void(*onTrue)())
 	_lastKey = ' ';
 }
 
+
+void KeyBinding::Process()
+{
+	//std::cout << "Child Process" << std::endl;
+	this->HotkeyBinding::Process();
+}
+
+
 void KeyBinding::PreProcess()
 {
 	KeyBinding::_lastKey = cv::waitKey(10);
 }
 
-bool KeyBinding::Evaluate()
+bool KeyBinding::Evaluate()  
 {
 	return KeyBinding::_lastKey == _key;
 }
 
+#if SPI_OUTPUT
 
+GPIOBinding::GPIOBinding(int memoryAddress, int bit, int bcmNumber, void(*onTrue)())
+	:HotkeyBinding(onTrue)
+{
+	_memoryAddress = memoryAddress;
+	_bit = bit;
+	_bcmNumber = bcmNumber;
+	_lastState = false;
+	
+	//Set up the pin.
+	GPIOHelper::GPIOSetup_Mem(bcmNumber, GPIOHelper::GPIODirection::IN);
+	_pinDef = GPIOHelper::InitPin_In(memoryAddress, bit);
+}
 
+bool GPIOBinding::Evaluate()
+{
+	bool newState = GPIOHelper::GetValue_Mem(_pinDef, _bit);
+	bool returnValue = newState == true && _lastState == false;
+	_lastState = newState;
+	return returnValue;
+}
+
+#endif

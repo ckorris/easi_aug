@@ -8,12 +8,19 @@
 #include <thread>
 #include <fstream>
 #include <sstream>
+#include <sys/mman.h>
+#include <sys/fcntl.h>
 
 using namespace std;
 
+//Forward declarations.
+void* GetBase();
+int GetFD();
+
+
 constexpr auto ROOT = "/sys/class/gpio"; //To do: Move this and remove auto. 
 
-void GPIOHelper::GPIOSetup_Mem(const int gpio)
+void GPIOHelper::GPIOSetup_Mem(const int gpio, GPIODirection direction)
 {
 
 	//Export the GPIO so we can start using it. 
@@ -53,7 +60,16 @@ void GPIOHelper::GPIOSetup_Mem(const int gpio)
 	{
 		//std::cout << "Set direction of pin " << gpio << " to out." << std::endl;
 		std::ofstream direction_file(gpio_dir_path);
-		direction_file << "out";
+		//direction_file << "out";
+		switch (direction)
+		{
+		case GPIODirection::IN:
+			direction_file << "in";
+			break;
+		case GPIODirection::OUT:
+			direction_file << "out";
+			break;
+		}
 	}
 
 
@@ -71,5 +87,84 @@ void GPIOHelper::UnexportGPIO_Mem(const int gpio)
 	std::ofstream f_unexport(std::string(ROOT) + "/unexport");
 	f_unexport << gpio;
 }
+
+
+volatile gpio_t* GPIOHelper::InitPin_Out(int memaddress, int bit)
+{
+	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)GetBase() + (memaddress & (getpagesize() - 1)));
+
+	pinLed->CNF = pinLed->CNF | bit; //Set to GPIO, not SPIO.
+	pinLed->OE = pinLed->OE | bit; //Enable output.
+	pinLed->OUT = pinLed->OUT & (~bit); //Set output to low to start.
+	pinLed->INT_ENB = pinLed->INT_ENB & (~bit); //Disable interrupts.
+
+	return pinLed;
+}
+
+volatile gpio_t* GPIOHelper::InitPin_In(int memaddress, int bit)
+{
+	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)GetBase() + (memaddress & (getpagesize() - 1)));
+
+	pinLed->CNF = pinLed->CNF | bit; //Set to GPIO, not SPIO.
+	pinLed->OE = pinLed->OE & (~bit); //Disable output.
+	pinLed->INT_ENB = pinLed->INT_ENB & (~bit); //Disable interrupts.
+	//pinLed->IN = pinLed->IN | bit; //Set initial value to one, but should be readonly.
+	//pinLed->OUT = pinLed->OUT & (~bit); //Make sure output is off.
+	pinLed->INT_STA = pinLed->INT_STA | bit;
+	pinLed->INT_LVL = pinLed->INT_LVL | bit;
+	pinLed->INT_LVL = pinLed->INT_LVL | (bit << 8);
+	pinLed->INT_LVL = pinLed->INT_LVL | (bit << 16);
+	pinLed->INT_CLR = pinLed->INT_CLR | bit;
+
+	return pinLed;
+}
+
+bool GPIOHelper::GetValue_Mem(volatile gpio_t *pinLed, int bit)
+{
+	uint32_t readval = pinLed->IN &= bit;
+	return readval == bit;
+}
+
+void* _base;
+void* GetBase()
+{
+	if (_base == nullptr)
+	{
+		int pagesize = getpagesize();
+		int pagemask = pagesize - 1;
+		_base = mmap(0, pagesize, PROT_READ | PROT_WRITE, MAP_SHARED, GetFD(), (0x6000d004 & ~pagemask));
+	}
+	return _base;
+}
+
+int _fd;
+int GetFD()
+{
+	if (_fd == 0) //TODO: Verify that this is initialized to zero.'
+	//if (true) //TODO: Verify that this is initialized to zero.
+	{
+
+		//Open direct access to memory. 
+		_fd = open("/dev/mem", O_RDWR | O_SYNC);
+		if (_fd < 0) {
+			//fprintf(stderr, "usage : $ sudo %s (with root privilege)\n", argv[0]);
+			cout << "Can't open memory. Try running with root (sudo ./[appname])." << endl;
+			exit(1);
+		}
+	}
+	return _fd;
+}
+
+volatile gpio_t* GPIOHelper::InitPin_Mem(void *base, int pagemask, int memaddress, int bit)
+{
+	gpio_t volatile *pinLed = (gpio_t volatile *)((char *)base + (memaddress & pagemask));
+
+	pinLed->CNF = pinLed->CNF | bit;
+	pinLed->OE = pinLed->OE | bit; 
+	pinLed->OUT = pinLed->OUT & (~bit);
+	pinLed->INT_ENB = pinLed->INT_ENB & (~bit);
+
+	return pinLed;
+} 
 
 #endif
