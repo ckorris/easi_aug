@@ -1,6 +1,6 @@
 #pragma once
 #include "MathStructs.h"
-#include "Stats.h"
+#include "SimStats.h"
 #include "PhysicsArgs.h"
 #include <vector>
 #include <functional>
@@ -23,10 +23,10 @@ namespace hps
 		DLL_API bool RunSimulation(float sampleTime, int maxSamples, float3 camPosOffset, float3 camRotOffset,
 			PhysicsArgs physicsArgs, float3 gravityVector, CollisionDetectionFunc collisionDetectionFunc,
 			float& collisiondepth, float& totaltime, float3** linePoints, int& linePointsCount, SampleStats** sampleStats,
-			Stats& stats);
+			SimStats& stats);
 	}
 
-	class Simulation
+	class DLL_API Simulation
 	{
 	public:
 
@@ -34,7 +34,7 @@ namespace hps
 
 		static bool Simulate(float sampleTime, int maxSamples, float3 camPosOffset, float3 camRotOffset, PhysicsArgs
 			physicsArgs, float3 gravityVector, CollisionDetectionFunc collisionDetectionFunc, float& collisiondepth, float& totaltime,
-			vector<float3>& linePoints, vector<SampleStats>& sampleStats, Stats& stats);
+			vector<float3>& linePoints, vector<SampleStats>& sampleStats, SimStats& stats);
 
 		static float CalculateAirDensity(float totalairpressurehpa, float tempcelsius, float relhumidity01);
 

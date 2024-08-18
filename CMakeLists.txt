@@ -7,9 +7,13 @@ if (NOT LINK_SHARED_ZED AND MSVC)
     message(FATAL_ERROR "LINK_SHARED_ZED OFF : ZED SDK static libraries not available on Windows")
 endif()
 
+# Copy the default config file.
+file(COPY "${CMAKE_SOURCE_DIR}/config.txt"
+     DESTINATION "${CMAKE_BINARY_DIR}")
+
 if(COMMAND cmake_policy)
-	cmake_policy(SET CMP0003 OLD)
-	cmake_policy(SET CMP0015 OLD)
+    cmake_policy(SET CMP0003 OLD)
+    cmake_policy(SET CMP0015 OLD)
 endif(COMMAND cmake_policy)
 
 set(CMAKE_CXX_STANDARD 14)
@@ -17,15 +21,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread")
 
-#Optional output to SPI LCD screen. 
-#This was only set up for the Jetson Nano/TX1 GPIO pin header, and with a specific
-#2 inch LCD screen by WaveShare based on the ST7789VW chip.
-#Note this will be totally ignored if in Windows. 
+# Optional output to SPI LCD screen.
+# This was only set up for the Jetson Nano/TX1 GPIO pin header, and with a specific
+# 2 inch LCD screen by WaveShare based on the ST7789VW chip.
+# Note this will be totally ignored if in Windows.
 option(SPI_LCD "Output to SPI LCD screen (Jetson Nano/TX1 Only)" OFF)
 
-
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
-SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
+    SET(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
 
 SET(EXECUTABLE_OUTPUT_PATH ".")
@@ -35,11 +38,11 @@ IF(NOT WIN32)
     SET(SPECIAL_OS_LIBS "pthread" "X11" "lpthread")
     SET(PLATFORM_SPECIFIC_LIBS "-lpthread")
 
-    #Threading support.
+    # Threading support.
     find_package(Threads)
     set(THREADS_PREFER_PTHREAD_FLAG ON)
 
-    #Check option to use SPI for an LCD screen. 
+    # Check option to use SPI for an LCD screen.
     if(SPI_LCD)
         add_definitions(-DSPI_OUTPUT)
     endif()
@@ -47,11 +50,22 @@ ELSE()
     add_definitions(-DWINDOWS)
 ENDIF()
 
+# Set the appropriate library path based on the architecture
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+    set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/x64")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/ARM64")
+else()
+    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+endif()
+
+# Include the library path
+link_directories(${LIB_ARCH_PATH})
+
+# Find packages
 find_package(ZED 3 REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(CUDA ${ZED_CUDA_VERSION} EXACT REQUIRED)
-
-
 
 include_directories(${CUDA_INCLUDE_DIRS})
 include_directories(${ZED_INCLUDE_DIRS})
@@ -67,7 +81,6 @@ FILE(GLOB_RECURSE HDR_FILES include/*.hpp)
 FILE(GLOB_RECURSE HDR_FILES include/*.h)
 FILE(GLOB_RECURSE SRC_IMAGES images/*.png)
 
-
 ADD_EXECUTABLE(${PROJECT_NAME} ${HDR_FILES} ${SRC_FILES} ${SRC_IMAGES})
 add_definitions(-std=c++14 -O3)
 
@@ -79,4 +92,19 @@ else()
     SET(ZED_LIBS ${ZED_STATIC_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_LIBRARY})
 endif()
 
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ZED_LIBS} ${OpenCV_LIBRARIES})
+# Link the necessary libraries
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ZED_LIBS} ${OpenCV_LIBRARIES} HoppedProjectileSim)
+
+# Copy the sim .dll.
+if(WIN32)
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${LIB_ARCH_PATH}/HoppedProjectileSim.dll"
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+endif()
+
+# Add the .lib file to the link dependencies on Windows
+if(WIN32)
+    set(HOPPED_PROJECTILE_LIB "${LIB_ARCH_PATH}/HoppedProjectileSim.lib")
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${HOPPED_PROJECTILE_LIB})
+endif()

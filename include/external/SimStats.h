@@ -2,7 +2,7 @@
 
 namespace hps
 {
-	struct Stats
+	struct SimStats
 	{
 		float SpeedImpact;
 

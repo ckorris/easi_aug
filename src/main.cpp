@@ -326,7 +326,7 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 
 		//SampleStats** sampleStats;
 		std::vector<SampleStats> sampleStats;
-		Stats stats;
+		SimStats stats;
 		
 		bool collided = sim->Simulate(sampleTime, maxSamples, camPosOffset, camRotOffset, physicsArgs,
 			gravityVector, collisionDetectionFunc, collisionDepth, totalTime, linePoints, sampleStats, stats);
