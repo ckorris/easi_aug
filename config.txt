@@ -1,15 +1,25 @@
 #Booleans
 bToggleDistance=1
+<<<<<<< HEAD
 bToggleGravityCrosshair=0
 bToggleGravityPath=0
+=======
+bToggleGravityCrosshair=1
+bToggleGravityPath=1
+>>>>>>> 10b47f918b38ad8c3793abc19ba22afa2c70b789
 bToggleLaserCrosshair=1
 bToggleLaserPath=1
 bToggleTravelTime=1
 
 #Integers
 iCamPerformanceMode=1
+<<<<<<< HEAD
 iCamResolution=2
 iImageRotation=0
+=======
+iCamResolution=3
+iImageRotation=1
+>>>>>>> 10b47f918b38ad8c3793abc19ba22afa2c70b789
 iLCDHeight=240
 iLCDWidth=320
 iScreenRotation=0
