@@ -111,13 +111,15 @@ int main(int argc, char **argv)
 	Simulation simReal = Simulation();
 	sim = &simReal;
 
-	imageHelper = &ImageHelper(&zed);
+	//imageHelper = &ImageHelper(&zed);
+	imageHelper =  new ImageHelper(&zed);
 
 	sl::CameraInformation info = zed.getCameraInformation();
 	projectionMatrix = CamUtilities::GetProjectionMatrix(info);
 
 	//Declare the recording helper (for recording SVO files) and button.
-	recorder = &RecordingHelper(&zed);
+	//recorder = &RecordingHelper(&zed);
+	recorder =  new RecordingHelper(&zed);
 	RecordingHelper record = static_cast<RecordingHelper>(*recorder);
 	recordHelper = recorder;
 

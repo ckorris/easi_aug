@@ -10,10 +10,18 @@ namespace hps
 {
 	using namespace std;
 
-#ifdef BUILD_DLL
-#define DLL_API __declspec(dllexport)
+#ifdef _WIN32
+	#ifdef BUILD_DLL
+		#define DLL_API __declspec(dllexport)
+	#else
+		#define DLL_API __declspec(dllimport)
+	#endif
 #else
-#define DLL_API __declspec(dllimport)
+	#ifdef BUILD_DLL
+		#define DLL_API __attribute__((visibility("default")))
+	#else
+		#define DLL_API
+#endif
 #endif
 
 	extern "C" {
