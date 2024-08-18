@@ -50,18 +50,6 @@ ELSE()
     add_definitions(-DWINDOWS)
 ENDIF()
 
-# Set the appropriate library path based on the architecture
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
-    set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/x64")
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-    set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/ARM64")
-else()
-    message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
-endif()
-
-# Include the library path
-link_directories(${LIB_ARCH_PATH})
-
 # Find packages
 find_package(ZED 3 REQUIRED)
 find_package(OpenCV REQUIRED)
@@ -98,9 +86,48 @@ TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ZED_LIBS} ${OpenCV_LIBRARIES} HoppedProj
 # Copy the sim .dll.
 if(WIN32)
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "D:/Projects/EasiOS/lib/x64/HoppedProjectileSim.dll"
+    $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+
+endif()
+
+# Set the appropriate library path based on the architecture and platform
+if(WIN32)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/x64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+        set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/ARM64")
+    else()
+        message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+
+    # Include the library path
+    link_directories(${LIB_ARCH_PATH})
+
+    # Link the necessary libraries
+    set(HOPPED_PROJECTILE_LIB "${LIB_ARCH_PATH}/HoppedProjectileSim.lib")
+    target_link_libraries(${PROJECT_NAME} PRIVATE ${HOPPED_PROJECTILE_LIB})
+    
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${LIB_ARCH_PATH}/HoppedProjectileSim.dll"
         $<TARGET_FILE_DIR:${PROJECT_NAME}>)
+
+elseif(UNIX)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
+        set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/x64")
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+        set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/ARM64")
+    else()
+        message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+
+    # Include the library path
+    link_directories(${LIB_ARCH_PATH})
+
+    # Link the necessary libraries
+    target_link_libraries(${PROJECT_NAME} PRIVATE "${LIB_ARCH_PATH}/libHoppedProjectileSim.so")
 endif()
 
 # Add the .lib file to the link dependencies on Windows
