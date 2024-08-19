@@ -105,9 +105,9 @@ elseif(UNIX AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
     link_directories(${LIB_ARCH_PATH})
 
     # Link the necessary libraries
-    target_link_libraries(${PROJECT_NAME} PRIVATE "${LIB_ARCH_PATH}/libHoppedProjectileSim.so" m)
+    set(HOPPED_PROJECTILE_LIB "${LIB_ARCH_PATH}/libHoppedProjectileSim.so")
+    target_link_libraries(${PROJECT_NAME} PRIVATE "${HOPPED_PROJECTILE_LIB}" m)
 endif()
 
-# Link the necessary libraries
+# Link the common libraries for all platforms
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ZED_LIBS} ${OpenCV_LIBRARIES})
-
