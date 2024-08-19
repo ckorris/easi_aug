@@ -22,9 +22,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -pthread")
 
 # Optional output to SPI LCD screen.
-# This was only set up for the Jetson Nano/TX1 GPIO pin header, and with a specific
-# 2 inch LCD screen by WaveShare based on the ST7789VW chip.
-# Note this will be totally ignored if in Windows.
 option(SPI_LCD "Output to SPI LCD screen (Jetson Nano/TX1 Only)" OFF)
 
 if (NOT CMAKE_BUILD_TYPE OR CMAKE_BUILD_TYPE STREQUAL "")
@@ -65,8 +62,7 @@ link_directories(${OpenCV_LIBRARY_DIRS})
 link_directories(${CUDA_LIBRARY_DIRS})
 
 FILE(GLOB_RECURSE SRC_FILES src/*.cpp)
-FILE(GLOB_RECURSE HDR_FILES include/*.hpp)
-FILE(GLOB_RECURSE HDR_FILES include/*.h)
+FILE(GLOB_RECURSE HDR_FILES include/*.hpp include/*.h)
 FILE(GLOB_RECURSE SRC_IMAGES images/*.png)
 
 ADD_EXECUTABLE(${PROJECT_NAME} ${HDR_FILES} ${SRC_FILES} ${SRC_IMAGES})
@@ -80,19 +76,7 @@ else()
     SET(ZED_LIBS ${ZED_STATIC_LIBRARIES} ${CUDA_CUDA_LIBRARY} ${CUDA_LIBRARY})
 endif()
 
-# Link the necessary libraries
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ZED_LIBS} ${OpenCV_LIBRARIES} HoppedProjectileSim)
-
-# Copy the sim .dll.
-if(WIN32)
-    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "D:/Projects/EasiOS/lib/x64/HoppedProjectileSim.dll"
-    $<TARGET_FILE_DIR:${PROJECT_NAME}>)
-
-endif()
-
-# Set the appropriate library path based on the architecture and platform
+# Platform-specific linking
 if(WIN32)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
         set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/x64")
@@ -108,30 +92,22 @@ if(WIN32)
     # Link the necessary libraries
     set(HOPPED_PROJECTILE_LIB "${LIB_ARCH_PATH}/HoppedProjectileSim.lib")
     target_link_libraries(${PROJECT_NAME} PRIVATE ${HOPPED_PROJECTILE_LIB})
-    
+
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${LIB_ARCH_PATH}/HoppedProjectileSim.dll"
         $<TARGET_FILE_DIR:${PROJECT_NAME}>)
 
-elseif(UNIX)
-    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64")
-        set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/x64")
-    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
-        set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/ARM64")
-    else()
-        message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
-    endif()
+elseif(UNIX AND CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64")
+    set(LIB_ARCH_PATH "${CMAKE_SOURCE_DIR}/lib/ARM64")
 
     # Include the library path
     link_directories(${LIB_ARCH_PATH})
 
     # Link the necessary libraries
-    target_link_libraries(${PROJECT_NAME} PRIVATE "${LIB_ARCH_PATH}/libHoppedProjectileSim.so")
+    target_link_libraries(${PROJECT_NAME} PRIVATE "${LIB_ARCH_PATH}/libHoppedProjectileSim.so" m)
 endif()
 
-# Add the .lib file to the link dependencies on Windows
-if(WIN32)
-    set(HOPPED_PROJECTILE_LIB "${LIB_ARCH_PATH}/HoppedProjectileSim.lib")
-    target_link_libraries(${PROJECT_NAME} PRIVATE ${HOPPED_PROJECTILE_LIB})
-endif()
+# Link the necessary libraries
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} ${ZED_LIBS} ${OpenCV_LIBRARIES})
+
