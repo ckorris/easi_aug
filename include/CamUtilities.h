@@ -13,7 +13,7 @@ public:
 
 	//static cv::Mat GetProjectionMatrix(Camera cam);
 	static cv::Mat GetProjectionMatrix(sl::CameraInformation info);
-	static int2 CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, int screenwidth, int screenheight);
+	static sl::int2 CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, int screenwidth, int screenheight);
 
 	static sl::float3 IMUPoseToGravityVector(sl::Pose imupose);
 

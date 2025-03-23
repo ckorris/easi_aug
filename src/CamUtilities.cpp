@@ -35,8 +35,8 @@ cv::Mat CamUtilities::GetProjectionMatrix(sl::CameraInformation info)
 	float fovx = parameters.left_cam.h_fov * (3.1415926 / 180.0);
 	float fovy = parameters.left_cam.v_fov * (3.1415926 / 180.0);
 
-	float f_imageWidth = info.camera_resolution.width;
-	float f_imageHeight = info.camera_resolution.height;
+	float f_imageWidth = info.camera_configuration.resolution.width;
+	float f_imageHeight = info.camera_configuration.resolution.height;
 
 	//Manually construct the matrix based on initialization/calibration values.
 	projection.at<float>(0, 0) = 1.0f / tan(fovx * 0.5f); //Horizontal FoV.
@@ -66,7 +66,7 @@ cv::Mat CamUtilities::GetProjectionMatrix(sl::CameraInformation info)
 	return projection;
 }
 
-int2 CamUtilities::CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, int screenwidth, int screenheight)
+sl::int2 CamUtilities::CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, int screenwidth, int screenheight)
 {
 	cv::Mat relposmat = cv::Mat(4, 1, CV_32FC1);
 	relposmat.at<float>(0, 0) = relpos[0];
@@ -93,7 +93,7 @@ int2 CamUtilities::CameraToScreenPos(sl::float3 relpos, cv::Mat projectionmat, i
 	int screen_x = (vp_x + 1) / 2.0 * screenwidth;
 	int screen_y = (vp_y + 1) / 2.0 * screenheight;
 
-	int2 screenpos; 
+	sl::int2 screenpos; 
 	screenpos.x = screen_x;
 	screenpos.y = screen_y;
 
@@ -138,7 +138,7 @@ int CamUtilities::InitZed(int argc, char **argv, Camera *zed, RuntimeParameters 
 
 	// Set runtime parameters after opening the camera
 
-	runtime_parameters->sensing_mode = SENSING_MODE::FILL;
+	runtime_parameters->enable_fill_mode = true;
 
 	CameraInformation cameraInfo = zed->getCameraInformation();
 	Resolution size = cameraInfo.camera_configuration.resolution;

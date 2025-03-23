@@ -221,7 +221,7 @@ cv::Point ImageHelper::RawImagePointToRotated(cv::Point inpoint, bool scale )
 void ImageHelper::ScreenTouchToUIPoint(int* x, int* y)
 {
 	int screenrotamount = Config::screenRotation();
-	int2 returnint;
+	sl::int2 returnint;
 	if (screenrotamount == 0)
 	{
 		/*

@@ -344,14 +344,14 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 		
 		sl::float3 firstPointSL = sl::float3(camPosOffset.x, camPosOffset.y, 0);
 				
-		::int2 lastScreenPos = CamUtilities::CameraToScreenPos(firstPointSL, projectionMatrix, depthWidth, depthHeight);
+		sl::int2 lastScreenPos = CamUtilities::CameraToScreenPos(firstPointSL, projectionMatrix, depthWidth, depthHeight);
 
 		for(size_t i = 0; i < linePoints.size() ; i++) //Start on the second, so the last one is the first one.
 		{
 			hps::float3 currentPoint = linePoints[i];
 			sl::float3 currentPointSL = sl::float3(currentPoint.x, currentPoint.y, currentPoint.z);
 
-			::int2 currentScreenPos = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix, depthWidth, depthHeight);
+			sl::int2 currentScreenPos = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix, depthWidth, depthHeight);
 			
 			if (lastScreenPos.x != currentScreenPos.x || lastScreenPos.y != currentScreenPos.y) //Comparing int2 to int2 causes weird errors.
 			{
@@ -450,7 +450,7 @@ bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& curre
 	sl::float3 currentPointSL = sl::float3(currentPoint.x, currentPoint.y, currentPoint.z);
 
 	//hps::int2 screenPosition = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix,
-	::int2 screenPosition = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix,
+	sl::int2 screenPosition = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix,
 		imageWidth, imageHeight);
 
 	//If it's outside view of the screen, we won't be able to calculate depth. 
