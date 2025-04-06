@@ -7,7 +7,8 @@ using namespace std;
 
 Drawable::Drawable(float anchorxmin, float anchorxmax, float anchorymin, float anchorymax)
 {
-	//cout << "Drawable Constructor" << endl;
+	//
+	// << "Drawable Constructor" << endl;
 
 	anchorXMin = anchorxmin;
 	anchorXMax = anchorxmax;

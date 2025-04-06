@@ -516,7 +516,7 @@ void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat
 void HandleOutputAndMouse(cv::Mat finalImageMat)
 {
 	//Draw the mouse.
-	cv::circle(finalImageMat, mousePos, (finalImageMat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);
+	
 
 	//Output to desktop.
 	if (SET_TO_FULL_SCREEN == true)
@@ -537,6 +537,7 @@ void HandleOutputAndMouse(cv::Mat finalImageMat)
 		cv::Rect cropRegion(x, y, screenWidth, screenHeight);
 		cv::Mat cropped = resized(cropRegion);
 
+		cv::circle(cropped, mousePos, (finalImageMat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);
 
 		//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
 		cv::namedWindow("EasiAug", cv::WINDOW_NORMAL);
@@ -547,6 +548,7 @@ void HandleOutputAndMouse(cv::Mat finalImageMat)
 	}
 	else
 	{
+		cv::circle(finalImageMat, mousePos, (finalImageMat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);
 		cv::namedWindow("EasiAug");
 		cv::imshow("EasiAug", finalImageMat);
 	}

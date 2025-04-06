@@ -236,6 +236,10 @@ void ImageHelper::ScreenTouchToUIPoint(int* x, int* y)
 		float zedwidth = zedres.width; //Shorthand.
 		float zedheight = zedres.height; //Shorthand.
 
+		//TEST
+		zedwidth = Config::lcdWidth();
+		zedheight = Config::lcdHeight();
+
 		if (screenrotamount == 1)
 		{
 			int oldx = *x;
