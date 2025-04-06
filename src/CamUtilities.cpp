@@ -120,6 +120,7 @@ int CamUtilities::InitZed(int argc, char **argv, Camera *zed, RuntimeParameters 
 	// Set configuration parameters
 	InitParameters initparams;
 	initparams.camera_resolution = Config::camResolution();
+
 	initparams.depth_mode = Config::camPerformanceMode();
 	initparams.coordinate_units = UNIT::METER;
 	if (argc > 1) initparams.input.setFromSVOFile(argv[1]);

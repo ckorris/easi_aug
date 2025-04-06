@@ -260,3 +260,49 @@ void ImageHelper::ScreenTouchToUIPoint(int* x, int* y)
 		}
 	}
 }
+
+#ifdef _WIN32
+#include <windows.h>
+
+int ImageHelper::GetScreenWidth()
+{
+	return GetSystemMetrics(SM_CXSCREEN);
+}
+
+int ImageHelper::GetScreenHeight()
+{
+	return GetSystemMetrics(SM_CYSCREEN);
+}
+#endif
+
+#ifndef _WIN32
+#include <X11/Xlib.h>
+
+int ImageHelper::GetScreenWidth()
+{
+	Display* display = XOpenDisplay(nullptr);
+	if (!display)
+	{
+		// handle error
+		return 0;
+	}
+	Screen* screen = DefaultScreenOfDisplay(display);
+	int width = screen->width;
+	XCloseDisplay(display);
+	return width;
+}
+
+int ImageHelper::GetScreenHeight()
+{
+	Display* display = XOpenDisplay(nullptr);
+	if (!display)
+	{
+		// handle error
+		return 0;
+	}
+	Screen* screen = DefaultScreenOfDisplay(display);
+	int height = screen->height;
+	XCloseDisplay(display);
+	return height;
+}
+#endif

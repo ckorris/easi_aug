@@ -20,7 +20,7 @@ using namespace hps;
 using namespace std;
 using namespace sl;
 
-const bool SET_TO_FULL_SCREEN = false; //If true, will make window full-screen. Best for small HDMI screens.
+const bool SET_TO_FULL_SCREEN = true; //If true, will make window full-screen. Best for small HDMI screens.
 
 //Variables.
 cv::Point mousePos(0,0); //Current position of the mouse. Updated within ClickCallback (okay so I need to rename that). 
@@ -200,6 +200,8 @@ void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
 		destheight = zedHeight();
 	}
 
+	
+
 	//Calculate the menu size and assign it. 
 	//This involves figuring out what the image will be scaled to, and what will be cropped for the output res. 	
 	float srcaspect = menu_mat.cols / (float)menu_mat.rows;
@@ -243,8 +245,6 @@ void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
 	cv::putText(menu_mat, fpsbuffer, cv::Point(menu_mat.cols - (widthdiff / 2) - fpssize.width - 2,
 		fpssize.height + (heightdiff / 2) + 2), 1, 2, cv::Scalar(102, 204, 0, 100), 2);
 
-
-
 	*outMat = menu_mat;
 }
 
@@ -284,8 +284,6 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 	if (Config::toggleGravityCrosshair() || Config::toggleGravityPath())
 	{
 		
-		
-
 		//TEMP consts that should be messed with and made real consts.
 		int maxSamples = 100;
 		float sampleTime = 0.01f;
@@ -473,6 +471,8 @@ void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat
 	cv::Mat finalimagemat(image_ocv.cols, image_ocv.rows, CV_8UC4);
 	cv::Mat finaluimat(sim_mat.cols, sim_mat.rows, CV_8UC4);
 	int zoom = Config::zoomLevel();
+
+
 	if (zoom == 1) //Save some maths and some cycles. 
 	{
 		finalimagemat = imageHelper->RotateImageToConfig(image_ocv);
@@ -491,14 +491,18 @@ void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat
 		cv::resize(rotateduiimage(zoomrect), finaluimat, cv::Size(uiwidth, uiheight));
 	}
 
+
 	//Declare a "fromto" array to be used in several additive functions (cv::mixChannels). 
 	int fromto[] = { 3, 0 };
 
 	//Rotate the UI mat and add the menu mat to the sim mat. 
 	cv::Mat menumask(cv::Size(menu_mat.cols, menu_mat.rows), CV_8UC1);
 	cv::mixChannels(menu_mat, menumask, fromto, 1);
+
+
 	cv::add(finaluimat, menu_mat, finaluimat, menumask);
 
+	
 
 	//Add the UI image (now with the menu) to the ZED image. 
 	cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
@@ -517,15 +521,33 @@ void HandleOutputAndMouse(cv::Mat finalImageMat)
 	//Output to desktop.
 	if (SET_TO_FULL_SCREEN == true)
 	{
-		cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+		int screenWidth = imageHelper->GetScreenWidth();
+		int screenHeight = imageHelper->GetScreenHeight();
+
+		float scaleW = static_cast<float>(screenWidth) / static_cast<float>(finalImageMat.cols);
+		float scaleH = static_cast<float>(screenHeight) / static_cast<float>(finalImageMat.rows);
+		float scale = std::max(scaleW, scaleH); // ensures at least one dimension matches screen size
+
+
+		cv::Mat resized;
+		cv::resize(finalImageMat, resized, cv::Size(), scale, scale, cv::INTER_LINEAR);
+
+		int x = (resized.cols - screenWidth) / 2;
+		int y = (resized.rows - screenHeight) / 2;
+		cv::Rect cropRegion(x, y, screenWidth, screenHeight);
+		cv::Mat cropped = resized(cropRegion);
+
+
+		//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
+		cv::namedWindow("EasiAug", cv::WINDOW_NORMAL);
 		cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
+		cv::imshow("EasiAug", finalImageMat);
 	}
 	else
 	{
 		cv::namedWindow("EasiAug");
+		cv::imshow("EasiAug", finalImageMat);
 	}
-
-	cv::imshow("EasiAug", finalImageMat);
 
 #if SPI_OUTPUT
 	//Output to SPI screen.
