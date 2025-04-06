@@ -24,10 +24,6 @@ public:
 	//int2 ScreenTouchToUIPoint(int x, int y);
 	void ScreenTouchToUIPoint(int* x, int* y);
 
-	int GetScreenWidth();
-
-	int GetScreenHeight();
-
 private:
 	sl::Camera* zed;
 

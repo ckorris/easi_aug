@@ -521,8 +521,8 @@ void HandleOutputAndMouse(cv::Mat finalImageMat)
 	//Output to desktop.
 	if (SET_TO_FULL_SCREEN == true)
 	{
-		int screenWidth = imageHelper->GetScreenWidth();
-		int screenHeight = imageHelper->GetScreenHeight();
+		int screenWidth = Config::lcdWidth();
+		int screenHeight = Config::lcdHeight();
 
 		float scaleW = static_cast<float>(screenWidth) / static_cast<float>(finalImageMat.cols);
 		float scaleH = static_cast<float>(screenHeight) / static_cast<float>(finalImageMat.rows);
@@ -540,8 +540,10 @@ void HandleOutputAndMouse(cv::Mat finalImageMat)
 
 		//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
 		cv::namedWindow("EasiAug", cv::WINDOW_NORMAL);
+
 		cv::setWindowProperty("EasiAug", cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN);
-		cv::imshow("EasiAug", finalImageMat);
+		//cv::imshow("EasiAug", finalImageMat);
+		cv::imshow("EasiAug", cropped);
 	}
 	else
 	{
