@@ -23,13 +23,13 @@ using namespace sl;
 const bool SET_TO_FULL_SCREEN = true; //If true, will make window full-screen. Best for small HDMI screens.
 
 //Variables.
-cv::Point mousePos(0,0); //Current position of the mouse. Updated within ClickCallback (okay so I need to rename that). 
+cv::Point mousePos(0, 0); //Current position of the mouse. Updated within ClickCallback (okay so I need to rename that). 
 //bool zoom = false; //When true, the images will be magnified by 2x.
 
 //Non-ZED helpers/managers.
-Simulation *sim;
-ImageHelper *imageHelper;
-RecordingHelper *recorder;
+Simulation* sim;
+ImageHelper* imageHelper;
+RecordingHelper* recorder;
 
 RecordingHelper* recordHelper; //Not actually used. //Update: TODO: Figure out why there are two of this now. There was a reason that I failed to document.
 bool(*recordinggetter)() = []() { return recordHelper->IsRecordingSVO(); };
@@ -47,7 +47,7 @@ SensorsData sensorData;
 RuntimeParameters runtime_parameters;
 Resolution image_size;
 
-TextureHolder *textureHolder;
+TextureHolder* textureHolder;
 
 bool wantsToQuit = false;
 
@@ -66,12 +66,12 @@ int zedHeight()
 cv::Mat slMat2cvMat(Mat& input);
 int slMatType2cvMatType(sl::MAT_TYPE sltype);
 void ClickCallback(int event, int x, int y, int flags, void* userdata);
-void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat);
-void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projectionMatrix, 
-	cv::Mat image_ocv, cv::Mat *outSimMat);
+void DrawUI(int uiwidth, int uiheight, cv::Mat* outMat);
+void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projectionMatrix,
+	cv::Mat image_ocv, cv::Mat* outSimMat);
 bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& currentPoint);
-void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, 
-	cv::Mat *finalMat);
+void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat,
+	cv::Mat* finalMat);
 void HandleOutputAndMouse(cv::Mat finalImageMat);
 void RequestClose();
 
@@ -80,7 +80,11 @@ Camera zed;
 Mat depth_measure;
 cv::Mat projectionMatrix;
 
-int main(int argc, char **argv) 
+float outputScale;
+cv::Mat resized;
+cv::Mat cropped;
+
+int main(int argc, char** argv)
 {
 #if SPI_OUTPUT
 	//Create object for outputting to SPI monitor.
@@ -107,19 +111,19 @@ int main(int argc, char **argv)
 	TextureHolder texholder(&zedimage, &depth_measure, &image_ocv);
 	textureHolder = &texholder;
 	textureHolder->CreateMatrixesFromZed(&zed);
-	
+
 	Simulation simReal = Simulation();
 	sim = &simReal;
 
 	//imageHelper = &ImageHelper(&zed);
-	imageHelper =  new ImageHelper(&zed);
+	imageHelper = new ImageHelper(&zed);
 
 	sl::CameraInformation info = zed.getCameraInformation();
 	projectionMatrix = CamUtilities::GetProjectionMatrix(info);
 
 	//Declare the recording helper (for recording SVO files) and button.
 	//recorder = &RecordingHelper(&zed);
-	recorder =  new RecordingHelper(&zed);
+	recorder = new RecordingHelper(&zed);
 	RecordingHelper record = static_cast<RecordingHelper>(*recorder);
 	recordHelper = recorder;
 
@@ -137,11 +141,35 @@ int main(int argc, char **argv)
 	hotkeyManager.RegisterKeyBinding('v', []() { IOShortcuts::SleepMode(&zed); });
 	hotkeyManager.RegisterKeyBinding('q', RequestClose);
 
-	// Loop until 'q' is pressed
+	//Get window crop settings.
+	int screenWidth = Config::lcdWidth();
+	int screenHeight = Config::lcdHeight();
+
+	sl::Resolution zedres = zed.getCameraInformation().camera_configuration.resolution;
+	float zedwidth = zedres.width; //Shorthand.
+	float zedheight = zedres.height; //Shorthand.
+
+	float scaleW = static_cast<float>(screenWidth) / static_cast<float>(zedwidth);
+	float scaleH = static_cast<float>(screenHeight) / static_cast<float>(zedheight);
+	outputScale = std::max(scaleW, scaleH); // ensures at least one dimension matches screen size
+
+	float newWidth = static_cast<int>(zedwidth * outputScale);
+	float newHeight = static_cast<int>(zedheight * outputScale);
+
+
+	resized.create(newHeight, newWidth, CV_8UC4);
+
+	int x = (resized.cols - screenWidth) / 2;
+	int y = (resized.rows - screenHeight) / 2;
+	cv::Rect cropRegion(x, y, screenWidth, screenHeight);
+
+	cropped = resized(cropRegion);
+
+	//Loop until 'q' is pressed.
 	char key = ' ';
 	while (wantsToQuit == false) {
-		
-		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS) 
+
+		if (zed.grab(runtime_parameters) == ERROR_CODE::SUCCESS)
 		{
 			//Log a new frame in TimeHelper, so that we can accurately get deltaTime later. 
 			Time::LogNewFrame();
@@ -169,7 +197,7 @@ int main(int argc, char **argv)
 
 			//Display on the window and/or LCD screen, and handle mouse drawing and input.
 			HandleOutputAndMouse(finalImageMat);
-		
+
 			//Process hotkeys.
 			hotkeyManager.Process();
 
@@ -182,7 +210,7 @@ int main(int argc, char **argv)
 	return 0;
 }
 
-void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
+void DrawUI(int uiwidth, int uiheight, cv::Mat* outMat)
 {
 	//Make the menu image. Note this behaves very similarly to sim_mat, but is kept separate so we can add an offset at the end. 
 	cv::Mat menu_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
@@ -200,7 +228,7 @@ void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
 		destheight = zedHeight();
 	}
 
-	
+
 
 	//Calculate the menu size and assign it. 
 	//This involves figuring out what the image will be scaled to, and what will be cropped for the output res. 	
@@ -248,8 +276,8 @@ void DrawUI(int uiwidth, int uiheight, cv::Mat *outMat)
 	*outMat = menu_mat;
 }
 
-void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projectionMatrix, 
-					cv::Mat image_ocv, cv::Mat *outSimMat)
+void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projectionMatrix,
+	cv::Mat image_ocv, cv::Mat* outSimMat)
 {//Make the image used for some displays, like the distance text.
 	cv::Mat sim_mat = cv::Mat(uiheight, uiwidth, CV_8UC4);
 	sim_mat.setTo(cv::Scalar(0, 0, 0, 0)); //Maaaay not need, now that we're drawing the menu separately. 
@@ -262,10 +290,10 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 		bool collided = sim->Simulate(traveltime_nograv, maxSamples, camPosOffset, camRotOffset, physicsArgs,
 			gravityVector, collisionDetectionFunc, collisionDepth, totalTime, linePoints, sampleStats, stats);
 
-		//bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, sensorData, collisionpoint_nograv, collisiondepth_nograv, 
+		//bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, sensorData, collisionpoint_nograv, collisiondepth_nograv,
 		//	traveltime_nograv, Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0, 1));
-		
-		
+
+
 		if (collided && Config::toggleLaserCrosshair())
 		{
 			float dotradius = 15 / collisiondepth_nograv;
@@ -283,7 +311,7 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 	//Laser crosshair - gravity.
 	if (Config::toggleGravityCrosshair() || Config::toggleGravityPath())
 	{
-		
+
 		//TEMP consts that should be messed with and made real consts.
 		int maxSamples = 100;
 		float sampleTime = 0.01f;
@@ -317,7 +345,7 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 
 			return DetectCollision(lastValidPoint, currentPoint);
 			};
-		
+
 		float collisionDepth;
 		float totalTime;
 		int linePointsCount;
@@ -327,50 +355,50 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 		//SampleStats** sampleStats;
 		std::vector<SampleStats> sampleStats;
 		SimStats stats;
-		
+
 		bool collided = sim->Simulate(sampleTime, maxSamples, camPosOffset, camRotOffset, physicsArgs,
 			gravityVector, collisionDetectionFunc, collisionDepth, totalTime, linePoints, sampleStats, stats);
-		
+
 		if (linePoints.size() == 0)
 		{
 			*outSimMat = sim_mat;
 			return;
 		}
-		
+
 		float depthWidth = (int)depth_measure.getWidth();
 		float depthHeight = (int)depth_measure.getHeight();
-		
+
 		sl::float3 firstPointSL = sl::float3(camPosOffset.x, camPosOffset.y, 0);
-				
+
 		sl::int2 lastScreenPos = CamUtilities::CameraToScreenPos(firstPointSL, projectionMatrix, depthWidth, depthHeight);
 
-		for(size_t i = 0; i < linePoints.size() ; i++) //Start on the second, so the last one is the first one.
+		for (size_t i = 0; i < linePoints.size(); i++) //Start on the second, so the last one is the first one.
 		{
 			hps::float3 currentPoint = linePoints[i];
 			sl::float3 currentPointSL = sl::float3(currentPoint.x, currentPoint.y, currentPoint.z);
 
 			sl::int2 currentScreenPos = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix, depthWidth, depthHeight);
-			
+
 			if (lastScreenPos.x != currentScreenPos.x || lastScreenPos.y != currentScreenPos.y) //Comparing int2 to int2 causes weird errors.
 			{
 				//Due to how this works, we're transforming the points twice, once during collision, once here.
 				//TODO: Optimize.
 				cv::Scalar color = cv::Scalar(0, 0, 255.0, 1);
 
-				cv::line(image_ocv, cv::Point(lastScreenPos.x, lastScreenPos.y), cv::Point(currentScreenPos.x, currentScreenPos.y), 
+				cv::line(image_ocv, cv::Point(lastScreenPos.x, lastScreenPos.y), cv::Point(currentScreenPos.x, currentScreenPos.y),
 					color, 2);
 
 				lastScreenPos = currentScreenPos;
 			}
 		}
-		
+
 		hps::int2 collisionpoint_grav = hps::int2(lastScreenPos.x, lastScreenPos.y);
-		float collisiondepth_grav = linePoints[linePoints.size() - 1].z; 
+		float collisiondepth_grav = linePoints[linePoints.size() - 1].z;
 		float traveltime_grav = sampleTime * linePoints.size();
 
 		//bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, true, sensorData, collisionpoint_grav, collisiondepth_grav, traveltime_grav,
 		//	Config::toggleGravityPath(), image_ocv, cv::Scalar(0, 0, 255.0, 1));
-		
+
 		if (collided && Config::toggleGravityCrosshair())
 		{
 			float dotradius = 15 / collisiondepth_grav;
@@ -422,7 +450,7 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 		{
 			//cout << "Did not collide. Last was " << collisionpoint_grav.x << ", " << collisionpoint_grav.y << endl;
 		}
-		
+
 	}
 
 	*outSimMat = sim_mat;
@@ -431,7 +459,7 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& currentPoint)
 {
 	//return false;
-	
+
 	//For simplicity, just check the current position against the depth of its corresponding point
 	//in the ZED depth image. We could be fancier and check for collision along all the 2D points between
 	//the last and current one, but this would very rarely make a difference, and it would be slight,
@@ -439,7 +467,7 @@ bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& curre
 
 	if (currentPoint.z < 0) //If behind the camera, don't test.
 	{
-		return false; 
+		return false;
 	}
 
 	int imageWidth = (int)depth_measure.getWidth();
@@ -452,7 +480,7 @@ bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& curre
 		imageWidth, imageHeight);
 
 	//If it's outside view of the screen, we won't be able to calculate depth. 
-	if (screenPosition.x < 0.0 || screenPosition.y < 0.0 || 
+	if (screenPosition.x < 0.0 || screenPosition.y < 0.0 ||
 		screenPosition.x > imageWidth || screenPosition.y > imageHeight)
 	{
 		return false;
@@ -460,12 +488,12 @@ bool DetectCollision(const hps::float3& lastValidPoint, const hps::float3& curre
 
 	float zedDepth;
 	depth_measure.getValue(screenPosition.x, screenPosition.y, &zedDepth);
-	
+
 	return zedDepth > 0.0 && currentPoint.z > zedDepth; //Current point is behind the depth of the image.
 
 }
 
-void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat *finalMat)
+void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat sim_mat, cv::Mat menu_mat, cv::Mat* finalMat)
 {
 	//Rotate the ZED image, and possibly zoom in.  
 	cv::Mat finalimagemat(image_ocv.cols, image_ocv.rows, CV_8UC4);
@@ -502,7 +530,7 @@ void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat
 
 	cv::add(finaluimat, menu_mat, finaluimat, menumask);
 
-	
+
 
 	//Add the UI image (now with the menu) to the ZED image. 
 	cv::Mat mask(cv::Size(finaluimat.cols, finaluimat.rows), CV_8UC1);
@@ -515,29 +543,15 @@ void CombineIntoFinalImage(int uiwidth, int uiheight, cv::Mat image_ocv, cv::Mat
 
 void HandleOutputAndMouse(cv::Mat finalImageMat)
 {
-	//Draw the mouse.
-	
+	cv::circle(finalImageMat, mousePos, (finalImageMat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);	//Draw the mouse.
 
 	//Output to desktop.
 	if (SET_TO_FULL_SCREEN == true)
 	{
-		int screenWidth = Config::lcdWidth();
-		int screenHeight = Config::lcdHeight();
-
-		float scaleW = static_cast<float>(screenWidth) / static_cast<float>(finalImageMat.cols);
-		float scaleH = static_cast<float>(screenHeight) / static_cast<float>(finalImageMat.rows);
-		float scale = std::max(scaleW, scaleH); // ensures at least one dimension matches screen size
+		cv::resize(finalImageMat, resized, cv::Size(resized.cols, resized.rows), 0, 0, cv::INTER_LINEAR);
 
 
-		cv::Mat resized;
-		cv::resize(finalImageMat, resized, cv::Size(), scale, scale, cv::INTER_LINEAR);
-
-		int x = (resized.cols - screenWidth) / 2;
-		int y = (resized.rows - screenHeight) / 2;
-		cv::Rect cropRegion(x, y, screenWidth, screenHeight);
-		cv::Mat cropped = resized(cropRegion);
-
-		cv::circle(cropped, mousePos, (finalImageMat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);
+		//cv::circle(cropped, mousePos, (cropped.cols / 150), cv::Scalar(0, 255, 255, 255), -1); 	//Draw the mouse.
 
 		//cv::namedWindow("EasiAug", cv::WINDOW_KEEPRATIO);
 		cv::namedWindow("EasiAug", cv::WINDOW_NORMAL);
@@ -548,7 +562,7 @@ void HandleOutputAndMouse(cv::Mat finalImageMat)
 	}
 	else
 	{
-		cv::circle(finalImageMat, mousePos, (finalImageMat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);
+		//cv::circle(finalImageMat, mousePos, (finalImageMat.cols / 150), cv::Scalar(0, 255, 255, 255), -1);	//Draw the mouse.
 		cv::namedWindow("EasiAug");
 		cv::imshow("EasiAug", finalImageMat);
 	}
@@ -569,13 +583,22 @@ bool GetIsRecording()
 
 void ClickCallback(int event, int x, int y, int flags, void* userdata)
 {
-	
+	if (SET_TO_FULL_SCREEN)
+	{
+		sl::Resolution zedres = zed.getCameraInformation().camera_configuration.resolution;
+		float zedwidth = zedres.width; //Shorthand.
+		float zedheight = zedres.height; //Shorthand.
+		x = static_cast<int>(x / outputScale);
+		y = static_cast<int>(y / outputScale);
+	}
+
+
 	if (event == cv::EVENT_LBUTTONDOWN || event == cv::EVENT_LBUTTONUP)
 	{
-		ImageHelper *imageHelper = static_cast<ImageHelper*>(userdata);
+		ImageHelper* imageHelper = static_cast<ImageHelper*>(userdata);
 		imageHelper->ScreenTouchToUIPoint(&x, &y);
 
-		bool isdown = event == cv::EVENT_LBUTTONDOWN; 
+		bool isdown = event == cv::EVENT_LBUTTONDOWN;
 
 		panel.ProcessAllClicks(x, y, isdown);
 		recordButton.ProcessAllClicks(x, y, isdown);
@@ -589,7 +612,7 @@ void ClickCallback(int event, int x, int y, int flags, void* userdata)
 	{
 		mousePos = cv::Point(x, y);
 	}
-	
+
 }
 
 void RequestClose()
