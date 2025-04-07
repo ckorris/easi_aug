@@ -285,27 +285,95 @@ void DrawSimulation(int uiwidth, int uiheight, Mat depth_measure, cv::Mat projec
 	//Laser crosshair - no gravity. 
 	if (Config::toggleLaserCrosshair() || Config::toggleLaserPath())
 	{
-		//TODO: Make this work.
-		/*
-		bool collided = sim->Simulate(traveltime_nograv, maxSamples, camPosOffset, camRotOffset, physicsArgs,
-			gravityVector, collisionDetectionFunc, collisionDepth, totalTime, linePoints, sampleStats, stats);
+		//TODO: Lots of duplicate code here, fix later.
+		int maxSamples = 100;
+		float sampleTime = 0.01f;
+		
+		hps::float3 camPosOffset(0, 0, 0);
+		camPosOffset.x = Config::camXPos();
+		camPosOffset.y = Config::camYPos();
+		camPosOffset.z = Config::camZPos();
+
+		hps::float3 camRotOffset(Config::camXRot(), Config::camYRot(), Config::camZRot());
+
+		hps::PhysicsArgs physicsArgs;
+		physicsArgs.BBDiameterMM = Config::bbDiameterMM();
+		physicsArgs.BBMassGrams = Config::bbMassGrams();
+		physicsArgs.StartSpeedMPS = Config::forwardSpeedMPS();
+		physicsArgs.SpinRPM = 0;
+		physicsArgs.TemperatureCelsius = Config::temperatureC();
+		physicsArgs.RelativeHumidity01 = Config::relativeHumidity01();
+		physicsArgs.PressureHPa = sensorData.barometer.pressure;
+		physicsArgs.BBToAirFrictionCoefficient = Config::bbToAirFrictionCoef();
+
+		hps::float3 gravityVectorSL = hps::float3(0, 0, 0); //No gravity.
+
+		CollisionDetectionFunc collisionDetectionFunc = [](const hps::float3& lastValidPoint, const hps::float3& currentPoint) ->
+			bool {
+
+			return DetectCollision(lastValidPoint, currentPoint);
+			};
+
+		float collisionDepth_NoGrav;
+		float totalTime;
+		int linePointsCount;
+
+		std::vector<hps::float3> linePoints;
+
+		//SampleStats** sampleStats;
+		std::vector<SampleStats> sampleStats;
+		SimStats stats;
+
+		bool collided = sim->Simulate(sampleTime, maxSamples, camPosOffset, camRotOffset, physicsArgs,
+			gravityVectorSL, collisionDetectionFunc, collisionDepth_NoGrav, totalTime, linePoints, sampleStats, stats);
 
 		//bool collided = sim->Simulate(depth_measure, Config::forwardSpeedMPS(), 0.04, false, sensorData, collisionpoint_nograv, collisiondepth_nograv,
 		//	traveltime_nograv, Config::toggleLaserPath(), image_ocv, cv::Scalar(0, 255.0, 0, 1));
 
+		float depthWidth = (int)depth_measure.getWidth();
+		float depthHeight = (int)depth_measure.getHeight();
+
+		sl::float3 firstPointSL = sl::float3(camPosOffset.x, camPosOffset.y, 0);
+		sl::int2 lastScreenPos = CamUtilities::CameraToScreenPos(firstPointSL, projectionMatrix, depthWidth, depthHeight);
+
+		for (size_t i = 0; i < linePoints.size(); i++) //Start on the second, so the last one is the first one.
+		{
+			hps::float3 currentPoint = linePoints[i];
+			sl::float3 currentPointSL = sl::float3(currentPoint.x, currentPoint.y, currentPoint.z);
+
+			sl::int2 currentScreenPos = CamUtilities::CameraToScreenPos(currentPointSL, projectionMatrix, depthWidth, depthHeight);
+
+			if (lastScreenPos.x != currentScreenPos.x || lastScreenPos.y != currentScreenPos.y) //Comparing int2 to int2 causes weird errors.
+			{
+				//Due to how this works, we're transforming the points twice, once during collision, once here.
+				//TODO: Optimize.
+				cv::Scalar color = cv::Scalar(0, 255.0, 0, 1);
+
+				cv::line(image_ocv, cv::Point(lastScreenPos.x, lastScreenPos.y), cv::Point(currentScreenPos.x, currentScreenPos.y),
+					color, 2);
+
+				lastScreenPos = currentScreenPos;
+			}
+		}
 
 		if (collided && Config::toggleLaserCrosshair())
 		{
-			float dotradius = 15 / collisiondepth_nograv;
+			
+
+			hps::int2 collisionpoint_nograv = hps::int2(lastScreenPos.x, lastScreenPos.y);
+			float collisiondepth_grav = linePoints[linePoints.size() - 1].z;
+			float traveltime_grav = sampleTime * linePoints.size();
+
+			float dotradius = 15 / collisionDepth_NoGrav;
 			if (dotradius <= 0)
 			{
-				cout << "Dotradius was less than zero: " << dotradius << " Depth: " << collisiondepth_nograv << endl;
+				//cout << "Dotradius was less than zero: " << dotradius << " Depth: " << collisionDepth_NoGrav << endl;
 				dotradius = 2.0;
 			}
 
 			cv::circle(image_ocv, cv::Point(collisionpoint_nograv.x, collisionpoint_nograv.y), dotradius, cv::Scalar(0, 255.0, 0), -1);
 		}
-		*/
+		
 	}
 
 	//Laser crosshair - gravity.
